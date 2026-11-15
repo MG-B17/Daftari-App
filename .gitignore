@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+docs/
+design/
 
 # Symbolication related
 app.*.symbols
@@ -43,6 +45,27 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
 
 # Widget Preview related
 .widget_preview/
+
+# Local credentials and signing material (Firebase client config stays tracked)
+.env
+.env.*
+secrets/
+**/*service-account*.json
+**/*service_account*.json
+**/*firebase-adminsdk*.json
+**/key.properties
+*.jks
+*.keystore
+
+# Local Ruby/Fastlane state and verification artifacts
+.bundle/
+vendor/bundle/
+**/fastlane/report.xml
+**/fastlane/README.md
+**/fastlane/screenshots/
+/screenshots/
+/tmp_screenshots/
