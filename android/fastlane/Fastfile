@@ -1,23 +1,28 @@
 default_platform(:android)
 
-platform :android do
-  desc "Build and distribute a release APK to Firebase testers"
-  lane :firebase do
-    app_id = ENV.fetch("FIREBASE_APP_ID")
-    credentials = ENV.fetch("FIREBASE_CREDENTIALS")
-    project_root = File.expand_path("../..", __dir__)
+PROJECT_ROOT = File.expand_path("../..", __dir__)
 
-    Dir.chdir(project_root) do
+platform :android do
+
+  desc "Build APK and distribute to Firebase App Distribution"
+  lane :firebase do
+    Dir.chdir(PROJECT_ROOT) do
+
       sh("flutter clean")
       sh("flutter build apk --release")
+
       firebase_app_distribution(
-        app: app_id,
-        service_credentials_json_data: credentials,
-        android_artifact_type: "APK",
-        android_artifact_path: File.join(project_root, "build/app/outputs/flutter-apk/app-release.apk"),
+        app: ENV.fetch("FIREBASE_APP_ID"),
+        firebase_cli_token: ENV.fetch("FIREBASE_CREDENTIALS"),
+        android_artifact_path: File.join(
+          PROJECT_ROOT,
+          "build/app/outputs/flutter-apk/app-release.apk"
+        ),
         testers: "mostafagalal1712004@gmail.com",
         release_notes: "Automated CI build"
       )
+
     end
   end
+
 end
