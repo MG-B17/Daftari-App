@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> pumpShared(
   WidgetTester tester,
@@ -96,6 +97,7 @@ void main() {
   );
 
   test('dependency configuration is idempotent', () async {
+    SharedPreferences.setMockInitialValues({});
     await sl.reset();
     await configureDependencies();
     final router = sl<GoRouter>();
