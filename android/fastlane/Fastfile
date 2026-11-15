@@ -4,7 +4,7 @@ PROJECT_ROOT = File.expand_path("../..", __dir__)
 
 platform :android do
 
-  desc "Build APK and distribute to Firebase App Distribution"
+  desc "Build APK and distribute to Firebase App Distribution and send email to testers"
   lane :firebase do
     app_id = ENV.fetch("FIREBASE_APP_ID").strip
     unless app_id.match?(/\A1:\d+:android:[a-f0-9]+\z/)
