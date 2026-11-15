@@ -1,0 +1,16 @@
+{
+  "@@locale": "ar",
+  "appTitle": "دفتري",
+  "foundationReady": "دفترك يبدأ من هنا",
+  "foundationDescription": "الأساس جاهز. سيظهر عملاؤك ومعاملاتك هنا في مرحلة لاحقة.",
+  "loading": "جارٍ التحميل",
+  "emptyTitle": "لا توجد بيانات بعد",
+  "emptyMessage": "ستظهر العناصر الجديدة هنا.",
+  "errorTitle": "حدث خطأ",
+  "errorMessage": "يرجى المحاولة مرة أخرى.",
+  "retry": "إعادة المحاولة",
+  "confirm": "تأكيد",
+  "cancel": "إلغاء",
+  "optional": "اختياري",
+  "requiredField": "مطلوب"
+}

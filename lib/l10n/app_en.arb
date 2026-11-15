@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "appTitle": "Daftari",
+  "foundationReady": "Your ledger starts here",
+  "foundationDescription": "The foundation is ready. Your customers and transactions will appear here in a later phase.",
+  "loading": "Loading",
+  "emptyTitle": "Nothing here yet",
+  "emptyMessage": "New items will appear here.",
+  "errorTitle": "Something went wrong",
+  "errorMessage": "Please try again.",
+  "retry": "Retry",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "optional": "Optional",
+  "requiredField": "Required"
+}
