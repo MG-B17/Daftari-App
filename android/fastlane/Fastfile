@@ -4,7 +4,7 @@ platform :android do
   desc "Build and distribute a release APK to Firebase testers"
   lane :firebase do
     app_id = ENV.fetch("FIREBASE_APP_ID")
-    credentials = ENV.fetch("FIREBASE_SERVICE_ACCOUNT_JSON")
+    credentials = ENV.fetch("FIREBASE_CREDENTIALS")
     project_root = File.expand_path("../..", __dir__)
 
     Dir.chdir(project_root) do
