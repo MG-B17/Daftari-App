@@ -6,14 +6,21 @@ platform :android do
 
   desc "Build APK and distribute to Firebase App Distribution"
   lane :firebase do
+    app_id = ENV.fetch("FIREBASE_APP_ID").strip
+    unless app_id.match?(/\A1:\d+:android:[a-f0-9]+\z/)
+      UI.user_error!("FIREBASE_APP_ID must be the Android Firebase App ID, not an iOS App ID or package name.")
+    end
+    credentials = ENV.fetch("FIREBASE_CREDENTIALS").strip
+
     Dir.chdir(PROJECT_ROOT) do
 
       sh("flutter clean")
       sh("flutter build apk --release")
 
       firebase_app_distribution(
-        app: ENV.fetch("FIREBASE_APP_ID"),
-        firebase_cli_token: ENV.fetch("FIREBASE_CREDENTIALS"),
+        app: app_id,
+        firebase_cli_token: credentials,
+        android_artifact_type: "APK",
         android_artifact_path: File.join(
           PROJECT_ROOT,
           "build/app/outputs/flutter-apk/app-release.apk"
