@@ -1,15 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../services/local_storage_service.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_scaffold.dart';
 import 'app_routes.dart';
 
 abstract final class AppRouter {
-  static GoRouter create() => GoRouter(
-    initialLocation: AppRoutes.root,
+  static GoRouter create({
+    LocalStorageService? localStorage,
+    OnboardingCubit Function()? createOnboardingCubit,
+  }) => GoRouter(
+    initialLocation: AppRoutes.splash,
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        name: AppRoutes.splashName,
+        builder: (context, state) => SplashScreen(
+          onFinished: () => context.go(
+            localStorage != null && !localStorage.onboardingCompleted
+                ? AppRoutes.onboarding
+                : AppRoutes.root,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        name: AppRoutes.onboardingName,
+        redirect: (context, state) =>
+            localStorage == null || localStorage.onboardingCompleted
+            ? AppRoutes.root
+            : null,
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              createOnboardingCubit?.call() ?? OnboardingCubit(localStorage!),
+          child: const OnboardingScreen(),
+        ),
+      ),
       GoRoute(
         path: AppRoutes.root,
         name: AppRoutes.rootName,

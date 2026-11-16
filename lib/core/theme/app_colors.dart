@@ -12,6 +12,10 @@ abstract final class AppColors {
   static const background = Color(0xFFF5F7FA);
   static const paper = Color(0xFFFAF7F0);
   static const surface = Color(0xFFFFFFFF);
+  static const onboardingGradientStart = Color(0xFFD9EAE7);
+  static const onboardingGradientEnd = Color(0xFFFFF0D6);
+  static const warning = Color(0xFFFF9800);
+  static const shadow = Color(0x14000000);
   static const border = Color(0xFFE5E9F0);
   static const input = Color(0xFFEEF2F8);
   static const text = Color(0xFF172B26);

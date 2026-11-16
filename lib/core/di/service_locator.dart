@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../errors/app_exception.dart';
 import '../errors/error_handler.dart';
 import '../routing/app_router.dart';
@@ -50,9 +51,17 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<ErrorHandler>()) {
     sl.registerLazySingleton<ErrorHandler>(() => ErrorHandler(sl<AppLogger>()));
   }
+  if (!sl.isRegistered<OnboardingCubit>()) {
+    sl.registerFactory<OnboardingCubit>(
+      () => OnboardingCubit(sl<LocalStorageService>()),
+    );
+  }
   if (!sl.isRegistered<GoRouter>()) {
     sl.registerLazySingleton<GoRouter>(
-      AppRouter.create,
+      () => AppRouter.create(
+        localStorage: sl<LocalStorageService>(),
+        createOnboardingCubit: () => sl<OnboardingCubit>(),
+      ),
       dispose: (router) => router.dispose(),
     );
   }

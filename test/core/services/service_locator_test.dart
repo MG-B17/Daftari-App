@@ -6,6 +6,7 @@ import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,5 +54,16 @@ void main() {
     await configureDependencies();
     expect(sl<AppLogger>(), same(logger));
     expect(sl<LocalStorageService>().localeCode, 'en');
+  });
+
+  test('onboarding cubit is factory scoped', () async {
+    await configureDependencies();
+    final first = sl<OnboardingCubit>();
+    final second = sl<OnboardingCubit>();
+    expect(first, isNot(same(second)));
+    first.nextPage();
+    expect(second.state.pageIndex, 0);
+    await first.close();
+    await second.close();
   });
 }

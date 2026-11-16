@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Daftari'**
   String get appTitle;
 
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your shop’s credit ledger'**
+  String get splashTagline;
+
   /// No description provided for @foundationReady.
   ///
   /// In en, this message translates to:
@@ -175,6 +181,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Required'**
   String get requiredField;
+
+  /// No description provided for @onboardingTitle1.
+  ///
+  /// In en, this message translates to:
+  /// **'Record credit in seconds'**
+  String get onboardingTitle1;
+
+  /// No description provided for @onboardingDescription1.
+  ///
+  /// In en, this message translates to:
+  /// **'Log any customer balance with one tap—no complexity, no lost paper.'**
+  String get onboardingDescription1;
+
+  /// No description provided for @onboardingTitle2.
+  ///
+  /// In en, this message translates to:
+  /// **'Know every customer'**
+  String get onboardingTitle2;
+
+  /// No description provided for @onboardingDescription2.
+  ///
+  /// In en, this message translates to:
+  /// **'Track customer balances, total credit, and payments clearly anytime.'**
+  String get onboardingDescription2;
+
+  /// No description provided for @onboardingTitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is safe'**
+  String get onboardingTitle3;
+
+  /// No description provided for @onboardingDescription3.
+  ///
+  /// In en, this message translates to:
+  /// **'Works completely offline, with optional cloud backup whenever you choose.'**
+  String get onboardingDescription3;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get onboardingStart;
+
+  /// No description provided for @onboardingPageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {total}: {title}'**
+  String onboardingPageLabel(int page, int total, String title);
+
+  /// No description provided for @onboardingQuickEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick entry'**
+  String get onboardingQuickEntry;
+
+  /// No description provided for @onboardingInstantPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant payment'**
+  String get onboardingInstantPayment;
+
+  /// No description provided for @onboardingSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved instantly'**
+  String get onboardingSaved;
+
+  /// No description provided for @onboardingSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'In just 3 seconds'**
+  String get onboardingSeconds;
+
+  /// No description provided for @onboardingSampleCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer: Emad Taha'**
+  String get onboardingSampleCustomer;
+
+  /// No description provided for @onboardingSampleAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'EGP 250'**
+  String get onboardingSampleAmount;
+
+  /// No description provided for @onboardingStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your preference. Please try again.'**
+  String get onboardingStorageError;
 }
 
 class _AppLocalizationsDelegate

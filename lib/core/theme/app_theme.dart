@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_constants.dart';
+import 'app_color_scheme.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
@@ -29,6 +30,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colors,
+      extensions: [dark ? AppColorScheme.dark : AppColorScheme.light],
       fontFamily: AppConstants.fontFamily,
       textTheme: AppTypography.textTheme.apply(
         bodyColor: colors.onSurface,

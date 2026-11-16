@@ -13,6 +13,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appTitle => 'دفتري';
 
   @override
+  String get splashTagline => 'دفتر الآجل لمحلك';
+
+  @override
   String get foundationReady => 'دفترك يبدأ من هنا';
 
   @override
@@ -48,4 +51,60 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get requiredField => 'مطلوب';
+
+  @override
+  String get onboardingTitle1 => 'سجّل الآجل في ثوانٍ';
+
+  @override
+  String get onboardingDescription1 =>
+      'اكتب حساب أي زبون بضغطة زر واحدة بدون تعقيد ولا ورق يضيع.';
+
+  @override
+  String get onboardingTitle2 => 'اعرف كل عميل';
+
+  @override
+  String get onboardingDescription2 =>
+      'تابع حسابات زبائنك وإجمالي الآجل والسداد بوضوح في أي وقت.';
+
+  @override
+  String get onboardingTitle3 => 'بياناتك آمنة';
+
+  @override
+  String get onboardingDescription3 =>
+      'يعمل بدون إنترنت بالكامل، مع إمكانية النسخ الاحتياطي السحابي لاحقاً.';
+
+  @override
+  String get onboardingSkip => 'تخطي';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingStart => 'ابدأ الآن';
+
+  @override
+  String onboardingPageLabel(int page, int total, String title) {
+    return 'الصفحة $page من $total: $title';
+  }
+
+  @override
+  String get onboardingQuickEntry => 'تسجيل سريع';
+
+  @override
+  String get onboardingInstantPayment => 'سداد فوري';
+
+  @override
+  String get onboardingSaved => 'حفظ مباشر';
+
+  @override
+  String get onboardingSeconds => 'في 3 ثوانٍ فقط';
+
+  @override
+  String get onboardingSampleCustomer => 'عميل: عماد طه';
+
+  @override
+  String get onboardingSampleAmount => '250 ج.م';
+
+  @override
+  String get onboardingStorageError => 'تعذر حفظ تفضيلك. حاول مرة أخرى.';
 }

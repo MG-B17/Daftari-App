@@ -1,6 +1,7 @@
 {
   "@@locale": "ar",
   "appTitle": "دفتري",
+  "splashTagline": "دفتر الآجل لمحلك",
   "foundationReady": "دفترك يبدأ من هنا",
   "foundationDescription": "الأساس جاهز. سيظهر عملاؤك ومعاملاتك هنا في مرحلة لاحقة.",
   "loading": "جارٍ التحميل",
@@ -12,5 +13,29 @@
   "confirm": "تأكيد",
   "cancel": "إلغاء",
   "optional": "اختياري",
-  "requiredField": "مطلوب"
+  "requiredField": "مطلوب",
+  "onboardingTitle1": "سجّل الآجل في ثوانٍ",
+  "onboardingDescription1": "اكتب حساب أي زبون بضغطة زر واحدة بدون تعقيد ولا ورق يضيع.",
+  "onboardingTitle2": "اعرف كل عميل",
+  "onboardingDescription2": "تابع حسابات زبائنك وإجمالي الآجل والسداد بوضوح في أي وقت.",
+  "onboardingTitle3": "بياناتك آمنة",
+  "onboardingDescription3": "يعمل بدون إنترنت بالكامل، مع إمكانية النسخ الاحتياطي السحابي لاحقاً.",
+  "onboardingSkip": "تخطي",
+  "onboardingNext": "التالي",
+  "onboardingStart": "ابدأ الآن",
+  "onboardingPageLabel": "الصفحة {page} من {total}: {title}",
+  "@onboardingPageLabel": {
+    "placeholders": {
+      "page": {"type": "int"},
+      "total": {"type": "int"},
+      "title": {"type": "String"}
+    }
+  },
+  "onboardingQuickEntry": "تسجيل سريع",
+  "onboardingInstantPayment": "سداد فوري",
+  "onboardingSaved": "حفظ مباشر",
+  "onboardingSeconds": "في 3 ثوانٍ فقط",
+  "onboardingSampleCustomer": "عميل: عماد طه",
+  "onboardingSampleAmount": "250 ج.م",
+  "onboardingStorageError": "تعذر حفظ تفضيلك. حاول مرة أخرى."
 }
