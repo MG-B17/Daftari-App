@@ -1,0 +1,45 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/extensions/context_extensions.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_scaffold.dart';
+import '../cubit/settings_cubit.dart';
+import '../cubit/settings_state.dart';
+import '../widgets/about_section.dart';
+import '../widgets/language_tile.dart';
+import '../widgets/settings_section_card.dart';
+import '../widgets/theme_mode_selector.dart';
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocListener<SettingsCubit, SettingsState>(
+        listenWhen: (previous, current) =>
+            !previous.hasError && current.hasError,
+        listener: (context, state) => ScaffoldMessenger.of(context)
+            .showSnackBar(
+              SnackBar(content: Text(context.l10n.settingsStorageError)),
+            ),
+        child: AppScaffold(
+          title: context.l10n.settingsTitle,
+          body: ListView(
+            children: [
+              SettingsSectionCard(
+                title: context.l10n.settingsAppearanceTitle,
+                child: const ThemeModeSelector(),
+              ),
+              SizedBox(height: AppSpacing.settingsSectionGap),
+              SettingsSectionCard(
+                title: context.l10n.settingsLanguageTitle,
+                child: const LanguageTile(),
+              ),
+              SizedBox(height: AppSpacing.settingsSectionGap),
+              const AboutSection(),
+            ],
+          ),
+        ),
+      );
+}

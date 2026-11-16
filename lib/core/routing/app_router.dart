@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../services/local_storage_service.dart';
@@ -49,6 +50,14 @@ abstract final class AppRouter {
           final l10n = AppLocalizations.of(context)!;
           return AppScaffold(
             title: l10n.appTitle,
+            actions: [
+              IconButton(
+                key: const ValueKey('open-settings'),
+                tooltip: l10n.settingsTitle,
+                onPressed: () => context.push(AppRoutes.settings),
+                icon: const Icon(Icons.settings_outlined),
+              ),
+            ],
             body: Center(
               child: AppEmptyState(
                 icon: Icons.menu_book_rounded,
@@ -58,6 +67,11 @@ abstract final class AppRouter {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        name: AppRoutes.settingsName,
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

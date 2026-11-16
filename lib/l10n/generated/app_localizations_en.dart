@@ -108,4 +108,71 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onboardingStorageError =>
       'Couldn\'t save your preference. Please try again.';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsAppearanceTitle => 'Appearance';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsAppearanceCaption =>
+      'The light paper theme is designed to suit traditional ledgers in sunlight.';
+
+  @override
+  String get settingsLanguageTitle => 'App language';
+
+  @override
+  String get settingsLanguageArabic => 'Arabic';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsLanguageChange => 'Tap to change the language';
+
+  @override
+  String get settingsLanguagePickerTitle => 'Choose language';
+
+  @override
+  String get settingsLanguagePickerSubtitle =>
+      'Choose the interface display language';
+
+  @override
+  String get settingsLanguageArabicDescription => 'Complete Arabic interface';
+
+  @override
+  String get settingsLanguageEnglishDescription => 'English user interface';
+
+  @override
+  String get settingsLanguageHint =>
+      'You can always change the language later from Settings.';
+
+  @override
+  String get settingsLanguageBadgeArabic => 'ع';
+
+  @override
+  String get settingsLanguageBadgeEnglish => 'En';
+
+  @override
+  String get settingsAboutTitle => 'About';
+
+  @override
+  String get settingsVersionLabel => 'App version';
+
+  @override
+  String get settingsVersionStable => 'Stable';
+
+  @override
+  String get settingsStorageError =>
+      'Couldn\'t save your preference. Please try again.';
 }

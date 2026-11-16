@@ -1,8 +1,15 @@
+import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
+import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
+import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +34,11 @@ void main() {
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
+        sl<SettingsCubit>(),
+        sl<SettingsRepository>(),
+        sl<GetSettingsUseCase>(),
+        sl<ChangeLanguageUseCase>(),
+        sl<ChangeThemeUseCase>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -36,6 +48,11 @@ void main() {
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
+        sl<SettingsCubit>(),
+        sl<SettingsRepository>(),
+        sl<GetSettingsUseCase>(),
+        sl<ChangeLanguageUseCase>(),
+        sl<ChangeThemeUseCase>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
@@ -66,4 +83,19 @@ void main() {
     await first.close();
     await second.close();
   });
+
+  test(
+    'database and DAOs are lazy singletons sharing one connection',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+
+      await configureDependencies();
+
+      expect(sl<AppDatabase>(), same(database));
+      expect(sl<CustomerDao>(), same(database.customerDao));
+      expect(sl<TransactionDao>(), same(database.transactionDao));
+    },
+  );
 }
