@@ -5,4 +5,5 @@ abstract final class AppConstants {
   static const defaultLocale = Locale('ar');
   static const supportedLocales = [Locale('ar'), Locale('en')];
   static const fontFamily = 'Cairo';
+  static const appVersion = '1.0.0';
 }

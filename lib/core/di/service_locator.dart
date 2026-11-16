@@ -5,6 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import '../../features/settings/presentation/cubit/settings_cubit.dart';
+import '../../features/settings/data/repositories/settings_repository_impl.dart';
+import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/settings/domain/usecases/get_settings_usecase.dart';
+import '../../features/settings/domain/usecases/change_language_usecase.dart';
+import '../../features/settings/domain/usecases/change_theme_usecase.dart';
 import '../database/app_database.dart';
 import '../errors/app_exception.dart';
 import '../errors/error_handler.dart';
@@ -69,6 +75,37 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<OnboardingCubit>()) {
     sl.registerFactory<OnboardingCubit>(
       () => OnboardingCubit(sl<LocalStorageService>()),
+    );
+  }
+  if (!sl.isRegistered<SettingsRepository>()) {
+    sl.registerLazySingleton<SettingsRepository>(
+      () => SettingsRepositoryImpl(sl<LocalStorageService>()),
+    );
+  }
+  if (!sl.isRegistered<GetSettingsUseCase>()) {
+    sl.registerLazySingleton<GetSettingsUseCase>(
+      () => GetSettingsUseCase(sl<SettingsRepository>()),
+    );
+  }
+  if (!sl.isRegistered<ChangeLanguageUseCase>()) {
+    sl.registerLazySingleton<ChangeLanguageUseCase>(
+      () => ChangeLanguageUseCase(sl<SettingsRepository>()),
+    );
+  }
+  if (!sl.isRegistered<ChangeThemeUseCase>()) {
+    sl.registerLazySingleton<ChangeThemeUseCase>(
+      () => ChangeThemeUseCase(sl<SettingsRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SettingsCubit>()) {
+    sl.registerLazySingleton<SettingsCubit>(
+      () => SettingsCubit(
+        sl<GetSettingsUseCase>(),
+        sl<ChangeLanguageUseCase>(),
+        sl<ChangeThemeUseCase>(),
+        sl<ErrorHandler>(),
+      ),
+      dispose: (cubit) => cubit.close(),
     );
   }
   if (!sl.isRegistered<GoRouter>()) {

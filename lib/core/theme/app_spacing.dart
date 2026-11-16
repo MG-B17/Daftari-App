@@ -58,4 +58,25 @@ abstract final class AppSpacing {
   static double get splashLogoImageSize => 80.r;
   static EdgeInsets get splashProgressPadding =>
       EdgeInsets.only(bottom: xxl, top: md);
+
+  static double get hairline => 1;
+  static double get selectedStroke => 2;
+  static double get settingsSectionGap => roomy;
+  static double get settingsIconBox => 40.r;
+  static double get settingsBadgeSize => 40.r;
+  static double get settingsOptionHeight => 72.r;
+  static double get settingsRadioSize => 22.r;
+  static double get settingsSheetHandleWidth => 44.w;
+  static double get settingsSheetHandleHeight => 4.r;
+  static EdgeInsets get settingsCardPadding => EdgeInsets.all(compact);
+  static EdgeInsetsDirectional get settingsOptionPadding =>
+      EdgeInsetsDirectional.symmetric(horizontal: compact, vertical: compact);
+  static EdgeInsetsDirectional get settingsSectionTitlePadding =>
+      EdgeInsetsDirectional.only(start: xs, bottom: sm);
+  static EdgeInsetsDirectional get settingsSheetPadding =>
+      EdgeInsetsDirectional.fromSTEB(lg, compact, lg, xl);
+  static BorderRadius get settingsOptionRadius =>
+      BorderRadius.circular(compact);
+  static BorderRadius get settingsSheetRadius =>
+      BorderRadius.vertical(top: Radius.circular(largeRadius));
 }

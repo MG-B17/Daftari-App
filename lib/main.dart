@@ -9,6 +9,7 @@ import 'package:marionette_flutter/marionette_flutter.dart';
 import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/app_logger.dart';
+import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -29,5 +30,7 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(DaftariApp(router: sl<GoRouter>()));
+  runApp(
+    DaftariApp(router: sl<GoRouter>(), settingsCubit: sl<SettingsCubit>()),
+  );
 }

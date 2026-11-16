@@ -107,4 +107,69 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboardingStorageError => 'تعذر حفظ تفضيلك. حاول مرة أخرى.';
+
+  @override
+  String get settingsTitle => 'الإعدادات';
+
+  @override
+  String get settingsAppearanceTitle => 'المظهر';
+
+  @override
+  String get settingsThemeLight => 'فاتح';
+
+  @override
+  String get settingsThemeDark => 'داكن';
+
+  @override
+  String get settingsThemeSystem => 'النظام';
+
+  @override
+  String get settingsAppearanceCaption =>
+      'الوضع الفاتح مصمم بألوان دفتر الحسابات التقليدي ليناسب ضوء الشمس';
+
+  @override
+  String get settingsLanguageTitle => 'لغة التطبيق';
+
+  @override
+  String get settingsLanguageArabic => 'العربية';
+
+  @override
+  String get settingsLanguageEnglish => 'الإنجليزية';
+
+  @override
+  String get settingsLanguageChange => 'اضغط لتغيير اللغة';
+
+  @override
+  String get settingsLanguagePickerTitle => 'اختر اللغة';
+
+  @override
+  String get settingsLanguagePickerSubtitle => 'حدد لغة عرض الواجهة والتقارير';
+
+  @override
+  String get settingsLanguageArabicDescription => 'واجهة كاملة باللغة العربية';
+
+  @override
+  String get settingsLanguageEnglishDescription => 'English user interface';
+
+  @override
+  String get settingsLanguageHint =>
+      'يمكنك دائماً تغيير اللغة من الإعدادات لاحقاً';
+
+  @override
+  String get settingsLanguageBadgeArabic => 'ع';
+
+  @override
+  String get settingsLanguageBadgeEnglish => 'En';
+
+  @override
+  String get settingsAboutTitle => 'عن التطبيق';
+
+  @override
+  String get settingsVersionLabel => 'إصدار التطبيق';
+
+  @override
+  String get settingsVersionStable => 'مستقر';
+
+  @override
+  String get settingsStorageError => 'تعذر حفظ تفضيلك. حاول مرة أخرى.';
 }

@@ -5,4 +5,6 @@ abstract final class AppRoutes {
   static const rootName = 'root';
   static const onboarding = '/onboarding';
   static const onboardingName = 'onboarding';
+  static const settings = '/settings';
+  static const settingsName = 'settings';
 }

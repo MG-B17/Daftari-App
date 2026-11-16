@@ -283,6 +283,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save your preference. Please try again.'**
   String get onboardingStorageError;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsAppearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearanceTitle;
+
+  /// No description provided for @settingsThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsThemeLight;
+
+  /// No description provided for @settingsThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsThemeDark;
+
+  /// No description provided for @settingsThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsThemeSystem;
+
+  /// No description provided for @settingsAppearanceCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'The light paper theme is designed to suit traditional ledgers in sunlight.'**
+  String get settingsAppearanceCaption;
+
+  /// No description provided for @settingsLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App language'**
+  String get settingsLanguageTitle;
+
+  /// No description provided for @settingsLanguageArabic.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get settingsLanguageArabic;
+
+  /// No description provided for @settingsLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// No description provided for @settingsLanguageChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change the language'**
+  String get settingsLanguageChange;
+
+  /// No description provided for @settingsLanguagePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose language'**
+  String get settingsLanguagePickerTitle;
+
+  /// No description provided for @settingsLanguagePickerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the interface display language'**
+  String get settingsLanguagePickerSubtitle;
+
+  /// No description provided for @settingsLanguageArabicDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete Arabic interface'**
+  String get settingsLanguageArabicDescription;
+
+  /// No description provided for @settingsLanguageEnglishDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'English user interface'**
+  String get settingsLanguageEnglishDescription;
+
+  /// No description provided for @settingsLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can always change the language later from Settings.'**
+  String get settingsLanguageHint;
+
+  /// No description provided for @settingsLanguageBadgeArabic.
+  ///
+  /// In en, this message translates to:
+  /// **'ع'**
+  String get settingsLanguageBadgeArabic;
+
+  /// No description provided for @settingsLanguageBadgeEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'En'**
+  String get settingsLanguageBadgeEnglish;
+
+  /// No description provided for @settingsAboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settingsAboutTitle;
+
+  /// No description provided for @settingsVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get settingsVersionLabel;
+
+  /// No description provided for @settingsVersionStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Stable'**
+  String get settingsVersionStable;
+
+  /// No description provided for @settingsStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your preference. Please try again.'**
+  String get settingsStorageError;
 }
 
 class _AppLocalizationsDelegate

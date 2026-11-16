@@ -4,6 +4,11 @@ import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
+import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
+import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +34,11 @@ void main() {
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
+        sl<SettingsCubit>(),
+        sl<SettingsRepository>(),
+        sl<GetSettingsUseCase>(),
+        sl<ChangeLanguageUseCase>(),
+        sl<ChangeThemeUseCase>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -38,6 +48,11 @@ void main() {
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
+        sl<SettingsCubit>(),
+        sl<SettingsRepository>(),
+        sl<GetSettingsUseCase>(),
+        sl<ChangeLanguageUseCase>(),
+        sl<ChangeThemeUseCase>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
