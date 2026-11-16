@@ -1,0 +1,41 @@
+{
+  "@@locale": "en",
+  "appTitle": "Daftari",
+  "splashTagline": "Your shop’s credit ledger",
+  "foundationReady": "Your ledger starts here",
+  "foundationDescription": "The foundation is ready. Your customers and transactions will appear here in a later phase.",
+  "loading": "Loading",
+  "emptyTitle": "Nothing here yet",
+  "emptyMessage": "New items will appear here.",
+  "errorTitle": "Something went wrong",
+  "errorMessage": "Please try again.",
+  "retry": "Retry",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "optional": "Optional",
+  "requiredField": "Required",
+  "onboardingTitle1": "Record credit in seconds",
+  "onboardingDescription1": "Log any customer balance with one tap—no complexity, no lost paper.",
+  "onboardingTitle2": "Know every customer",
+  "onboardingDescription2": "Track customer balances, total credit, and payments clearly anytime.",
+  "onboardingTitle3": "Your data is safe",
+  "onboardingDescription3": "Works completely offline, with optional cloud backup whenever you choose.",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingStart": "Get Started",
+  "onboardingPageLabel": "Page {page} of {total}: {title}",
+  "@onboardingPageLabel": {
+    "placeholders": {
+      "page": {"type": "int"},
+      "total": {"type": "int"},
+      "title": {"type": "String"}
+    }
+  },
+  "onboardingQuickEntry": "Quick entry",
+  "onboardingInstantPayment": "Instant payment",
+  "onboardingSaved": "Saved instantly",
+  "onboardingSeconds": "In just 3 seconds",
+  "onboardingSampleCustomer": "Customer: Emad Taha",
+  "onboardingSampleAmount": "EGP 250",
+  "onboardingStorageError": "Couldn't save your preference. Please try again."
+}
