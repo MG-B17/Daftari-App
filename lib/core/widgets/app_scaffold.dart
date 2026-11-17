@@ -12,6 +12,7 @@ class AppScaffold extends StatelessWidget {
     this.padding,
     this.backgroundColor,
     this.floatingActionButton,
+    this.floatingActionButtonLocation,
     this.bottomNavigationBar,
   });
 
@@ -22,6 +23,7 @@ class AppScaffold extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final Color? backgroundColor;
   final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
   final Widget? bottomNavigationBar;
 
   @override
@@ -34,6 +36,7 @@ class AppScaffold extends StatelessWidget {
       child: Padding(padding: padding ?? AppSpacing.pagePadding, child: body),
     ),
     floatingActionButton: floatingActionButton,
+    floatingActionButtonLocation: floatingActionButtonLocation,
     bottomNavigationBar: bottomNavigationBar,
   );
 }

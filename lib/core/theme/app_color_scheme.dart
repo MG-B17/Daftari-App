@@ -13,6 +13,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     required this.onboardingGradientStart,
     required this.onboardingGradientMiddle,
     required this.onboardingGradientEnd,
+    required this.customersAccentSurface,
   });
 
   static const light = AppColorScheme(
@@ -25,6 +26,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onboardingGradientStart: AppColors.onboardingGradientStart,
     onboardingGradientMiddle: AppColors.surface,
     onboardingGradientEnd: AppColors.onboardingGradientEnd,
+    customersAccentSurface: AppColors.customersAccentSurface,
   );
 
   static final dark = AppColorScheme(
@@ -41,6 +43,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
       .5,
     )!,
     onboardingGradientEnd: AppColors.darkSurface,
+    customersAccentSurface: AppColors.customersDarkAccentSurface,
   );
 
   final Color brand;
@@ -52,6 +55,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
   final Color onboardingGradientStart;
   final Color onboardingGradientMiddle;
   final Color onboardingGradientEnd;
+  final Color customersAccentSurface;
 
   @override
   AppColorScheme copyWith({
@@ -64,6 +68,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     Color? onboardingGradientStart,
     Color? onboardingGradientMiddle,
     Color? onboardingGradientEnd,
+    Color? customersAccentSurface,
   }) => AppColorScheme(
     brand: brand ?? this.brand,
     paperBackground: paperBackground ?? this.paperBackground,
@@ -76,6 +81,8 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onboardingGradientMiddle:
         onboardingGradientMiddle ?? this.onboardingGradientMiddle,
     onboardingGradientEnd: onboardingGradientEnd ?? this.onboardingGradientEnd,
+    customersAccentSurface:
+        customersAccentSurface ?? this.customersAccentSurface,
   );
 
   @override
@@ -105,6 +112,11 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
       onboardingGradientEnd: Color.lerp(
         onboardingGradientEnd,
         other.onboardingGradientEnd,
+        t,
+      )!,
+      customersAccentSurface: Color.lerp(
+        customersAccentSurface,
+        other.customersAccentSurface,
         t,
       )!,
     );

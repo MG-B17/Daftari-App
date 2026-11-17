@@ -175,4 +175,131 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsStorageError =>
       'Couldn\'t save your preference. Please try again.';
+
+  @override
+  String get customersTitle => 'Customers';
+
+  @override
+  String get customersHome => 'Home';
+
+  @override
+  String get customerNewTitle => 'New customer';
+
+  @override
+  String get customerEditTitle => 'Edit customer';
+
+  @override
+  String get customerDetailsTitle => 'Customer details';
+
+  @override
+  String get customerFormHeading => 'A new page in your ledger';
+
+  @override
+  String get customerFormDescription =>
+      'Record customer details to keep their account organized.';
+
+  @override
+  String get customerImport => 'Import from contacts';
+
+  @override
+  String get customerImportDescription => 'Choose a contact to save time';
+
+  @override
+  String get customerName => 'Customer name';
+
+  @override
+  String get customerNameHint => 'Enter the customer name';
+
+  @override
+  String get customerPhone => 'Mobile number';
+
+  @override
+  String get customerPhoneHint => 'Enter the mobile number';
+
+  @override
+  String get customerNotes => 'Note or address';
+
+  @override
+  String get customerNotesHint => 'Add a note or address';
+
+  @override
+  String get customerSave => 'Save customer';
+
+  @override
+  String get customerBalance => 'Current outstanding balance';
+
+  @override
+  String get customerCall => 'Call';
+
+  @override
+  String get customerCallError => 'Could not open the phone app.';
+
+  @override
+  String get customerEdit => 'Edit customer';
+
+  @override
+  String get customerNotFound => 'Customer not found';
+
+  @override
+  String get customersSearch => 'Search by name or phone...';
+
+  @override
+  String get customersAll => 'All';
+
+  @override
+  String get customersOwes => 'Owes';
+
+  @override
+  String get customersSettled => 'Settled';
+
+  @override
+  String get customersAdd => 'New customer';
+
+  @override
+  String get customersAddFirst => 'Add first customer';
+
+  @override
+  String get customersEmptyBadge => 'Your notebook is still new';
+
+  @override
+  String get customersEmptyTitle => 'No customers yet';
+
+  @override
+  String get customersEmptyMessage =>
+      'Add your first customer and start recording credit and payments easily.';
+
+  @override
+  String get customersNoResults => 'No customers match your search.';
+
+  @override
+  String get customersTotalDebt => 'Total debt';
+
+  @override
+  String customersCount(int count, int owing) {
+    return '$count customers • $owing owe a balance';
+  }
+
+  @override
+  String get customersSample1 => 'Mohamed Abdel Fattah';
+
+  @override
+  String get customersSample2 => 'Ahmed El Shenawy';
+
+  @override
+  String get customersSample3 => 'Sameh the grocer';
+
+  @override
+  String get customersSample4 => 'Hussein the carpenter';
+
+  @override
+  String get customersSample5 => 'Umm Karim';
+
+  @override
+  String get customersSample6 => 'Ibrahim the blacksmith';
+
+  @override
+  String get customersSample7 => 'Ali the plumber';
+
+  @override
+  String get customersComingSoon => 'Coming in the next task';
 }

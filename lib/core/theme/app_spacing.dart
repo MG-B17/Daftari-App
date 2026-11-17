@@ -79,4 +79,11 @@ abstract final class AppSpacing {
       BorderRadius.circular(compact);
   static BorderRadius get settingsSheetRadius =>
       BorderRadius.vertical(top: Radius.circular(largeRadius));
+  static double get customersMaxWidth => 520.w.clamp(0, 520).toDouble();
+  static double get customersAvatarRadius => 24.r;
+  static double get customersIllustrationSize => 144.r;
+  static double get customersListBottomInset => 80.r;
+  static double get customersIllustrationRadius =>
+      customersIllustrationSize / 2;
+  static EdgeInsets get customersCardPadding => EdgeInsets.all(compact);
 }

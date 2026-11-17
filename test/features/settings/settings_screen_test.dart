@@ -84,7 +84,13 @@ void main() {
 
     expect(Directionality.of(context), TextDirection.rtl);
     expect(find.byType(SettingsScreen), findsOneWidget);
-    expect(find.text(l10n.settingsTitle), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text(l10n.settingsTitle),
+      ),
+      findsOneWidget,
+    );
     expect(find.text(l10n.settingsAppearanceTitle), findsOneWidget);
     expect(find.text(l10n.settingsThemeLight), findsOneWidget);
     expect(find.text(l10n.settingsThemeDark), findsOneWidget);
@@ -105,7 +111,10 @@ void main() {
     final harness = await _pumpSettings(tester, localeCode: 'en');
     final context = tester.element(find.byType(SettingsScreen));
     expect(Directionality.of(context), TextDirection.ltr);
-    expect(find.text('Settings'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Settings')),
+      findsOneWidget,
+    );
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('App language'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
@@ -200,7 +209,10 @@ void main() {
     context = tester.element(find.byType(SettingsScreen));
     expect(Directionality.of(context), TextDirection.ltr);
     expect(find.byType(LanguagePickerSheet), findsNothing);
-    expect(find.text('Settings'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Settings')),
+      findsOneWidget,
+    );
     expect(harness.storage.localeCode, 'en');
     expect(harness.cubit.state.localeCode, 'en');
 
@@ -210,7 +222,13 @@ void main() {
     await tester.pumpAndSettle();
     context = tester.element(find.byType(SettingsScreen));
     expect(Directionality.of(context), TextDirection.rtl);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('الإعدادات'),
+      ),
+      findsOneWidget,
+    );
     expect(harness.storage.localeCode, 'ar');
 
     final restarted = SettingsCubit(
