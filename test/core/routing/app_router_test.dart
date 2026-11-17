@@ -9,14 +9,50 @@ import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/splash/presentation/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
+
+import '../../customer_test_setup.dart';
 
 void main() {
+  setUp(() async => setupCustomerTests());
+  tearDown(() => sl.reset());
+  testWidgets('customer subroutes are outside the navigation shell', (
+    tester,
+  ) async {
+    final router = AppRouter.create();
+    await tester.pumpWidget(DaftariApp(router: router));
+    await tester.pumpAndSettle();
+    router.go(AppRoutes.customers);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('navigation-0')), findsOneWidget);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(CustomerFormScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('navigation-0')), findsOneWidget);
+    for (final path in [
+      '/customers/new',
+      '/customers/1',
+      '/customers/1/edit',
+    ]) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, path);
+      expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
+    }
+    await tester.pumpWidget(const SizedBox());
+    router.dispose();
+  });
+
   for (final completed in [false, true]) {
     testWidgets('initial route for onboardingCompleted=$completed', (
       tester,
@@ -85,9 +121,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('open-settings')));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsWidgets);
 
-    router.pop();
+    router.go(AppRoutes.root);
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsNothing);
     expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);

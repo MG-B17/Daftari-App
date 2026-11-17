@@ -172,4 +172,178 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsStorageError => 'تعذر حفظ تفضيلك. حاول مرة أخرى.';
+
+  @override
+  String get customersTitle => 'العملاء';
+
+  @override
+  String get customersHome => 'الرئيسية';
+
+  @override
+  String get customerNewTitle => 'عميل جديد';
+
+  @override
+  String get customerEditTitle => 'تعديل العميل';
+
+  @override
+  String get customerDetailsTitle => 'تفاصيل العميل';
+
+  @override
+  String get customerFormHeading => 'صفحة دفتر جديدة';
+
+  @override
+  String get customerFormDescription => 'سجل بيانات الزبون بدقة لضبط الحساب.';
+
+  @override
+  String get customerImport => 'سحب من جهات الاتصال';
+
+  @override
+  String get customerImportDescription =>
+      'اختيار سريع من سجل هاتفك لتوفير وقت الكتابة';
+
+  @override
+  String get customerName => 'اسم العميل';
+
+  @override
+  String get customerNameHint => 'اكتب اسم العميل';
+
+  @override
+  String get customerPhone => 'رقم الموبايل';
+
+  @override
+  String get customerPhoneHint => 'اكتب رقم الموبايل';
+
+  @override
+  String get customerNotes => 'ملاحظة أو عنوان';
+
+  @override
+  String get customerNotesHint => 'أضف ملاحظة أو عنوان';
+
+  @override
+  String get customerSave => 'حفظ العميل في الدفتر';
+
+  @override
+  String get customerBalance => 'إجمالي الحساب المستحق حالياً';
+
+  @override
+  String get customerCall => 'اتصال';
+
+  @override
+  String get customerCallError => 'تعذر فتح تطبيق الهاتف.';
+
+  @override
+  String get customerEdit => 'تعديل العميل';
+
+  @override
+  String get customerNotFound => 'العميل غير موجود';
+
+  @override
+  String get customersSearch => 'ابحث بالاسم أو رقم الهاتف...';
+
+  @override
+  String get customersAll => 'الكل';
+
+  @override
+  String get customersOwes => 'عليهم رصيد';
+
+  @override
+  String get customersSettled => 'خالص';
+
+  @override
+  String get customersAdd => 'عميل جديد';
+
+  @override
+  String get customersAddFirst => 'أضف أول عميل';
+
+  @override
+  String get customersEmptyBadge => 'دفترك أبيض ولسه جديد';
+
+  @override
+  String get customersEmptyTitle => 'لسه مفيش عملاء مسجلين';
+
+  @override
+  String get customersEmptyMessage =>
+      'سجل أول زبون عندك وابدأ تدوين الديون والسداد بسهولة.';
+
+  @override
+  String get customersNoResults => 'لا يوجد عملاء يطابقون البحث.';
+
+  @override
+  String get customersTotalDebt => 'مجموع الديون';
+
+  @override
+  String customersCount(int count, int owing) {
+    return 'إجمالي $count عملاء • $owing عليهم رصيد مستحق';
+  }
+
+  @override
+  String get customersSample1 => 'محمد عبد الفتاح';
+
+  @override
+  String get customersSample2 => 'أحمد الشناوي (ورشة)';
+
+  @override
+  String get customersSample3 => 'سامح البقال';
+
+  @override
+  String get customersSample4 => 'حسين النجار';
+
+  @override
+  String get customersSample5 => 'أم كريم (الخضار)';
+
+  @override
+  String get customersSample6 => 'إبراهيم الحداد';
+
+  @override
+  String get customersSample7 => 'علي السباك';
+
+  @override
+  String get customersComingSoon => 'قريباً في المهمة القادمة';
+
+  @override
+  String get customerErrorDatabase =>
+      'تعذر الوصول إلى بيانات العملاء. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorStorage => 'تعذر الوصول إلى التخزين. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorNetwork => 'حدث خطأ في الشبكة. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorAuth => 'فشل تسجيل الدخول. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorPicker =>
+      'تعذر فتح جهات الاتصال. يمكنك إدخال البيانات يدوياً.';
+
+  @override
+  String get customerErrorValidation => 'أدخل الاسم ورقم موبايل مصري صحيح.';
+
+  @override
+  String get customerErrorUnexpected => 'حدث خطأ. حاول مرة أخرى.';
+
+  @override
+  String get customersSort => 'ترتيب العملاء';
+
+  @override
+  String get customersSortName => 'الاسم';
+
+  @override
+  String get customersSortBalance => 'أعلى رصيد';
+
+  @override
+  String get customersSortRecent => 'الأحدث إضافة';
+
+  @override
+  String get customerDelete => 'حذف العميل';
+
+  @override
+  String get customerDeleteMessage =>
+      'هل تريد حذف العميل؟ سيبقى سجل حسابه محفوظاً.';
+
+  @override
+  String customerDeleteBalanceMessage(String balance) {
+    return 'على هذا العميل رصيد قدره $balance. هل تريد حذفه؟ سيبقى سجل حسابه محفوظاً.';
+  }
 }

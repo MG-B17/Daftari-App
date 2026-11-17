@@ -409,6 +409,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save your preference. Please try again.'**
   String get settingsStorageError;
+
+  /// No description provided for @customersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get customersTitle;
+
+  /// No description provided for @customersHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get customersHome;
+
+  /// No description provided for @customerNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New customer'**
+  String get customerNewTitle;
+
+  /// No description provided for @customerEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit customer'**
+  String get customerEditTitle;
+
+  /// No description provided for @customerDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer details'**
+  String get customerDetailsTitle;
+
+  /// No description provided for @customerFormHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'A new page in your ledger'**
+  String get customerFormHeading;
+
+  /// No description provided for @customerFormDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Record customer details to keep their account organized.'**
+  String get customerFormDescription;
+
+  /// No description provided for @customerImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from contacts'**
+  String get customerImport;
+
+  /// No description provided for @customerImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a contact to save time'**
+  String get customerImportDescription;
+
+  /// No description provided for @customerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer name'**
+  String get customerName;
+
+  /// No description provided for @customerNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the customer name'**
+  String get customerNameHint;
+
+  /// No description provided for @customerPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number'**
+  String get customerPhone;
+
+  /// No description provided for @customerPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the mobile number'**
+  String get customerPhoneHint;
+
+  /// No description provided for @customerNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Note or address'**
+  String get customerNotes;
+
+  /// No description provided for @customerNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note or address'**
+  String get customerNotesHint;
+
+  /// No description provided for @customerSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save customer'**
+  String get customerSave;
+
+  /// No description provided for @customerBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Current outstanding balance'**
+  String get customerBalance;
+
+  /// No description provided for @customerCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get customerCall;
+
+  /// No description provided for @customerCallError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the phone app.'**
+  String get customerCallError;
+
+  /// No description provided for @customerEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit customer'**
+  String get customerEdit;
+
+  /// No description provided for @customerNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer not found'**
+  String get customerNotFound;
+
+  /// No description provided for @customersSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or phone...'**
+  String get customersSearch;
+
+  /// No description provided for @customersAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get customersAll;
+
+  /// No description provided for @customersOwes.
+  ///
+  /// In en, this message translates to:
+  /// **'Owes'**
+  String get customersOwes;
+
+  /// No description provided for @customersSettled.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled'**
+  String get customersSettled;
+
+  /// No description provided for @customersAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'New customer'**
+  String get customersAdd;
+
+  /// No description provided for @customersAddFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add first customer'**
+  String get customersAddFirst;
+
+  /// No description provided for @customersEmptyBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notebook is still new'**
+  String get customersEmptyBadge;
+
+  /// No description provided for @customersEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No customers yet'**
+  String get customersEmptyTitle;
+
+  /// No description provided for @customersEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first customer and start recording credit and payments easily.'**
+  String get customersEmptyMessage;
+
+  /// No description provided for @customersNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No customers match your search.'**
+  String get customersNoResults;
+
+  /// No description provided for @customersTotalDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Total debt'**
+  String get customersTotalDebt;
+
+  /// No description provided for @customersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} customers • {owing} owe a balance'**
+  String customersCount(int count, int owing);
+
+  /// No description provided for @customersSample1.
+  ///
+  /// In en, this message translates to:
+  /// **'Mohamed Abdel Fattah'**
+  String get customersSample1;
+
+  /// No description provided for @customersSample2.
+  ///
+  /// In en, this message translates to:
+  /// **'Ahmed El Shenawy'**
+  String get customersSample2;
+
+  /// No description provided for @customersSample3.
+  ///
+  /// In en, this message translates to:
+  /// **'Sameh the grocer'**
+  String get customersSample3;
+
+  /// No description provided for @customersSample4.
+  ///
+  /// In en, this message translates to:
+  /// **'Hussein the carpenter'**
+  String get customersSample4;
+
+  /// No description provided for @customersSample5.
+  ///
+  /// In en, this message translates to:
+  /// **'Umm Karim'**
+  String get customersSample5;
+
+  /// No description provided for @customersSample6.
+  ///
+  /// In en, this message translates to:
+  /// **'Ibrahim the blacksmith'**
+  String get customersSample6;
+
+  /// No description provided for @customersSample7.
+  ///
+  /// In en, this message translates to:
+  /// **'Ali the plumber'**
+  String get customersSample7;
+
+  /// No description provided for @customersComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming in the next task'**
+  String get customersComingSoon;
+
+  /// No description provided for @customerErrorDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not access customer data. Please try again.'**
+  String get customerErrorDatabase;
+
+  /// No description provided for @customerErrorStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not access storage. Please try again.'**
+  String get customerErrorStorage;
+
+  /// No description provided for @customerErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please try again.'**
+  String get customerErrorNetwork;
+
+  /// No description provided for @customerErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please try again.'**
+  String get customerErrorAuth;
+
+  /// No description provided for @customerErrorPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open contacts. You can enter details manually.'**
+  String get customerErrorPicker;
+
+  /// No description provided for @customerErrorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and a valid Egyptian mobile number.'**
+  String get customerErrorValidation;
+
+  /// No description provided for @customerErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get customerErrorUnexpected;
+
+  /// No description provided for @customersSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort customers'**
+  String get customersSort;
+
+  /// No description provided for @customersSortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get customersSortName;
+
+  /// No description provided for @customersSortBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest balance'**
+  String get customersSortBalance;
+
+  /// No description provided for @customersSortRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently added'**
+  String get customersSortRecent;
+
+  /// No description provided for @customerDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete customer'**
+  String get customerDelete;
+
+  /// No description provided for @customerDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this customer? Their ledger history will be preserved.'**
+  String get customerDeleteMessage;
+
+  /// No description provided for @customerDeleteBalanceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This customer has an outstanding balance of {balance}. Delete them? Their ledger history will be preserved.'**
+  String customerDeleteBalanceMessage(String balance);
 }
 
 class _AppLocalizationsDelegate

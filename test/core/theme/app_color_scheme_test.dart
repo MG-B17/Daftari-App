@@ -18,6 +18,7 @@ List<Color> _values(AppColorScheme colors) => [
   colors.onboardingGradientStart,
   colors.onboardingGradientMiddle,
   colors.onboardingGradientEnd,
+  colors.customersAccentSurface,
 ];
 
 void main() {
@@ -58,6 +59,7 @@ void main() {
       onboardingGradientStart: AppColors.primarySurface,
       onboardingGradientMiddle: AppColors.creditSurface,
       onboardingGradientEnd: AppColors.paymentSurface,
+      customersAccentSurface: AppColors.input,
     );
     final base = AppColorScheme.light;
     final copies = [
@@ -74,6 +76,7 @@ void main() {
         onboardingGradientMiddle: replacement.onboardingGradientMiddle,
       ),
       base.copyWith(onboardingGradientEnd: replacement.onboardingGradientEnd),
+      base.copyWith(customersAccentSurface: replacement.customersAccentSurface),
     ];
     for (var index = 0; index < copies.length; index++) {
       final expected = _values(base);

@@ -7,4 +7,12 @@ abstract final class AppRoutes {
   static const onboardingName = 'onboarding';
   static const settings = '/settings';
   static const settingsName = 'settings';
+  static const customers = '/customers';
+  static const customersName = 'customers';
+  static const customerNew = '/customers/new';
+  static const customerNewName = 'customer-new';
+  static const customerDetails = '/customers/:id';
+  static const customerDetailsName = 'customer-details';
+  static const customerEdit = '/customers/:id/edit';
+  static const customerEditName = 'customer-edit';
 }

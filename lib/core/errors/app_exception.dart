@@ -4,6 +4,7 @@ enum AppErrorCode {
   storage('storage_error', 'The preference operation failed.'),
   network('network_error', 'The network operation failed.'),
   auth('auth_error', 'Authentication failed.'),
+  contactPicker('contact_picker_error', 'The contact picker failed.'),
   validation('validation_error', 'The input is invalid.'),
   unexpected('unexpected_error', 'An unexpected error occurred.');
 
@@ -38,6 +39,10 @@ final class NetworkException extends AppException {
 
 final class AuthException extends AppException {
   const AuthException() : super(AppErrorCode.auth);
+}
+
+final class ContactPickerException extends AppException {
+  const ContactPickerException() : super(AppErrorCode.contactPicker);
 }
 
 final class ValidationException extends AppException {
