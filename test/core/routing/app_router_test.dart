@@ -16,8 +16,13 @@ import 'package:daftariapp/features/splash/presentation/screens/splash_screen.da
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
+
+import '../../customer_test_setup.dart';
 
 void main() {
+  setUp(() async => setupCustomerTests());
+  tearDown(() => sl.reset());
   testWidgets('customer subroutes are outside the navigation shell', (
     tester,
   ) async {
@@ -26,14 +31,14 @@ void main() {
     await tester.pumpAndSettle();
     router.go(AppRoutes.customers);
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('navigation-0')), findsOneWidget);
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     expect(find.byType(CustomerFormScreen), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
     router.pop();
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('navigation-0')), findsOneWidget);
     for (final path in [
       '/customers/new',
       '/customers/1',
@@ -42,7 +47,7 @@ void main() {
       router.go(path);
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, path);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
     }
     await tester.pumpWidget(const SizedBox());
     router.dispose();

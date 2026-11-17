@@ -302,4 +302,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get customersComingSoon => 'Coming in the next task';
+
+  @override
+  String get customerErrorDatabase =>
+      'Could not access customer data. Please try again.';
+
+  @override
+  String get customerErrorStorage =>
+      'Could not access storage. Please try again.';
+
+  @override
+  String get customerErrorNetwork => 'Network error. Please try again.';
+
+  @override
+  String get customerErrorAuth => 'Authentication failed. Please try again.';
+
+  @override
+  String get customerErrorPicker =>
+      'Could not open contacts. You can enter details manually.';
+
+  @override
+  String get customerErrorValidation =>
+      'Enter a name and a valid Egyptian mobile number.';
+
+  @override
+  String get customerErrorUnexpected =>
+      'Something went wrong. Please try again.';
+
+  @override
+  String get customersSort => 'Sort customers';
+
+  @override
+  String get customersSortName => 'Name';
+
+  @override
+  String get customersSortBalance => 'Highest balance';
+
+  @override
+  String get customersSortRecent => 'Recently added';
+
+  @override
+  String get customerDelete => 'Delete customer';
+
+  @override
+  String get customerDeleteMessage =>
+      'Delete this customer? Their ledger history will be preserved.';
+
+  @override
+  String customerDeleteBalanceMessage(String balance) {
+    return 'This customer has an outstanding balance of $balance. Delete them? Their ledger history will be preserved.';
+  }
 }

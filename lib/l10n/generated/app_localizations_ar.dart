@@ -299,4 +299,51 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get customersComingSoon => 'قريباً في المهمة القادمة';
+
+  @override
+  String get customerErrorDatabase =>
+      'تعذر الوصول إلى بيانات العملاء. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorStorage => 'تعذر الوصول إلى التخزين. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorNetwork => 'حدث خطأ في الشبكة. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorAuth => 'فشل تسجيل الدخول. حاول مرة أخرى.';
+
+  @override
+  String get customerErrorPicker =>
+      'تعذر فتح جهات الاتصال. يمكنك إدخال البيانات يدوياً.';
+
+  @override
+  String get customerErrorValidation => 'أدخل الاسم ورقم موبايل مصري صحيح.';
+
+  @override
+  String get customerErrorUnexpected => 'حدث خطأ. حاول مرة أخرى.';
+
+  @override
+  String get customersSort => 'ترتيب العملاء';
+
+  @override
+  String get customersSortName => 'الاسم';
+
+  @override
+  String get customersSortBalance => 'أعلى رصيد';
+
+  @override
+  String get customersSortRecent => 'الأحدث إضافة';
+
+  @override
+  String get customerDelete => 'حذف العميل';
+
+  @override
+  String get customerDeleteMessage =>
+      'هل تريد حذف العميل؟ سيبقى سجل حسابه محفوظاً.';
+
+  @override
+  String customerDeleteBalanceMessage(String balance) {
+    return 'على هذا العميل رصيد قدره $balance. هل تريد حذفه؟ سيبقى سجل حسابه محفوظاً.';
+  }
 }

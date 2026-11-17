@@ -655,6 +655,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming in the next task'**
   String get customersComingSoon;
+
+  /// No description provided for @customerErrorDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not access customer data. Please try again.'**
+  String get customerErrorDatabase;
+
+  /// No description provided for @customerErrorStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not access storage. Please try again.'**
+  String get customerErrorStorage;
+
+  /// No description provided for @customerErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please try again.'**
+  String get customerErrorNetwork;
+
+  /// No description provided for @customerErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please try again.'**
+  String get customerErrorAuth;
+
+  /// No description provided for @customerErrorPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open contacts. You can enter details manually.'**
+  String get customerErrorPicker;
+
+  /// No description provided for @customerErrorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name and a valid Egyptian mobile number.'**
+  String get customerErrorValidation;
+
+  /// No description provided for @customerErrorUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get customerErrorUnexpected;
+
+  /// No description provided for @customersSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort customers'**
+  String get customersSort;
+
+  /// No description provided for @customersSortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get customersSortName;
+
+  /// No description provided for @customersSortBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest balance'**
+  String get customersSortBalance;
+
+  /// No description provided for @customersSortRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently added'**
+  String get customersSortRecent;
+
+  /// No description provided for @customerDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete customer'**
+  String get customerDelete;
+
+  /// No description provided for @customerDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this customer? Their ledger history will be preserved.'**
+  String get customerDeleteMessage;
+
+  /// No description provided for @customerDeleteBalanceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This customer has an outstanding balance of {balance}. Delete them? Their ledger history will be preserved.'**
+  String customerDeleteBalanceMessage(String balance);
 }
 
 class _AppLocalizationsDelegate

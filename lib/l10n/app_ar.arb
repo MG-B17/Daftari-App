@@ -100,5 +100,20 @@
   "customersSample5": "أم كريم (الخضار)",
   "customersSample6": "إبراهيم الحداد",
   "customersSample7": "علي السباك",
-  "customersComingSoon": "قريباً في المهمة القادمة"
+  "customersComingSoon": "قريباً في المهمة القادمة",
+  "customerErrorDatabase": "تعذر الوصول إلى بيانات العملاء. حاول مرة أخرى.",
+  "customerErrorStorage": "تعذر الوصول إلى التخزين. حاول مرة أخرى.",
+  "customerErrorNetwork": "حدث خطأ في الشبكة. حاول مرة أخرى.",
+  "customerErrorAuth": "فشل تسجيل الدخول. حاول مرة أخرى.",
+  "customerErrorPicker": "تعذر فتح جهات الاتصال. يمكنك إدخال البيانات يدوياً.",
+  "customerErrorValidation": "أدخل الاسم ورقم موبايل مصري صحيح.",
+  "customerErrorUnexpected": "حدث خطأ. حاول مرة أخرى.",
+  "customersSort": "ترتيب العملاء",
+  "customersSortName": "الاسم",
+  "customersSortBalance": "أعلى رصيد",
+  "customersSortRecent": "الأحدث إضافة",
+  "customerDelete": "حذف العميل",
+  "customerDeleteMessage": "هل تريد حذف العميل؟ سيبقى سجل حسابه محفوظاً.",
+  "customerDeleteBalanceMessage": "على هذا العميل رصيد قدره {balance}. هل تريد حذفه؟ سيبقى سجل حسابه محفوظاً.",
+  "@customerDeleteBalanceMessage": {"placeholders": {"balance": {"type": "String"}}}
 }

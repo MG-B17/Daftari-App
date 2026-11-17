@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../customer_mock_data.dart';
+import '../../domain/entities/customer_entity.dart';
+import '../../domain/entities/picked_contact.dart';
+import '../cubit/customer_form_cubit.dart';
+import '../customer_error_message.dart';
 
 class CustomerFormBody extends StatefulWidget {
-  const CustomerFormBody({super.key, this.customer});
+  const CustomerFormBody({
+    super.key,
+    this.customer,
+    this.initialContact,
+    this.saving = false,
+  });
 
-  final CustomerMock? customer;
+  final CustomerEntity? customer;
+  final PickedContact? initialContact;
+  final bool saving;
 
   @override
   State<CustomerFormBody> createState() => _CustomerFormBodyState();
@@ -22,9 +33,13 @@ class _CustomerFormBodyState extends State<CustomerFormBody> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController(text: widget.customer?.name);
-    _phone = TextEditingController(text: widget.customer?.phone);
-    _notes = TextEditingController();
+    _name = TextEditingController(
+      text: widget.customer?.name ?? widget.initialContact?.name,
+    );
+    _phone = TextEditingController(
+      text: widget.customer?.phone ?? widget.initialContact?.phone,
+    );
+    _notes = TextEditingController(text: widget.customer?.notes);
   }
 
   @override
@@ -59,7 +74,37 @@ class _CustomerFormBodyState extends State<CustomerFormBody> {
               child: Padding(
                 padding: AppSpacing.customersCardPadding,
                 child: OutlinedButton.icon(
-                  onPressed: null,
+                  onPressed: widget.saving
+                      ? null
+                      : () async {
+                          final result = await context
+                              .read<CustomerFormCubit>()
+                              .pickContact();
+                          if (!context.mounted) return;
+                          result.fold(
+                            (failure) => ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      customerErrorMessage(
+                                        context,
+                                        failure.errorCode,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            (contact) {
+                              if (contact != null) {
+                                if (contact.name != null) {
+                                  _name.text = contact.name!;
+                                }
+                                if (contact.phone != null) {
+                                  _phone.text = contact.phone!;
+                                }
+                              }
+                            },
+                          );
+                        },
                   icon: const Icon(Icons.contacts_outlined),
                   label: Text(l10n.customerImport),
                 ),
@@ -103,7 +148,13 @@ class _CustomerFormBodyState extends State<CustomerFormBody> {
             ),
             SizedBox(height: AppSpacing.xl),
             FilledButton.icon(
-              onPressed: null,
+              onPressed: widget.saving
+                  ? null
+                  : () => context.read<CustomerFormCubit>().save(
+                      name: _name.text,
+                      phone: _phone.text,
+                      notes: _notes.text,
+                    ),
               icon: const Icon(Icons.person_add_alt),
               label: Text(l10n.customerSave),
             ),

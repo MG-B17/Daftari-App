@@ -12,6 +12,9 @@ import '../../features/customers/domain/usecases/soft_delete_customer_usecase.da
 import '../../features/customers/domain/usecases/update_customer_usecase.dart';
 import '../../features/customers/domain/usecases/watch_customer_details_usecase.dart';
 import '../../features/customers/domain/usecases/watch_customers_usecase.dart';
+import '../../features/customers/presentation/cubit/customer_details_cubit.dart';
+import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
+import '../../features/customers/presentation/cubit/customers_list_cubit.dart';
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../../features/settings/presentation/cubit/settings_cubit.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
@@ -121,6 +124,32 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<PickContactUseCase>()) {
     sl.registerLazySingleton<PickContactUseCase>(
       () => PickContactUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<CustomersListCubit>()) {
+    sl.registerFactory(
+      () => CustomersListCubit(
+        sl<WatchCustomersUseCase>(),
+        sl<PickContactUseCase>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<CustomerFormCubit>()) {
+    sl.registerFactory(
+      () => CustomerFormCubit(
+        sl<CreateCustomerUseCase>(),
+        sl<UpdateCustomerUseCase>(),
+        sl<WatchCustomerDetailsUseCase>(),
+        sl<PickContactUseCase>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<CustomerDetailsCubit>()) {
+    sl.registerFactory(
+      () => CustomerDetailsCubit(
+        sl<WatchCustomerDetailsUseCase>(),
+        sl<SoftDeleteCustomerUseCase>(),
+      ),
     );
   }
   if (!sl.isRegistered<OnboardingCubit>()) {

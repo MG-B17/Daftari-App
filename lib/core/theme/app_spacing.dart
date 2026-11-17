@@ -86,4 +86,11 @@ abstract final class AppSpacing {
   static double get customersIllustrationRadius =>
       customersIllustrationSize / 2;
   static EdgeInsets get customersCardPadding => EdgeInsets.all(compact);
+  static double get navigationMaxWidth => 480.r;
+  static EdgeInsets get navigationMargin => EdgeInsets.fromLTRB(md, sm, md, sm);
+  static EdgeInsets get navigationItemPadding =>
+      EdgeInsets.symmetric(horizontal: compact, vertical: sm);
+  static double get navigationIndicatorWidth => 72.r;
+  static double get navigationIndicatorStretch => 24.r;
+  static double get navigationElevation => 4;
 }

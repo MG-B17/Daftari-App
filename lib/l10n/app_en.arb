@@ -100,5 +100,20 @@
   "customersSample5": "Umm Karim",
   "customersSample6": "Ibrahim the blacksmith",
   "customersSample7": "Ali the plumber",
-  "customersComingSoon": "Coming in the next task"
+  "customersComingSoon": "Coming in the next task",
+  "customerErrorDatabase": "Could not access customer data. Please try again.",
+  "customerErrorStorage": "Could not access storage. Please try again.",
+  "customerErrorNetwork": "Network error. Please try again.",
+  "customerErrorAuth": "Authentication failed. Please try again.",
+  "customerErrorPicker": "Could not open contacts. You can enter details manually.",
+  "customerErrorValidation": "Enter a name and a valid Egyptian mobile number.",
+  "customerErrorUnexpected": "Something went wrong. Please try again.",
+  "customersSort": "Sort customers",
+  "customersSortName": "Name",
+  "customersSortBalance": "Highest balance",
+  "customersSortRecent": "Recently added",
+  "customerDelete": "Delete customer",
+  "customerDeleteMessage": "Delete this customer? Their ledger history will be preserved.",
+  "customerDeleteBalanceMessage": "This customer has an outstanding balance of {balance}. Delete them? Their ledger history will be preserved.",
+  "@customerDeleteBalanceMessage": {"placeholders": {"balance": {"type": "String"}}}
 }
