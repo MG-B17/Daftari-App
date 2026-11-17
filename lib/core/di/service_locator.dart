@@ -4,6 +4,14 @@ import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/customers/data/repositories/customer_repository_impl.dart';
+import '../../features/customers/domain/repositories/customer_repository.dart';
+import '../../features/customers/domain/usecases/create_customer_usecase.dart';
+import '../../features/customers/domain/usecases/pick_contact_usecase.dart';
+import '../../features/customers/domain/usecases/soft_delete_customer_usecase.dart';
+import '../../features/customers/domain/usecases/update_customer_usecase.dart';
+import '../../features/customers/domain/usecases/watch_customer_details_usecase.dart';
+import '../../features/customers/domain/usecases/watch_customers_usecase.dart';
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../../features/settings/presentation/cubit/settings_cubit.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
@@ -17,6 +25,7 @@ import '../errors/error_handler.dart';
 import '../routing/app_router.dart';
 import '../services/app_logger.dart';
 import '../services/connectivity_service.dart';
+import '../services/contact_picker_service.dart';
 import '../services/local_storage_service.dart';
 import '../utils/app_date_utils.dart';
 
@@ -70,6 +79,48 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<TransactionDao>()) {
     sl.registerLazySingleton<TransactionDao>(
       () => sl<AppDatabase>().transactionDao,
+    );
+  }
+  if (!sl.isRegistered<ContactPickerService>()) {
+    sl.registerLazySingleton<ContactPickerService>(ContactPickerService.new);
+  }
+  if (!sl.isRegistered<CustomerRepository>()) {
+    sl.registerLazySingleton<CustomerRepository>(
+      () => CustomerRepositoryImpl(
+        sl<CustomerDao>(),
+        sl<ContactPickerService>(),
+        sl<ErrorHandler>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<WatchCustomersUseCase>()) {
+    sl.registerLazySingleton<WatchCustomersUseCase>(
+      () => WatchCustomersUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<WatchCustomerDetailsUseCase>()) {
+    sl.registerLazySingleton<WatchCustomerDetailsUseCase>(
+      () => WatchCustomerDetailsUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<CreateCustomerUseCase>()) {
+    sl.registerLazySingleton<CreateCustomerUseCase>(
+      () => CreateCustomerUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<UpdateCustomerUseCase>()) {
+    sl.registerLazySingleton<UpdateCustomerUseCase>(
+      () => UpdateCustomerUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SoftDeleteCustomerUseCase>()) {
+    sl.registerLazySingleton<SoftDeleteCustomerUseCase>(
+      () => SoftDeleteCustomerUseCase(sl<CustomerRepository>()),
+    );
+  }
+  if (!sl.isRegistered<PickContactUseCase>()) {
+    sl.registerLazySingleton<PickContactUseCase>(
+      () => PickContactUseCase(sl<CustomerRepository>()),
     );
   }
   if (!sl.isRegistered<OnboardingCubit>()) {

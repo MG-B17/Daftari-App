@@ -8,6 +8,12 @@ import 'dao_support.dart';
 
 part 'customer_dao.g.dart';
 
+final class CustomerWithBalance {
+  const CustomerWithBalance(this.customer, this.balancePiasters);
+  final Customer customer;
+  final int balancePiasters;
+}
+
 /// Aggregated ledger figures for the dashboard.
 ///
 /// Every amount is an exact integer number of piasters; balances are always
@@ -83,6 +89,38 @@ class CustomerDao extends DatabaseAccessor<AppDatabase>
       runDatabaseOperation(_activeCustomers().get);
 
   Stream<List<Customer>> watchActiveCustomers() => _activeCustomers().watch();
+
+  Stream<List<CustomerWithBalance>> watchCustomersWithBalances({String? id}) {
+    final credit = transactions.amountPiasters.sum(
+      filter: transactions.type.equals(TransactionTypes.credit),
+    );
+    final payment = transactions.amountPiasters.sum(
+      filter: transactions.type.equals(TransactionTypes.payment),
+    );
+    final query =
+        select(customers).join([
+            leftOuterJoin(
+              transactions,
+              transactions.customerId.equalsExp(customers.id) &
+                  transactions.deletedAt.isNull(),
+              useColumns: false,
+            ),
+          ])
+          ..addColumns([credit, payment])
+          ..where(customers.deletedAt.isNull())
+          ..groupBy([customers.id]);
+    if (id != null) query.where(customers.id.equals(id));
+    return query.watch().map(
+      (rows) => rows
+          .map(
+            (row) => CustomerWithBalance(
+              row.readTable(customers),
+              (row.read(credit) ?? 0) - (row.read(payment) ?? 0),
+            ),
+          )
+          .toList(),
+    );
+  }
 
   Future<List<Customer>> searchCustomers(String query) {
     final term = query.trim();

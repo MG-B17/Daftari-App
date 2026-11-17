@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:drift/native.dart';
@@ -15,6 +17,67 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'joined balance stream updates on transaction and customer changes',
+    () async {
+      final customer = await customers.createCustomer(name: 'Live');
+      final stream = StreamIterator(
+        customers.watchCustomersWithBalances(id: customer.id),
+      );
+      expect(await stream.moveNext(), isTrue);
+      expect(stream.current.single.balancePiasters, 0);
+      await transactions.createTransaction(
+        customerId: customer.id,
+        type: TransactionTypes.credit,
+        amountPiasters: 500,
+      );
+      expect(await stream.moveNext(), isTrue);
+      expect(stream.current.single.balancePiasters, 500);
+      await customers.softDeleteCustomer(customer.id);
+      expect(await stream.moveNext(), isTrue);
+      expect(stream.current, isEmpty);
+      await stream.cancel();
+    },
+  );
+
+  test('joined balances include zero and exclude deleted transactions and customers', () async {
+    final first = await customers.createCustomer(name: 'First');
+    final zero = await customers.createCustomer(name: 'Zero');
+    final deleted = await customers.createCustomer(name: 'Deleted');
+    await transactions.createTransaction(
+      customerId: first.id,
+      type: TransactionTypes.credit,
+      amountPiasters: 1000,
+    );
+    await transactions.createTransaction(
+      customerId: first.id,
+      type: TransactionTypes.payment,
+      amountPiasters: 300,
+    );
+    final removed = await transactions.createTransaction(
+      customerId: first.id,
+      type: TransactionTypes.credit,
+      amountPiasters: 99,
+    );
+    await transactions.softDeleteTransaction(removed.id);
+    await customers.softDeleteCustomer(deleted.id);
+    final rows = await customers.watchCustomersWithBalances().first;
+    expect(
+      {for (final row in rows) row.customer.id: row.balancePiasters},
+      {first.id: 700, zero.id: 0},
+    );
+    expect(
+      (await customers.watchCustomersWithBalances(id: zero.id).first)
+          .single
+          .balancePiasters,
+      0,
+    );
+    expect(
+      await customers.watchCustomersWithBalances(id: deleted.id).first,
+      isEmpty,
+    );
+  });
 
   test('creates and reads a customer with backup metadata', () async {
     final created = await customers.createCustomer(
