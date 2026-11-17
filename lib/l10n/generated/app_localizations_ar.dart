@@ -346,4 +346,84 @@ class AppLocalizationsAr extends AppLocalizations {
   String customerDeleteBalanceMessage(String balance) {
     return 'على هذا العميل رصيد قدره $balance. هل تريد حذفه؟ سيبقى سجل حسابه محفوظاً.';
   }
+
+  @override
+  String get transactionNew => 'حركة جديدة';
+
+  @override
+  String get transactionEdit => 'تعديل الحركة';
+
+  @override
+  String get transactionCredit => 'عليه (دين / آجل)';
+
+  @override
+  String get transactionPayment => 'سدد (قبض / سداد)';
+
+  @override
+  String get transactionCustomer => 'العميل';
+
+  @override
+  String get transactionChooseCustomer => 'اختر العميل';
+
+  @override
+  String get transactionChange => 'تغيير';
+
+  @override
+  String get transactionAmount => 'المبلغ المطلوب تقييده';
+
+  @override
+  String get transactionQuickAmounts => 'لوحة الأرقام السريعة';
+
+  @override
+  String get transactionDate => 'تاريخ الحركة';
+
+  @override
+  String get transactionNote => 'ملاحظة أو صنف البضاعة (اختياري)';
+
+  @override
+  String get transactionSave => 'حفظ الحركة في الدفتر';
+
+  @override
+  String get transactionMockNotice => 'للمعاينة فقط — لن تُحفظ الحركات.';
+
+  @override
+  String get transactionMockHistory => 'سجل تجريبي — ليس معاملات هذا العميل';
+
+  @override
+  String get transactionHistory => 'سجل المعاملات';
+
+  @override
+  String get transactionSampleCredit => 'مشتريات بقالة';
+
+  @override
+  String get transactionSamplePayment => 'دفعة نقدية';
+
+  @override
+  String get transactionBalance => 'الرصيد';
+
+  @override
+  String get transactionBackspace => 'حذف رقم';
+
+  @override
+  String transactionHistoryCount(int count) {
+    return '$count حركات تجريبية';
+  }
+
+  @override
+  String get transactionCreditBadge => 'عليه';
+
+  @override
+  String get transactionPaymentBadge => 'سدد';
+
+  @override
+  String get transactionEditAction => 'تعديل';
+
+  @override
+  String get transactionDeleteAction => 'حذف';
+
+  @override
+  String get transactionSampleCreditNote => 'مشتريات بقالة';
+
+  @override
+  String get transactionSamplePaymentNote => 'مقبوضات كاش';
 }

@@ -8,6 +8,7 @@ import '../../../../core/routing/app_routes.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/money_utils.dart';
 import '../../../../core/widgets/app_confirmation_dialog.dart';
+import '../../../transactions/presentation/widgets/customer_transactions_section.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../cubit/customer_details_cubit.dart';
 
@@ -165,6 +166,7 @@ class CustomerDetailsBody extends StatelessWidget {
                 ),
               ),
             ),
+            CustomerTransactionsSection(customerId: customer.id),
           ],
         ),
       ),

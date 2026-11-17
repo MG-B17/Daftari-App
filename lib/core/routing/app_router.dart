@@ -14,6 +14,7 @@ import '../../features/layout/presentation/screens/app_layout_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../services/local_storage_service.dart';
 import '../animation/screen_transition_animation/fade_transition_page.dart';
@@ -131,6 +132,27 @@ abstract final class AppRouter {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.transactionNew,
+        name: AppRoutes.transactionNewName,
+        pageBuilder: (context, state) => ScaleTransitionPage(
+          key: state.pageKey,
+          child: TransactionFormScreen(
+            customerId: state.uri.queryParameters['customerId'],
+            initialType: state.uri.queryParameters['type'],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.transactionEdit,
+        name: AppRoutes.transactionEditName,
+        pageBuilder: (context, state) => ScaleTransitionPage(
+          key: state.pageKey,
+          child: TransactionFormScreen(
+            transactionId: state.pathParameters['id'],
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutes.customerNew,
