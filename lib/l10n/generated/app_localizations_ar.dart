@@ -405,6 +405,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get transactionBackspace => 'حذف رقم';
 
   @override
+  String get transactionSaveError =>
+      'تعذر حفظ الحركة. تحقق من العميل والمبلغ وحاول مرة أخرى.';
+
+  @override
+  String get transactionNotFound => 'الحركة غير موجودة.';
+
+  @override
+  String transactionCount(int count) {
+    return '$count حركات';
+  }
+
+  @override
+  String get transactionHistoryEmpty => 'لا توجد حركات بعد.';
+
+  @override
+  String get transactionHistoryError =>
+      'تعذر تحميل الحركات أو تعديلها. حاول مرة أخرى.';
+
+  @override
+  String get transactionBalanceUnavailable => 'الرصيد أكبر من أن يُعرض';
+
+  @override
+  String get transactionDeleteMessage =>
+      'هل تريد حذف هذه الحركة؟ ستُحفظ قيمها السابقة في سجل التدقيق.';
+
+  @override
   String transactionHistoryCount(int count) {
     return '$count حركات تجريبية';
   }

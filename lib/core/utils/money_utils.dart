@@ -7,6 +7,9 @@ abstract final class MoneyUtils {
   static final _max = BigInt.from(maxPiasters);
   static final _input = RegExp(r'^[0-9]+(?:[.٫][0-9]{1,2})?$');
 
+  static String currencyLabel(String locale) =>
+      locale.startsWith('ar') ? 'ج.م' : 'EGP';
+
   static int? tryParseEgpToPiasters(String input) {
     final value = input.trim().toWesternDigits;
     if (!_input.hasMatch(value)) return null;
@@ -40,7 +43,7 @@ abstract final class MoneyUtils {
         ? ''
         : '.${fraction.toString().padLeft(2, '0')}';
     final sign = piasters < 0 ? '-' : '';
-    final currency = locale.startsWith('ar') ? 'ج.م' : 'EGP';
+    final currency = currencyLabel(locale);
     return '$sign$grouped$decimals${includeCurrency ? ' $currency' : ''}';
   }
 }

@@ -79,6 +79,7 @@ void main() {
           findsOneWidget,
         );
         await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
         router.dispose();
       });
     }
@@ -109,6 +110,7 @@ void main() {
       );
     }
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -156,6 +158,7 @@ void main() {
     expect(find.text('Mohamed Abdel Fattah'), findsOneWidget);
     expect(find.text('Umm Karim'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -203,6 +206,7 @@ void main() {
     expect(cubit.state.sort, CustomerSort.recent);
     expect(cubit.state.visible.first.name, 'Umm Karim');
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -243,6 +247,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('placeholder'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 }

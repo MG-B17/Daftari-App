@@ -3,12 +3,19 @@ import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
+import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
+import 'package:daftariapp/features/transactions/domain/repositories/transaction_repository.dart';
+import 'package:daftariapp/features/transactions/domain/usecases/create_transaction_usecase.dart';
+import 'package:daftariapp/features/transactions/domain/usecases/edit_transaction_usecase.dart';
+import 'package:daftariapp/features/transactions/domain/usecases/get_transaction_by_id_usecase.dart';
+import 'package:daftariapp/features/transactions/domain/usecases/soft_delete_transaction_usecase.dart';
+import 'package:daftariapp/features/transactions/domain/usecases/watch_customer_transactions_usecase.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -26,11 +33,15 @@ void main() {
   test(
     'simultaneous/repeated DI setup preserves every registered instance',
     () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
       await Future.wait([configureDependencies(), configureDependencies()]);
       final instances = <Object>[
         sl<SharedPreferences>(),
         sl<LocalStorageService>(),
         sl<ConnectivityService>(),
+        sl<DateService>(),
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
@@ -39,12 +50,19 @@ void main() {
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
         sl<ChangeThemeUseCase>(),
+        sl<TransactionRepository>(),
+        sl<CreateTransactionUseCase>(),
+        sl<EditTransactionUseCase>(),
+        sl<GetTransactionByIdUseCase>(),
+        sl<SoftDeleteTransactionUseCase>(),
+        sl<WatchCustomerTransactionsUseCase>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
         sl<SharedPreferences>(),
         sl<LocalStorageService>(),
         sl<ConnectivityService>(),
+        sl<DateService>(),
         sl<AppLogger>(),
         sl<ErrorHandler>(),
         sl<GoRouter>(),
@@ -53,10 +71,17 @@ void main() {
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
         sl<ChangeThemeUseCase>(),
+        sl<TransactionRepository>(),
+        sl<CreateTransactionUseCase>(),
+        sl<EditTransactionUseCase>(),
+        sl<GetTransactionByIdUseCase>(),
+        sl<SoftDeleteTransactionUseCase>(),
+        sl<WatchCustomerTransactionsUseCase>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
       }
+      expect(sl<DateService>(), isA<SystemDateService>());
       // Debug setup and handling do not access Firebase without initialization.
       await sl<ErrorHandler>().handle(Exception('private details'));
     },

@@ -413,6 +413,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transactionBackspace => 'Delete digit';
 
   @override
+  String get transactionSaveError =>
+      'Could not save the transaction. Check the customer and amount, then try again.';
+
+  @override
+  String get transactionNotFound => 'Transaction not found.';
+
+  @override
+  String transactionCount(int count) {
+    return '$count transactions';
+  }
+
+  @override
+  String get transactionHistoryEmpty => 'No transactions yet.';
+
+  @override
+  String get transactionHistoryError =>
+      'Could not load or change transactions. Please try again.';
+
+  @override
+  String get transactionBalanceUnavailable => 'Balance too large to display';
+
+  @override
+  String get transactionDeleteMessage =>
+      'Delete this transaction? Its previous values will be retained in the audit history.';
+
+  @override
   String transactionHistoryCount(int count) {
     return '$count sample transactions';
   }

@@ -116,6 +116,7 @@ void main() {
           );
           expect(tester.widget<EditableText>(field).controller.text, '010123');
           await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 1));
           router.dispose();
           await cubit.close();
         },

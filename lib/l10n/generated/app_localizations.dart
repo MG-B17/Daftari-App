@@ -854,6 +854,48 @@ abstract class AppLocalizations {
   /// **'Delete digit'**
   String get transactionBackspace;
 
+  /// No description provided for @transactionSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the transaction. Check the customer and amount, then try again.'**
+  String get transactionSaveError;
+
+  /// No description provided for @transactionNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction not found.'**
+  String get transactionNotFound;
+
+  /// No description provided for @transactionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} transactions'**
+  String transactionCount(int count);
+
+  /// No description provided for @transactionHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet.'**
+  String get transactionHistoryEmpty;
+
+  /// No description provided for @transactionHistoryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or change transactions. Please try again.'**
+  String get transactionHistoryError;
+
+  /// No description provided for @transactionBalanceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance too large to display'**
+  String get transactionBalanceUnavailable;
+
+  /// No description provided for @transactionDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this transaction? Its previous values will be retained in the audit history.'**
+  String get transactionDeleteMessage;
+
   /// No description provided for @transactionHistoryCount.
   ///
   /// In en, this message translates to:
