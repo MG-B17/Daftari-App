@@ -66,6 +66,7 @@ void main() {
           findsOneWidget,
         );
         await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
         router.dispose();
       });
     }
@@ -106,6 +107,7 @@ void main() {
     expect(received.toString(), 'tel:01012345678');
     expect(find.text('Could not open the phone app.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -155,6 +157,7 @@ void main() {
       isTrue,
     );
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -193,6 +196,7 @@ void main() {
       );
       expect(active!.any((customer) => customer.id == id), isFalse);
       await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
       router.dispose();
     },
   );

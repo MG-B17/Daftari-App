@@ -50,6 +50,7 @@ void main() {
       expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
     }
     await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -83,6 +84,7 @@ void main() {
         expect(router.routeInformationProvider.value.uri.path, '/');
       }
       await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 1));
       router.dispose();
     });
   }
@@ -100,6 +102,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
     await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
 
@@ -129,6 +132,7 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
 
     await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
     await cubit.close();
   });

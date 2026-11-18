@@ -8,6 +8,7 @@ import '../../../../core/routing/app_routes.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/money_utils.dart';
 import '../../../../core/widgets/app_confirmation_dialog.dart';
+import '../../../transactions/presentation/widgets/customer_transactions_section.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../cubit/customer_details_cubit.dart';
 
@@ -71,100 +72,104 @@ class CustomerDetailsBody extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: AppSpacing.customersMaxWidth),
-        child: ListView(
-          children: [
-            Card(
-              child: Padding(
-                padding: AppSpacing.pagePadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: AppSpacing.customersAvatarRadius,
-                          backgroundColor:
-                              context.appColors.customersAccentSurface,
-                          child: Text(customer.name.characters.first),
-                        ),
-                        SizedBox(width: AppSpacing.compact),
-                        Expanded(
-                          child: Text(
-                            customer.name,
-                            style: context.textTheme.titleLarge,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: l10n.customerEdit,
-                          onPressed: () => context.pushNamed(
-                            AppRoutes.customerEditName,
-                            pathParameters: {'id': customer.id},
-                          ),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                    Container(
-                      padding: AppSpacing.pagePadding,
-                      decoration: BoxDecoration(
-                        color: context.appColors.customersAccentSurface,
-                        borderRadius: AppSpacing.borderRadius,
-                      ),
-                      child: Column(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Card(
+                child: Padding(
+                  padding: AppSpacing.pagePadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            l10n.customerBalance,
-                            textAlign: TextAlign.center,
+                          CircleAvatar(
+                            radius: AppSpacing.customersAvatarRadius,
+                            backgroundColor:
+                                context.appColors.customersAccentSurface,
+                            child: Text(customer.name.characters.first),
                           ),
-                          SizedBox(height: AppSpacing.sm),
-                          Text(
-                            MoneyUtils.formatPiasters(
-                              customer.balancePiasters,
-                              locale: Localizations.localeOf(context)
-                                  .languageCode,
+                          SizedBox(width: AppSpacing.compact),
+                          Expanded(
+                            child: Text(
+                              customer.name,
+                              style: context.textTheme.titleLarge,
                             ),
-                            style: context.textTheme.headlineMedium?.copyWith(
-                              color: customer.balancePiasters > 0
-                                  ? context.colorScheme.error
-                                  : context.appColors.paymentColor,
+                          ),
+                          IconButton(
+                            tooltip: l10n.customerEdit,
+                            onPressed: () => context.pushNamed(
+                              AppRoutes.customerEditName,
+                              pathParameters: {'id': customer.id},
                             ),
+                            icon: const Icon(Icons.edit_outlined),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            customer.phone ?? '',
-                            textDirection: TextDirection.ltr,
+                      SizedBox(height: AppSpacing.lg),
+                      Container(
+                        padding: AppSpacing.pagePadding,
+                        decoration: BoxDecoration(
+                          color: context.appColors.customersAccentSurface,
+                          borderRadius: AppSpacing.borderRadius,
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              l10n.customerBalance,
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: AppSpacing.sm),
+                            Text(
+                              MoneyUtils.formatPiasters(
+                                customer.balancePiasters,
+                                locale: Localizations.localeOf(context)
+                                    .languageCode,
+                              ),
+                              style: context.textTheme.headlineMedium?.copyWith(
+                                color: customer.balancePiasters > 0
+                                    ? context.colorScheme.error
+                                    : context.appColors.paymentColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              customer.phone ?? '',
+                              textDirection: TextDirection.ltr,
+                            ),
                           ),
-                        ),
-                        FilledButton.icon(
-                          key: const ValueKey('customer-call'),
-                          onPressed:
-                              customer.phone == null || customer.phone!.isEmpty
-                              ? null
-                              : () => _call(context),
-                          icon: const Icon(Icons.phone_outlined),
-                          label: Text(l10n.customerCall),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                    OutlinedButton.icon(
-                      onPressed: deleting
-                          ? null
-                          : () => _confirmDelete(context),
-                      icon: const Icon(Icons.delete_outline),
-                      label: Text(l10n.customerDelete),
-                    ),
-                  ],
+                          FilledButton.icon(
+                            key: const ValueKey('customer-call'),
+                            onPressed:
+                                customer.phone == null ||
+                                    customer.phone!.isEmpty
+                                ? null
+                                : () => _call(context),
+                            icon: const Icon(Icons.phone_outlined),
+                            label: Text(l10n.customerCall),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+                      OutlinedButton.icon(
+                        onPressed: deleting
+                            ? null
+                            : () => _confirmDelete(context),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(l10n.customerDelete),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+            CustomerTransactionsSection(customerId: customer.id),
           ],
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/database/app_database.dart';
@@ -16,13 +18,22 @@ class CustomerRepositoryImpl implements CustomerRepository {
   final ContactPickerService _picker;
   final ErrorHandler _errors;
 
-  Stream<Either<AppFailure, T>> _watch<T>(Stream<T> Function() source) async* {
+  Stream<Either<AppFailure, T>> _watch<T>(Stream<T> Function() source) {
     try {
-      await for (final value in source()) {
-        yield Right(value);
-      }
+      return source()
+          .transform(
+            StreamTransformer<T, Future<Either<AppFailure, T>>>.fromHandlers(
+              handleData: (value, sink) => sink.add(Future.value(Right(value))),
+              handleError: (Object error, StackTrace stack, sink) => sink.add(
+                _errors.handle(error).then((failure) => Left(failure)),
+              ),
+            ),
+          )
+          .asyncMap((result) => result);
     } catch (error) {
-      yield Left(await _errors.handle(error));
+      return Stream.fromFuture(
+        _errors.handle(error).then((failure) => Left(failure)),
+      );
     }
   }
 

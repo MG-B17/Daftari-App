@@ -22,6 +22,15 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_settings_usecase.dart';
 import '../../features/settings/domain/usecases/change_language_usecase.dart';
 import '../../features/settings/domain/usecases/change_theme_usecase.dart';
+import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
+import '../../features/transactions/domain/repositories/transaction_repository.dart';
+import '../../features/transactions/domain/usecases/create_transaction_usecase.dart';
+import '../../features/transactions/domain/usecases/edit_transaction_usecase.dart';
+import '../../features/transactions/domain/usecases/get_transaction_by_id_usecase.dart';
+import '../../features/transactions/domain/usecases/soft_delete_transaction_usecase.dart';
+import '../../features/transactions/domain/usecases/watch_customer_transactions_usecase.dart';
+import '../../features/transactions/presentation/cubit/customer_transactions_cubit.dart';
+import '../../features/transactions/presentation/cubit/transaction_form_cubit.dart';
 import '../database/app_database.dart';
 import '../errors/app_exception.dart';
 import '../errors/error_handler.dart';
@@ -29,6 +38,7 @@ import '../routing/app_router.dart';
 import '../services/app_logger.dart';
 import '../services/connectivity_service.dart';
 import '../services/contact_picker_service.dart';
+import '../services/date_service.dart';
 import '../services/local_storage_service.dart';
 import '../utils/app_date_utils.dart';
 
@@ -48,6 +58,9 @@ Future<void> configureDependencies() async {
     }
   }
   await AppDateUtils.initialize();
+  if (!sl.isRegistered<DateService>()) {
+    sl.registerLazySingleton<DateService>(SystemDateService.new);
+  }
   if (!sl.isRegistered<LocalStorageService>()) {
     sl.registerLazySingleton<LocalStorageService>(
       () => LocalStorageService(sl<SharedPreferences>()),
@@ -94,6 +107,54 @@ Future<void> configureDependencies() async {
         sl<ContactPickerService>(),
         sl<ErrorHandler>(),
       ),
+    );
+  }
+  if (!sl.isRegistered<TransactionRepository>()) {
+    sl.registerLazySingleton<TransactionRepository>(
+      () => TransactionRepositoryImpl(sl<TransactionDao>(), sl<ErrorHandler>()),
+    );
+  }
+  if (!sl.isRegistered<WatchCustomerTransactionsUseCase>()) {
+    sl.registerLazySingleton<WatchCustomerTransactionsUseCase>(
+      () => WatchCustomerTransactionsUseCase(sl<TransactionRepository>()),
+    );
+  }
+  if (!sl.isRegistered<CustomerTransactionsCubit>()) {
+    sl.registerFactory(
+      () => CustomerTransactionsCubit(
+        sl<WatchCustomerTransactionsUseCase>(),
+        sl<SoftDeleteTransactionUseCase>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<TransactionFormCubit>()) {
+    sl.registerFactory(
+      () => TransactionFormCubit(
+        sl<WatchCustomersUseCase>(),
+        sl<GetTransactionByIdUseCase>(),
+        sl<CreateTransactionUseCase>(),
+        sl<EditTransactionUseCase>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<GetTransactionByIdUseCase>()) {
+    sl.registerLazySingleton<GetTransactionByIdUseCase>(
+      () => GetTransactionByIdUseCase(sl<TransactionRepository>()),
+    );
+  }
+  if (!sl.isRegistered<CreateTransactionUseCase>()) {
+    sl.registerLazySingleton<CreateTransactionUseCase>(
+      () => CreateTransactionUseCase(sl<TransactionRepository>()),
+    );
+  }
+  if (!sl.isRegistered<EditTransactionUseCase>()) {
+    sl.registerLazySingleton<EditTransactionUseCase>(
+      () => EditTransactionUseCase(sl<TransactionRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SoftDeleteTransactionUseCase>()) {
+    sl.registerLazySingleton<SoftDeleteTransactionUseCase>(
+      () => SoftDeleteTransactionUseCase(sl<TransactionRepository>()),
     );
   }
   if (!sl.isRegistered<WatchCustomersUseCase>()) {

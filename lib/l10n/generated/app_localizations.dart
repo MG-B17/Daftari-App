@@ -739,6 +739,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This customer has an outstanding balance of {balance}. Delete them? Their ledger history will be preserved.'**
   String customerDeleteBalanceMessage(String balance);
+
+  /// No description provided for @transactionNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New transaction'**
+  String get transactionNew;
+
+  /// No description provided for @transactionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit transaction'**
+  String get transactionEdit;
+
+  /// No description provided for @transactionCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Owes (credit)'**
+  String get transactionCredit;
+
+  /// No description provided for @transactionPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid (payment)'**
+  String get transactionPayment;
+
+  /// No description provided for @transactionCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get transactionCustomer;
+
+  /// No description provided for @transactionChooseCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose customer'**
+  String get transactionChooseCustomer;
+
+  /// No description provided for @transactionChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get transactionChange;
+
+  /// No description provided for @transactionAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount to record'**
+  String get transactionAmount;
+
+  /// No description provided for @transactionQuickAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick amounts'**
+  String get transactionQuickAmounts;
+
+  /// No description provided for @transactionDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction date'**
+  String get transactionDate;
+
+  /// No description provided for @transactionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note or item description (optional)'**
+  String get transactionNote;
+
+  /// No description provided for @transactionSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save transaction'**
+  String get transactionSave;
+
+  /// No description provided for @transactionMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — transactions are not saved.'**
+  String get transactionMockNotice;
+
+  /// No description provided for @transactionMockHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample history — not this customer\'s transactions'**
+  String get transactionMockHistory;
+
+  /// No description provided for @transactionHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction history'**
+  String get transactionHistory;
+
+  /// No description provided for @transactionSampleCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Groceries'**
+  String get transactionSampleCredit;
+
+  /// No description provided for @transactionSamplePayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash payment'**
+  String get transactionSamplePayment;
+
+  /// No description provided for @transactionBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get transactionBalance;
+
+  /// No description provided for @transactionBackspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete digit'**
+  String get transactionBackspace;
+
+  /// No description provided for @transactionSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the transaction. Check the customer and amount, then try again.'**
+  String get transactionSaveError;
+
+  /// No description provided for @transactionNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction not found.'**
+  String get transactionNotFound;
+
+  /// No description provided for @transactionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} transactions'**
+  String transactionCount(int count);
+
+  /// No description provided for @transactionHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet.'**
+  String get transactionHistoryEmpty;
+
+  /// No description provided for @transactionHistoryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load or change transactions. Please try again.'**
+  String get transactionHistoryError;
+
+  /// No description provided for @transactionBalanceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance too large to display'**
+  String get transactionBalanceUnavailable;
+
+  /// No description provided for @transactionDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this transaction? Its previous values will be retained in the audit history.'**
+  String get transactionDeleteMessage;
+
+  /// No description provided for @transactionHistoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sample transactions'**
+  String transactionHistoryCount(int count);
+
+  /// No description provided for @transactionCreditBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit'**
+  String get transactionCreditBadge;
+
+  /// No description provided for @transactionPaymentBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get transactionPaymentBadge;
+
+  /// No description provided for @transactionEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get transactionEditAction;
+
+  /// No description provided for @transactionDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get transactionDeleteAction;
+
+  /// No description provided for @transactionSampleCreditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Grocery purchase'**
+  String get transactionSampleCreditNote;
+
+  /// No description provided for @transactionSamplePaymentNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash received'**
+  String get transactionSamplePaymentNote;
 }
 
 class _AppLocalizationsDelegate

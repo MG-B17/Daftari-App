@@ -352,4 +352,112 @@ class AppLocalizationsEn extends AppLocalizations {
   String customerDeleteBalanceMessage(String balance) {
     return 'This customer has an outstanding balance of $balance. Delete them? Their ledger history will be preserved.';
   }
+
+  @override
+  String get transactionNew => 'New transaction';
+
+  @override
+  String get transactionEdit => 'Edit transaction';
+
+  @override
+  String get transactionCredit => 'Owes (credit)';
+
+  @override
+  String get transactionPayment => 'Paid (payment)';
+
+  @override
+  String get transactionCustomer => 'Customer';
+
+  @override
+  String get transactionChooseCustomer => 'Choose customer';
+
+  @override
+  String get transactionChange => 'Change';
+
+  @override
+  String get transactionAmount => 'Amount to record';
+
+  @override
+  String get transactionQuickAmounts => 'Quick amounts';
+
+  @override
+  String get transactionDate => 'Transaction date';
+
+  @override
+  String get transactionNote => 'Note or item description (optional)';
+
+  @override
+  String get transactionSave => 'Save transaction';
+
+  @override
+  String get transactionMockNotice =>
+      'Preview only — transactions are not saved.';
+
+  @override
+  String get transactionMockHistory =>
+      'Sample history — not this customer\'s transactions';
+
+  @override
+  String get transactionHistory => 'Transaction history';
+
+  @override
+  String get transactionSampleCredit => 'Groceries';
+
+  @override
+  String get transactionSamplePayment => 'Cash payment';
+
+  @override
+  String get transactionBalance => 'Balance';
+
+  @override
+  String get transactionBackspace => 'Delete digit';
+
+  @override
+  String get transactionSaveError =>
+      'Could not save the transaction. Check the customer and amount, then try again.';
+
+  @override
+  String get transactionNotFound => 'Transaction not found.';
+
+  @override
+  String transactionCount(int count) {
+    return '$count transactions';
+  }
+
+  @override
+  String get transactionHistoryEmpty => 'No transactions yet.';
+
+  @override
+  String get transactionHistoryError =>
+      'Could not load or change transactions. Please try again.';
+
+  @override
+  String get transactionBalanceUnavailable => 'Balance too large to display';
+
+  @override
+  String get transactionDeleteMessage =>
+      'Delete this transaction? Its previous values will be retained in the audit history.';
+
+  @override
+  String transactionHistoryCount(int count) {
+    return '$count sample transactions';
+  }
+
+  @override
+  String get transactionCreditBadge => 'Credit';
+
+  @override
+  String get transactionPaymentBadge => 'Paid';
+
+  @override
+  String get transactionEditAction => 'Edit';
+
+  @override
+  String get transactionDeleteAction => 'Delete';
+
+  @override
+  String get transactionSampleCreditNote => 'Grocery purchase';
+
+  @override
+  String get transactionSamplePaymentNote => 'Cash received';
 }

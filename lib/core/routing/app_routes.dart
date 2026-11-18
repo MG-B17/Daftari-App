@@ -15,4 +15,8 @@ abstract final class AppRoutes {
   static const customerDetailsName = 'customer-details';
   static const customerEdit = '/customers/:id/edit';
   static const customerEditName = 'customer-edit';
+  static const transactionNew = '/transactions/new';
+  static const transactionNewName = 'transaction-new';
+  static const transactionEdit = '/transactions/:id/edit';
+  static const transactionEditName = 'transaction-edit';
 }
