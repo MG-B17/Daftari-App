@@ -93,4 +93,18 @@ abstract final class AppSpacing {
   static double get navigationIndicatorWidth => 72.r;
   static double get navigationIndicatorStretch => 24.r;
   static double get navigationElevation => 4;
+
+  static double get dashboardMaxWidth => 520.w.clamp(0, 520).toDouble();
+  static double get dashboardAvatarRadius => 22.r;
+  static double get dashboardActivityIconBox => 40.r;
+  static double get dashboardTipIconBox => 44.r;
+  static double get dashboardActionHeight => 56.r;
+  static double get dashboardSectionBarWidth => 4.w;
+  static double get dashboardSectionBarHeight => 20.h;
+  static double get dashboardChipRadius => 10.r;
+  static EdgeInsets get dashboardCardPadding => EdgeInsets.all(cardInset);
+  static EdgeInsets get dashboardSectionHeaderPadding =>
+      EdgeInsets.only(bottom: sm);
+  static EdgeInsets get dashboardDividerPadding =>
+      EdgeInsets.symmetric(horizontal: cardInset);
 }

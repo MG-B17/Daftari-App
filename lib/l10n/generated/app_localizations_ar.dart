@@ -452,4 +452,57 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get transactionSamplePaymentNote => 'مقبوضات كاش';
+
+  @override
+  String get dashboardTitle => 'دفتر الحسابات';
+
+  @override
+  String get dashboardSubtitle => 'الرئيسية';
+
+  @override
+  String get dashboardGreetingCaption => 'صباح الخير يا معلم،';
+
+  @override
+  String get dashboardWelcome => 'أهلاً، محلك';
+
+  @override
+  String get dashboardTotalOwed => 'إجمالي اللي على العملاء';
+
+  @override
+  String dashboardDebtorCount(int count) {
+    return '$count عميل عليهم رصيد مستحق';
+  }
+
+  @override
+  String get dashboardTodayCollections => 'تحصيلات اليوم';
+
+  @override
+  String get dashboardRegisterTransaction => 'تسجيل حركة';
+
+  @override
+  String get dashboardNewCustomer => 'عميل جديد';
+
+  @override
+  String get dashboardTopDebtors => 'أكبر المدينين';
+
+  @override
+  String get dashboardViewAll => 'عرض الكل';
+
+  @override
+  String get dashboardRecentActivity => 'آخر الحركات';
+
+  @override
+  String get dashboardUpdatedLive => 'محدث لحظيًا';
+
+  @override
+  String dashboardActivityDate(String day, String time) {
+    return '$day، $time';
+  }
+
+  @override
+  String get dashboardTipTitle => 'دفترك مضبوط ومحمي';
+
+  @override
+  String get dashboardTipMessage =>
+      'سجل كل قرش أول بأول عشان حسابك وحق زباينك ما يضيعش.';
 }

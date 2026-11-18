@@ -937,6 +937,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cash received'**
   String get transactionSamplePaymentNote;
+
+  /// No description provided for @dashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account ledger'**
+  String get dashboardTitle;
+
+  /// No description provided for @dashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get dashboardSubtitle;
+
+  /// No description provided for @dashboardGreetingCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning, boss,'**
+  String get dashboardGreetingCaption;
+
+  /// No description provided for @dashboardWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to your shop'**
+  String get dashboardWelcome;
+
+  /// No description provided for @dashboardTotalOwed.
+  ///
+  /// In en, this message translates to:
+  /// **'Total owed by customers'**
+  String get dashboardTotalOwed;
+
+  /// No description provided for @dashboardDebtorCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} customers with an outstanding balance'**
+  String dashboardDebtorCount(int count);
+
+  /// No description provided for @dashboardTodayCollections.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s collections'**
+  String get dashboardTodayCollections;
+
+  /// No description provided for @dashboardRegisterTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Record transaction'**
+  String get dashboardRegisterTransaction;
+
+  /// No description provided for @dashboardNewCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'New customer'**
+  String get dashboardNewCustomer;
+
+  /// No description provided for @dashboardTopDebtors.
+  ///
+  /// In en, this message translates to:
+  /// **'Top debtors'**
+  String get dashboardTopDebtors;
+
+  /// No description provided for @dashboardViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get dashboardViewAll;
+
+  /// No description provided for @dashboardRecentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get dashboardRecentActivity;
+
+  /// No description provided for @dashboardUpdatedLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated live'**
+  String get dashboardUpdatedLive;
+
+  /// No description provided for @dashboardActivityDate.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}, {time}'**
+  String dashboardActivityDate(String day, String time);
+
+  /// No description provided for @dashboardTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ledger is organized and protected'**
+  String get dashboardTipTitle;
+
+  /// No description provided for @dashboardTipMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Record every penny as it happens so your accounts and your customers\' rights are never lost.'**
+  String get dashboardTipMessage;
 }
 
 class _AppLocalizationsDelegate

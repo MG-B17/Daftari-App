@@ -460,4 +460,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transactionSamplePaymentNote => 'Cash received';
+
+  @override
+  String get dashboardTitle => 'Account ledger';
+
+  @override
+  String get dashboardSubtitle => 'Home';
+
+  @override
+  String get dashboardGreetingCaption => 'Good morning, boss,';
+
+  @override
+  String get dashboardWelcome => 'Welcome to your shop';
+
+  @override
+  String get dashboardTotalOwed => 'Total owed by customers';
+
+  @override
+  String dashboardDebtorCount(int count) {
+    return '$count customers with an outstanding balance';
+  }
+
+  @override
+  String get dashboardTodayCollections => 'Today\'s collections';
+
+  @override
+  String get dashboardRegisterTransaction => 'Record transaction';
+
+  @override
+  String get dashboardNewCustomer => 'New customer';
+
+  @override
+  String get dashboardTopDebtors => 'Top debtors';
+
+  @override
+  String get dashboardViewAll => 'View all';
+
+  @override
+  String get dashboardRecentActivity => 'Recent activity';
+
+  @override
+  String get dashboardUpdatedLive => 'Updated live';
+
+  @override
+  String dashboardActivityDate(String day, String time) {
+    return '$day, $time';
+  }
+
+  @override
+  String get dashboardTipTitle => 'Your ledger is organized and protected';
+
+  @override
+  String get dashboardTipMessage =>
+      'Record every penny as it happens so your accounts and your customers\' rights are never lost.';
 }

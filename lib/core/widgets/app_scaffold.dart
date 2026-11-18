@@ -7,6 +7,7 @@ class AppScaffold extends StatelessWidget {
     super.key,
     required this.body,
     this.title,
+    this.subtitle,
     this.actions,
     this.leading,
     this.padding,
@@ -18,6 +19,7 @@ class AppScaffold extends StatelessWidget {
 
   final Widget body;
   final String? title;
+  final String? subtitle;
   final List<Widget>? actions;
   final Widget? leading;
   final EdgeInsetsGeometry? padding;
@@ -31,7 +33,23 @@ class AppScaffold extends StatelessWidget {
     backgroundColor: backgroundColor,
     appBar: title == null
         ? null
-        : AppBar(title: Text(title!), actions: actions, leading: leading),
+        : AppBar(
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title!),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+            actions: actions,
+            leading: leading,
+          ),
     body: SafeArea(
       child: Padding(padding: padding ?? AppSpacing.pagePadding, child: body),
     ),
