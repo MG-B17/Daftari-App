@@ -10,8 +10,14 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customers_list_screen.dart';
+import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/top_debtor_row.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/recent_activity_row.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/dashboard_summary_card.dart';
+import 'package:daftariapp/features/transactions/presentation/screens/transaction_form_screen.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
-import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/splash/presentation/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +95,7 @@ void main() {
     });
   }
 
-  testWidgets('without storage the placeholder root remains available', (
+  testWidgets('without storage the dashboard root remains available', (
     tester,
   ) async {
     final router = AppRouter.create();
@@ -106,7 +112,79 @@ void main() {
     router.dispose();
   });
 
-  testWidgets('root settings action opens the settings route', (tester) async {
+  testWidgets('dashboard quick actions and live rows open their routes', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final router = AppRouter.create();
+    await tester.pumpWidget(DaftariApp(router: router));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<DashboardSummaryCard>(find.byType(DashboardSummaryCard))
+          .totalOwedPiasters,
+      320000,
+    );
+    await tester.runAsync(
+      () => tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh(),
+    );
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    for (final entry in {
+      'dashboard-register-transaction': TransactionFormScreen,
+      'dashboard-new-customer': CustomerFormScreen,
+    }.entries) {
+      final action = find.byKey(ValueKey(entry.key));
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+      expect(find.byType(entry.value), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+    }
+    final debtor = find.byType(TopDebtorRow);
+    final id = tester.widget<TopDebtorRow>(debtor).debtor.id;
+    await tester.ensureVisible(debtor);
+    await tester.tap(debtor);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<CustomerDetailsScreen>(find.byType(CustomerDetailsScreen))
+          .customerId,
+      id,
+    );
+    router.pop();
+    await tester.pumpAndSettle();
+    final activity = find.byType(RecentActivityRow);
+    await tester.ensureVisible(activity);
+    await tester.tap(activity);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<CustomerDetailsScreen>(find.byType(CustomerDetailsScreen))
+          .customerId,
+      id,
+    );
+    router.pop();
+    await tester.pumpAndSettle();
+    final viewAll = find.byKey(const ValueKey('dashboard-view-all-debtors'));
+    await tester.ensureVisible(viewAll);
+    await tester.tap(viewAll);
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, AppRoutes.customers);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+    router.dispose();
+  });
+
+  testWidgets('root search action opens the customers route', (tester) async {
     SharedPreferences.setMockInitialValues({'onboardingCompleted': true});
     final storage = LocalStorageService(await SharedPreferences.getInstance());
     final cubit = SettingsCubit(
@@ -119,16 +197,18 @@ void main() {
     await tester.pumpWidget(DaftariApp(router: router, settingsCubit: cubit));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
-    expect(find.byType(SettingsScreen), findsNothing);
+    expect(find.byType(DashboardScreen), findsOneWidget);
+    expect(find.byType(CustomersListScreen), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.tap(find.byKey(const ValueKey('dashboard-search')));
     await tester.pumpAndSettle();
-    expect(find.byType(SettingsScreen), findsOneWidget);
-    expect(find.text('الإعدادات'), findsWidgets);
+    expect(find.byType(CustomersListScreen), findsOneWidget);
+    expect(router.routeInformationProvider.value.uri.path, AppRoutes.customers);
 
     router.go(AppRoutes.root);
     await tester.pumpAndSettle();
-    expect(find.byType(SettingsScreen), findsNothing);
+    expect(find.byType(CustomersListScreen), findsNothing);
+    expect(find.byType(DashboardScreen), findsOneWidget);
     expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
 
     await tester.pumpWidget(const SizedBox());

@@ -11,12 +11,15 @@ import 'package:daftariapp/core/widgets/app_error_state.dart';
 import 'package:daftariapp/core/widgets/app_loading_indicator.dart';
 import 'package:daftariapp/core/widgets/app_scaffold.dart';
 import 'package:daftariapp/core/widgets/app_text_field.dart';
+import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'dashboard_test_setup.dart';
 
 Future<void> pumpShared(
   WidgetTester tester,
@@ -44,6 +47,9 @@ Future<void> pumpShared(
 }
 
 void main() {
+  setUp(setupDashboardTests);
+  tearDown(() => sl.reset());
+
   for (final locale in AppConstants.supportedLocales) {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${locale.languageCode} ${mode.name} app foundation', (
@@ -51,7 +57,7 @@ void main() {
       ) async {
         await tester.pumpWidget(DaftariApp(locale: locale, themeMode: mode));
         await tester.pumpAndSettle();
-        final context = tester.element(find.byType(AppEmptyState));
+        final context = tester.element(find.byType(DashboardScreen));
         expect(
           Directionality.of(context),
           locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
@@ -74,10 +80,13 @@ void main() {
           mode == ThemeMode.dark ? AppColors.mint : AppColors.primary,
         );
         expect(
-          find.text(locale.languageCode == 'ar' ? 'دفتري' : 'Daftari'),
+          find.text(
+            locale.languageCode == 'ar' ? 'دفتر الحسابات' : 'Account ledger',
+          ),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
       });
     }
   }
@@ -88,7 +97,7 @@ void main() {
       final router = AppRouter.create();
       await tester.pumpWidget(DaftariApp(router: router));
       await tester.pumpAndSettle();
-      expect(find.text('دفتري'), findsOneWidget);
+      expect(find.text('دفتر الحسابات'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       // The caller can still use and dispose its router after app unmount.
       expect(router.routeInformationProvider.value.uri.path, '/');

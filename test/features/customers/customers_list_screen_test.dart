@@ -91,7 +91,7 @@ void main() {
     await tester.pumpAndSettle();
     router.go(AppRoutes.root);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('open-customers')));
+    await tester.tap(find.byKey(const ValueKey('dashboard-search')));
     await tester.pumpAndSettle();
     expect(find.byType(CustomersListScreen), findsOneWidget);
     for (final path in [

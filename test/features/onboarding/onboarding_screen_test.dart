@@ -1,4 +1,5 @@
 import 'package:daftariapp/app.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/theme/app_colors.dart';
@@ -12,9 +13,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../dashboard_test_setup.dart';
+
 class _Storage extends Mock implements LocalStorageService {}
 
 void main() {
+  setUp(setupDashboardTests);
+  tearDown(() => sl.reset());
+
   for (final locale in [const Locale('ar'), const Locale('en')]) {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${locale.languageCode} ${mode.name}: next, swipe, finish', (

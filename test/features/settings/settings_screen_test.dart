@@ -3,6 +3,7 @@ import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecas
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/app.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
@@ -20,6 +21,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../dashboard_test_setup.dart';
 
 class _Storage extends Mock implements LocalStorageService {}
 
@@ -71,6 +74,9 @@ Future<void> _dispose(WidgetTester tester, _Harness harness) async {
 }
 
 void main() {
+  setUp(setupDashboardTests);
+  tearDown(() => sl.reset());
+
   setUpAll(() {
     registerFallbackValue(ThemeMode.system);
   });
