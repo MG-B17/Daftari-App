@@ -5,6 +5,8 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/features/dashboard/domain/repositories/dashboard_repository.dart';
+import 'package:daftariapp/features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
@@ -56,6 +58,8 @@ void main() {
         sl<GetTransactionByIdUseCase>(),
         sl<SoftDeleteTransactionUseCase>(),
         sl<WatchCustomerTransactionsUseCase>(),
+        sl<DashboardRepository>(),
+        sl<WatchDashboardSummaryUseCase>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -77,6 +81,8 @@ void main() {
         sl<GetTransactionByIdUseCase>(),
         sl<SoftDeleteTransactionUseCase>(),
         sl<WatchCustomerTransactionsUseCase>(),
+        sl<DashboardRepository>(),
+        sl<WatchDashboardSummaryUseCase>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));

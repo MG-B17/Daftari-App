@@ -16,6 +16,9 @@ import '../../features/customers/presentation/cubit/customer_details_cubit.dart'
 import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
 import '../../features/customers/presentation/cubit/customers_list_cubit.dart';
 import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import '../../features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import '../../features/dashboard/domain/repositories/dashboard_repository.dart';
+import '../../features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import '../../features/settings/presentation/cubit/settings_cubit.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
@@ -112,6 +115,21 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<TransactionRepository>()) {
     sl.registerLazySingleton<TransactionRepository>(
       () => TransactionRepositoryImpl(sl<TransactionDao>(), sl<ErrorHandler>()),
+    );
+  }
+  if (!sl.isRegistered<DashboardRepository>()) {
+    sl.registerLazySingleton<DashboardRepository>(
+      () => DashboardRepositoryImpl(
+        sl<CustomerDao>(),
+        sl<TransactionDao>(),
+        sl<ErrorHandler>(),
+        sl<DateService>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<WatchDashboardSummaryUseCase>()) {
+    sl.registerLazySingleton<WatchDashboardSummaryUseCase>(
+      () => WatchDashboardSummaryUseCase(sl<DashboardRepository>()),
     );
   }
   if (!sl.isRegistered<WatchCustomerTransactionsUseCase>()) {

@@ -7,6 +7,13 @@ import 'dao_support.dart';
 
 part 'transaction_dao.g.dart';
 
+final class TransactionWithCustomer {
+  const TransactionWithCustomer(this.transaction, this.customer);
+
+  final TransactionRecord transaction;
+  final Customer customer;
+}
+
 /// Transaction ledger operations, including atomic audited edits/deletes.
 @DriftAccessor(tables: [Customers, Transactions, TransactionAuditLogs])
 class TransactionDao extends DatabaseAccessor<AppDatabase>
@@ -78,6 +85,46 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
 
   Stream<List<TransactionRecord>> watchRecentTransactions({int limit = 20}) =>
       _recentTransactionQuery(limit).watch();
+
+  Stream<List<TransactionWithCustomer>> watchRecentTransactionsWithCustomer({
+    int limit = 5,
+  }) {
+    final query = _activeTransactionRows()
+      ..orderBy(_newestFirst)
+      ..limit(limit);
+    return query
+        .map(
+          (row) => TransactionWithCustomer(
+            row.readTable(transactions),
+            row.readTable(customers),
+          ),
+        )
+        .watch();
+  }
+
+  Stream<int> watchTodayPaymentsPiasters(
+    DateTime startOfDay,
+    DateTime endOfDay,
+  ) {
+    final total = transactions.amountPiasters.sum();
+    final query = selectOnly(transactions)
+      ..addColumns([total])
+      ..join([
+        innerJoin(
+          customers,
+          customers.id.equalsExp(transactions.customerId),
+          useColumns: false,
+        ),
+      ])
+      ..where(
+        transactions.deletedAt.isNull() &
+            customers.deletedAt.isNull() &
+            transactions.type.equals(TransactionTypes.payment) &
+            transactions.transactionDate.isBiggerOrEqualValue(startOfDay) &
+            transactions.transactionDate.isSmallerThanValue(endOfDay),
+      );
+    return query.map((row) => row.read(total) ?? 0).watchSingle();
+  }
 
   Future<List<TransactionAuditLog>> getAuditLogs(String transactionId) {
     return runDatabaseOperation(
