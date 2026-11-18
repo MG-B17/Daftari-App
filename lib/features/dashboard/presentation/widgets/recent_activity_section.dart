@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../domain/entities/recent_activity_entity.dart';
 import 'recent_activity_row.dart';
 
 class RecentActivitySection extends StatelessWidget {
-  const RecentActivitySection({super.key, required this.activities});
+  const RecentActivitySection({
+    super.key,
+    required this.activities,
+    required this.onOpenCustomer,
+    required this.updatedLive,
+  });
 
-  final List<RecentActivityPreview> activities;
+  final List<RecentActivityEntity> activities;
+  final ValueChanged<String> onOpenCustomer;
+  final bool updatedLive;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -34,12 +42,13 @@ class RecentActivitySection extends StatelessWidget {
                 style: context.textTheme.titleLarge,
               ),
             ),
-            Text(
-              context.l10n.dashboardUpdatedLive,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onSurfaceVariant,
+            if (updatedLive)
+              Text(
+                context.l10n.dashboardUpdatedLive,
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -48,6 +57,12 @@ class RecentActivitySection extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
+            if (activities.isEmpty)
+              Padding(
+                key: const ValueKey('dashboard-no-activity'),
+                padding: AppSpacing.dashboardCardPadding,
+                child: Text(context.l10n.transactionHistoryEmpty),
+              ),
             for (var index = 0; index < activities.length; index++) ...[
               if (index > 0)
                 Padding(
@@ -57,7 +72,11 @@ class RecentActivitySection extends StatelessWidget {
                     color: context.colorScheme.outline,
                   ),
                 ),
-              RecentActivityRow(activity: activities[index]),
+              RecentActivityRow(
+                key: ValueKey('dashboard-activity-${activities[index].id}'),
+                activity: activities[index],
+                onTap: () => onOpenCustomer(activities[index].customerId),
+              ),
             ],
           ],
         ),

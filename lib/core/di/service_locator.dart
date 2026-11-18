@@ -19,6 +19,7 @@ import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../../features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import '../../features/dashboard/domain/repositories/dashboard_repository.dart';
 import '../../features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
+import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/settings/presentation/cubit/settings_cubit.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
@@ -130,6 +131,12 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<WatchDashboardSummaryUseCase>()) {
     sl.registerLazySingleton<WatchDashboardSummaryUseCase>(
       () => WatchDashboardSummaryUseCase(sl<DashboardRepository>()),
+    );
+  }
+  if (!sl.isRegistered<DashboardCubit>()) {
+    sl.registerFactory(
+      () =>
+          DashboardCubit(sl<WatchDashboardSummaryUseCase>(), sl<DateService>()),
     );
   }
   if (!sl.isRegistered<WatchCustomerTransactionsUseCase>()) {

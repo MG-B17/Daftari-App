@@ -19,6 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'dashboard_test_setup.dart';
+
 Future<void> pumpShared(
   WidgetTester tester,
   Widget child, {
@@ -45,6 +47,9 @@ Future<void> pumpShared(
 }
 
 void main() {
+  setUp(setupDashboardTests);
+  tearDown(() => sl.reset());
+
   for (final locale in AppConstants.supportedLocales) {
     for (final mode in [ThemeMode.light, ThemeMode.dark]) {
       testWidgets('${locale.languageCode} ${mode.name} app foundation', (
@@ -81,6 +86,7 @@ void main() {
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
       });
     }
   }

@@ -10,6 +10,7 @@ import '../../features/customers/presentation/screens/customers_list_screen.dart
 import '../../features/customers/presentation/screens/customer_form_screen.dart';
 import '../../features/customers/presentation/screens/customer_details_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
+import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/layout/presentation/screens/app_layout_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -70,7 +71,10 @@ abstract final class AppRouter {
                 name: AppRoutes.rootName,
                 pageBuilder: (context, state) => FadeTransitionPage(
                   key: state.pageKey,
-                  child: const DashboardScreen(),
+                  child: BlocProvider(
+                    create: (_) => sl<DashboardCubit>()..refresh(),
+                    child: const DashboardScreen(),
+                  ),
                 ),
               ),
             ],

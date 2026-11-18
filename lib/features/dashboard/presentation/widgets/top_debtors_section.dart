@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../domain/entities/debtor_summary_entity.dart';
 import 'top_debtor_row.dart';
 
 class TopDebtorsSection extends StatelessWidget {
@@ -9,10 +10,12 @@ class TopDebtorsSection extends StatelessWidget {
     super.key,
     required this.debtors,
     required this.onViewAll,
+    required this.onOpenCustomer,
   });
 
-  final List<TopDebtorPreview> debtors;
+  final List<DebtorSummaryEntity> debtors;
   final VoidCallback onViewAll;
+  final ValueChanged<String> onOpenCustomer;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -62,6 +65,12 @@ class TopDebtorsSection extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
+            if (debtors.isEmpty)
+              Padding(
+                key: const ValueKey('dashboard-no-debtors'),
+                padding: AppSpacing.dashboardCardPadding,
+                child: Text(context.l10n.emptyTitle),
+              ),
             for (var index = 0; index < debtors.length; index++) ...[
               if (index > 0)
                 Padding(
@@ -71,7 +80,12 @@ class TopDebtorsSection extends StatelessWidget {
                     color: context.colorScheme.outline,
                   ),
                 ),
-              TopDebtorRow(debtor: debtors[index], top: index == 0),
+              TopDebtorRow(
+                key: ValueKey('dashboard-debtor-${debtors[index].id}'),
+                debtor: debtors[index],
+                top: index == 0,
+                onTap: () => onOpenCustomer(debtors[index].id),
+              ),
             ],
           ],
         ),
