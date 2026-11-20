@@ -9,6 +9,8 @@ import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
+import 'features/security/presentation/cubit/app_lock_cubit.dart';
+import 'features/security/presentation/widgets/app_lock_guard.dart';
 import 'l10n/generated/app_localizations.dart';
 
 class DaftariApp extends StatefulWidget {
@@ -18,12 +20,14 @@ class DaftariApp extends StatefulWidget {
     this.themeMode = ThemeMode.system,
     this.router,
     this.settingsCubit,
+    this.appLockCubit,
   });
 
   final Locale locale;
   final ThemeMode themeMode;
   final GoRouter? router;
   final SettingsCubit? settingsCubit;
+  final AppLockCubit? appLockCubit;
 
   @override
   State<DaftariApp> createState() => _DaftariAppState();
@@ -35,7 +39,9 @@ class _DaftariAppState extends State<DaftariApp> {
   @override
   void initState() {
     super.initState();
-    if (widget.router == null) _ownedRouter = AppRouter.create();
+    if (widget.router == null) {
+      _ownedRouter = AppRouter.create(appLock: widget.appLockCubit);
+    }
   }
 
   @override
@@ -47,6 +53,13 @@ class _DaftariAppState extends State<DaftariApp> {
 
   @override
   Widget build(BuildContext context) {
+    final lock = widget.appLockCubit;
+    return lock == null
+        ? _buildSettingsApp()
+        : BlocProvider.value(value: lock, child: _buildSettingsApp());
+  }
+
+  Widget _buildSettingsApp() {
     final settingsCubit = widget.settingsCubit;
     if (settingsCubit == null) {
       return _buildApp(locale: widget.locale, themeMode: widget.themeMode);
@@ -83,8 +96,15 @@ class _DaftariAppState extends State<DaftariApp> {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
-        builder: (context, child) =>
-            AppThemeTransitionArea(child: child ?? const SizedBox.shrink()),
+        builder: (context, child) {
+          final content = AppThemeTransitionArea(
+            child: child ?? const SizedBox.shrink(),
+          );
+          final lock = widget.appLockCubit;
+          return lock == null
+              ? content
+              : AppLockGuard(lock: lock, child: content);
+        },
         routerConfig: widget.router ?? (_ownedRouter ??= AppRouter.create()),
       ),
     ),

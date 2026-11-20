@@ -18,6 +18,8 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     required this.onWhatsappColor,
     required this.creditSurface,
     required this.paymentSurface,
+    required this.lockAccentSurface,
+    required this.lockKeySurface,
   });
 
   static const light = AppColorScheme(
@@ -35,6 +37,8 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onWhatsappColor: AppColors.text,
     creditSurface: AppColors.creditSurface,
     paymentSurface: AppColors.paymentSurface,
+    lockAccentSurface: AppColors.primarySurface,
+    lockKeySurface: AppColors.surface,
   );
 
   static final dark = AppColorScheme(
@@ -56,6 +60,12 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onWhatsappColor: AppColors.text,
     creditSurface: Color.lerp(AppColors.darkSurface, AppColors.credit, .2)!,
     paymentSurface: Color.lerp(AppColors.darkSurface, AppColors.payment, .2)!,
+    lockAccentSurface: Color.lerp(
+      AppColors.darkSurface,
+      AppColors.primary,
+      .2,
+    )!,
+    lockKeySurface: AppColors.darkSurface,
   );
 
   final Color brand;
@@ -73,6 +83,12 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
   final Color creditSurface;
   final Color paymentSurface;
 
+  final Color lockAccentSurface;
+  final Color lockKeySurface;
+  Color get lockActiveDot => brand;
+  Color get lockDeleteSurface => creditSurface;
+  Color get lockDeleteForeground => creditColor;
+
   @override
   AppColorScheme copyWith({
     Color? brand,
@@ -89,6 +105,8 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     Color? onWhatsappColor,
     Color? creditSurface,
     Color? paymentSurface,
+    Color? lockAccentSurface,
+    Color? lockKeySurface,
   }) => AppColorScheme(
     brand: brand ?? this.brand,
     paperBackground: paperBackground ?? this.paperBackground,
@@ -107,6 +125,8 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onWhatsappColor: onWhatsappColor ?? this.onWhatsappColor,
     creditSurface: creditSurface ?? this.creditSurface,
     paymentSurface: paymentSurface ?? this.paymentSurface,
+    lockAccentSurface: lockAccentSurface ?? this.lockAccentSurface,
+    lockKeySurface: lockKeySurface ?? this.lockKeySurface,
   );
 
   @override
@@ -126,6 +146,12 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
       onWhatsappColor: Color.lerp(onWhatsappColor, other.onWhatsappColor, t)!,
       creditSurface: Color.lerp(creditSurface, other.creditSurface, t)!,
       paymentSurface: Color.lerp(paymentSurface, other.paymentSurface, t)!,
+      lockAccentSurface: Color.lerp(
+        lockAccentSurface,
+        other.lockAccentSurface,
+        t,
+      )!,
+      lockKeySurface: Color.lerp(lockKeySurface, other.lockKeySurface, t)!,
       warningColor: Color.lerp(warningColor, other.warningColor, t)!,
       onboardingGradientStart: Color.lerp(
         onboardingGradientStart,

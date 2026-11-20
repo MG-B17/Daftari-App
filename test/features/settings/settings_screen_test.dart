@@ -15,6 +15,9 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
+import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
+import 'package:daftariapp/features/security/presentation/screens/pin_lock_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:daftariapp/features/settings/presentation/widgets/language_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +26,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../dashboard_test_setup.dart';
+import '../../security_test_setup.dart';
 
 class _Storage extends Mock implements LocalStorageService {}
 
@@ -32,6 +36,7 @@ typedef _Harness = ({
   GoRouter router,
   LocalStorageService storage,
   SettingsCubit cubit,
+  AppLockCubit security,
 });
 
 ErrorHandler _errorHandler() =>
@@ -42,6 +47,7 @@ Future<_Harness> _pumpSettings(
   String localeCode = 'ar',
   ThemeMode themeMode = ThemeMode.light,
   Size size = const Size(400, 900),
+  TestSecurityRepository? securityRepository,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -59,18 +65,52 @@ Future<_Harness> _pumpSettings(
     ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
     _errorHandler(),
   );
-  final router = AppRouter.create(localStorage: storage);
-  await tester.pumpWidget(DaftariApp(router: router, settingsCubit: cubit));
+  final security = await testAppLock(repository: securityRepository);
+  final router = AppRouter.create(localStorage: storage, appLock: security);
+  await tester.pumpWidget(
+    DaftariApp(router: router, settingsCubit: cubit, appLockCubit: security),
+  );
   await tester.pumpAndSettle();
   router.go(AppRoutes.settings);
   await tester.pumpAndSettle();
-  return (router: router, storage: storage, cubit: cubit);
+  return (router: router, storage: storage, cubit: cubit, security: security);
 }
 
 Future<void> _dispose(WidgetTester tester, _Harness harness) async {
   await tester.pumpWidget(const SizedBox());
   harness.router.dispose();
   await harness.cubit.close();
+  await harness.security.close();
+}
+
+Future<void> _digits(WidgetTester tester, String value) async {
+  for (final digit in value.split('')) {
+    final key = find.widgetWithText(FilledButton, digit);
+    await tester.ensureVisible(key);
+    await tester.tap(key);
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _openTile(WidgetTester tester, String label) async {
+  await tester.scrollUntilVisible(
+    find.text(label),
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(find.text(label));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _unlockAndOpenSettings(
+  WidgetTester tester,
+  _Harness harness, {
+  String pin = '2468',
+}) async {
+  await _digits(tester, pin);
+  harness.router.go(AppRoutes.settings);
+  await tester.pumpAndSettle();
+  expect(find.byType(SettingsScreen), findsOneWidget);
 }
 
 void main() {
@@ -79,6 +119,84 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(ThemeMode.system);
+  });
+
+  testWidgets('security session survives settings and ScreenUtil rebuilds', (
+    tester,
+  ) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+    AppLockCubit security() =>
+        tester.element(find.byType(SettingsScreen)).read<AppLockCubit>();
+    final original = security();
+    await original.setup('9876');
+    await original.setBiometric(true);
+    await harness.cubit.setThemeMode(ThemeMode.dark);
+    await tester.pumpAndSettle();
+    await harness.cubit.setLocaleCode('ar');
+    await tester.pumpAndSettle();
+    tester.view.physicalSize = const Size(430, 850);
+    await tester.pumpAndSettle();
+    expect(security(), same(original));
+    expect(security().state.settings.isPinEnabled, isTrue);
+    expect(security().state.settings.isBiometricEnabled, isTrue);
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('security setup, cancel and verified disable round trip', (
+    tester,
+  ) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+    final cubit = tester
+        .element(find.byType(SettingsScreen))
+        .read<AppLockCubit>();
+    Future<void> openPin() async {
+      await tester.scrollUntilVisible(
+        find.text('App PIN'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('App PIN'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> digits(String value) async {
+      for (final digit in value.split('')) {
+        final key = find.widgetWithText(FilledButton, digit);
+        await tester.ensureVisible(key);
+        await tester.tap(key);
+        await tester.pumpAndSettle();
+      }
+    }
+
+    await openPin();
+    harness.router.pop();
+    await tester.pumpAndSettle();
+    expect(cubit.state.settings.isPinEnabled, isFalse);
+    await openPin();
+    await digits('9876');
+    await digits('9876');
+    expect(cubit.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.byType(PinLockScreen), findsNothing);
+    await tester.scrollUntilVisible(
+      find.text('Change PIN'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Change PIN'));
+    await tester.pumpAndSettle();
+    await digits('9876');
+    await digits('2468');
+    await digits('2468');
+    expect(cubit.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.byType(PinLockScreen), findsNothing);
+    await openPin();
+    await digits('2468');
+    expect(cubit.state.settings.isPinEnabled, isFalse);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.byType(PinLockScreen), findsNothing);
+    await _dispose(tester, harness);
   });
 
   testWidgets('Arabic settings render RTL sections and the app version', (
@@ -104,6 +222,11 @@ void main() {
     expect(find.text(l10n.settingsAppearanceCaption), findsOneWidget);
     expect(find.text(l10n.settingsLanguageTitle), findsOneWidget);
     expect(find.text(l10n.settingsLanguageArabic), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(l10n.settingsAboutTitle),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text(l10n.settingsAboutTitle), findsOneWidget);
     expect(find.text(l10n.settingsVersionLabel), findsOneWidget);
     expect(
@@ -124,6 +247,11 @@ void main() {
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('App language'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('About'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('About'), findsOneWidget);
     await _dispose(tester, harness);
   });
@@ -265,7 +393,10 @@ void main() {
       handler,
     );
     final router = AppRouter.create();
-    await tester.pumpWidget(DaftariApp(router: router, settingsCubit: cubit));
+    final security = await testAppLock();
+    await tester.pumpWidget(
+      DaftariApp(router: router, settingsCubit: cubit, appLockCubit: security),
+    );
     await tester.pumpAndSettle();
     router.go(AppRoutes.settings);
     await tester.pumpAndSettle();
@@ -283,6 +414,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     router.dispose();
     await cubit.close();
+    await security.close();
   });
 
   testWidgets('settings fit a narrow RTL screen with enlarged text', (
@@ -301,6 +433,75 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('language-option-en')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('enabling PIN returns to Settings instead of dashboard', (
+    tester,
+  ) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+    await _openTile(tester, 'App PIN');
+    expect(find.text('Create your PIN'), findsOneWidget);
+
+    await _digits(tester, '1357');
+    await _digits(tester, '1357');
+
+    expect(harness.security.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(
+      harness.router.routeInformationProvider.value.uri.path,
+      AppRoutes.settings,
+    );
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('changing PIN returns to Settings instead of dashboard', (
+    tester,
+  ) async {
+    final repository = TestSecurityRepository(pin: '2468');
+    final harness = await _pumpSettings(
+      tester,
+      localeCode: 'en',
+      securityRepository: repository,
+    );
+    await _unlockAndOpenSettings(tester, harness);
+
+    await _openTile(tester, 'Change PIN');
+    await _digits(tester, '2468');
+    await _digits(tester, '1357');
+    await _digits(tester, '1357');
+
+    expect(repository.pin, '1357');
+    expect(harness.security.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(
+      harness.router.routeInformationProvider.value.uri.path,
+      AppRoutes.settings,
+    );
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('disabling PIN returns to Settings instead of dashboard', (
+    tester,
+  ) async {
+    final repository = TestSecurityRepository(pin: '2468');
+    final harness = await _pumpSettings(
+      tester,
+      localeCode: 'en',
+      securityRepository: repository,
+    );
+    await _unlockAndOpenSettings(tester, harness);
+
+    await _openTile(tester, 'App PIN');
+    await _digits(tester, '2468');
+
+    expect(repository.pin, isNull);
+    expect(harness.security.state.settings.isPinEnabled, isFalse);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(
+      harness.router.routeInformationProvider.value.uri.path,
+      AppRoutes.settings,
+    );
     await _dispose(tester, harness);
   });
 }

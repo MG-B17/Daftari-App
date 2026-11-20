@@ -14,6 +14,9 @@ import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/layout/presentation/screens/app_layout_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/security/presentation/cubit/app_lock_cubit.dart';
+import '../../features/security/domain/entities/pin_flow_mode.dart';
+import '../../features/security/presentation/screens/pin_lock_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/statements/presentation/screens/statement_screen.dart';
 import '../../features/statements/presentation/cubit/statement_cubit.dart';
@@ -29,9 +32,58 @@ abstract final class AppRouter {
   static GoRouter create({
     LocalStorageService? localStorage,
     OnboardingCubit Function()? createOnboardingCubit,
+    AppLockCubit? appLock,
   }) => GoRouter(
     initialLocation: AppRoutes.splash,
+    refreshListenable: appLock,
+    redirect: (context, state) {
+      if (appLock == null) return null;
+      final path = state.uri.path;
+      if (!appLock.state.initialized) {
+        return path == AppRoutes.splash ? null : AppRoutes.splash;
+      }
+      if (appLock.state.locked) {
+        return path == AppRoutes.lock ? null : AppRoutes.lock;
+      }
+      if (path == AppRoutes.lock) {
+        return localStorage != null && !localStorage.onboardingCompleted
+            ? AppRoutes.onboarding
+            : AppRoutes.root;
+      }
+      if (path == AppRoutes.settingsPin) {
+        final mode = state.uri.queryParameters['mode'];
+        if (mode == 'reset' ||
+            mode == 'unlock' ||
+            (mode == 'setup' && appLock.state.settings.isPinEnabled) ||
+            ((mode == 'change' || mode == 'disable') &&
+                !appLock.state.settings.isPinEnabled)) {
+          return AppRoutes.settings;
+        }
+      }
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: AppRoutes.lock,
+        name: AppRoutes.lockName,
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const PinLockScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsPin,
+        name: AppRoutes.settingsPinName,
+        pageBuilder: (context, state) {
+          final mode = switch (state.uri.queryParameters['mode']) {
+            'change' => PinFlowMode.change,
+            'disable' => PinFlowMode.disable,
+            _ => PinFlowMode.setup,
+          };
+          return FadeTransitionPage(
+            key: state.pageKey,
+            child: PinLockScreen(mode: mode),
+          );
+        },
+      ),
       GoRoute(
         path: AppRoutes.splash,
         name: AppRoutes.splashName,

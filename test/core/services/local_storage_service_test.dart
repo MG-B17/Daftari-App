@@ -10,6 +10,30 @@ class MockPreferences extends Mock implements SharedPreferences {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('security preferences are typed, persistent and fail safely', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final local = LocalStorageService(prefs);
+    expect(local.securityInitialized, isFalse);
+    expect(local.securityAutoLockTimeout, 'immediate');
+    expect(local.securityRevision, 0);
+    await local.markSecurityInitialized();
+    await local.setSecurityRevision(7);
+    await local.setSecurityAutoLockTimeout('fiveMinutes');
+    await prefs.reload();
+    expect(LocalStorageService(prefs).securityInitialized, isTrue);
+    expect(LocalStorageService(prefs).securityRevision, 7);
+    expect(LocalStorageService(prefs).securityAutoLockTimeout, 'fiveMinutes');
+    await expectLater(
+      local.setSecurityAutoLockTimeout('bad'),
+      throwsA(isA<ValidationException>()),
+    );
+    await prefs.setString('securityInitialized', 'bad');
+    expect(() => local.securityInitialized, throwsA(isA<StorageException>()));
+    await prefs.setString('securityRevision', 'bad');
+    expect(() => local.securityRevision, throwsA(isA<StorageException>()));
+  });
+
   test('defaults and persistence of typed preferences', () async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();

@@ -12,6 +12,7 @@ import 'package:daftariapp/features/settings/domain/usecases/change_language_use
 import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
+import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -47,7 +48,11 @@ void main() {
           );
           final router = AppRouter.create();
           await tester.pumpWidget(
-            DaftariApp(router: router, settingsCubit: cubit),
+            DaftariApp(
+              router: router,
+              settingsCubit: cubit,
+              appLockCubit: sl<AppLockCubit>(),
+            ),
           );
           await tester.pumpAndSettle();
           // Set the desired test settings through the production Cubit.

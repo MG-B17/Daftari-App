@@ -1,8 +1,12 @@
+import 'dart:ui' show Locale;
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
@@ -21,6 +25,12 @@ import '../../features/dashboard/domain/repositories/dashboard_repository.dart';
 import '../../features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/settings/presentation/cubit/settings_cubit.dart';
+import '../../features/security/data/repositories/security_repository_impl.dart';
+import '../../features/security/data/services/biometric_auth_service.dart';
+import '../../features/security/data/services/secure_storage_service.dart';
+import '../../features/security/domain/repositories/security_repository.dart';
+import '../../features/security/presentation/cubit/app_lock_cubit.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_settings_usecase.dart';
@@ -93,6 +103,45 @@ Future<void> configureDependencies() async {
   }
   if (!sl.isRegistered<ErrorHandler>()) {
     sl.registerLazySingleton<ErrorHandler>(() => ErrorHandler(sl<AppLogger>()));
+  }
+  if (!sl.isRegistered<FlutterSecureStorage>()) {
+    sl.registerLazySingleton<FlutterSecureStorage>(
+      () => const FlutterSecureStorage(
+        aOptions: AndroidOptions(resetOnError: false),
+      ),
+    );
+  }
+  if (!sl.isRegistered<LocalAuthentication>()) {
+    sl.registerLazySingleton<LocalAuthentication>(LocalAuthentication.new);
+  }
+  if (!sl.isRegistered<SecureStorageService>()) {
+    sl.registerLazySingleton<SecureStorageService>(
+      () => SecureStorageService(sl<FlutterSecureStorage>()),
+    );
+  }
+  if (!sl.isRegistered<BiometricAuthService>()) {
+    sl.registerLazySingleton<BiometricAuthService>(
+      () => BiometricAuthService(
+        sl<LocalAuthentication>(),
+        biometricReason: () =>
+            lookupAppLocalizations(Locale(sl<LocalStorageService>().localeCode))
+                .securityBiometricAction,
+        recoveryReason: () =>
+            lookupAppLocalizations(Locale(sl<LocalStorageService>().localeCode))
+                .securityRecoveryTitle,
+      ),
+    );
+  }
+  if (!sl.isRegistered<SecurityRepository>()) {
+    sl.registerLazySingleton<SecurityRepository>(
+      () => SecurityRepositoryImpl(
+        sl<SecureStorageService>(),
+        sl<BiometricAuthService>(),
+        sl<LocalStorageService>(),
+        sl<DateService>(),
+        sl<ErrorHandler>(),
+      ),
+    );
   }
   if (!sl.isRegistered<AppDatabase>()) {
     sl.registerLazySingleton<AppDatabase>(
@@ -318,10 +367,18 @@ Future<void> configureDependencies() async {
       dispose: (cubit) => cubit.close(),
     );
   }
+  if (!sl.isRegistered<AppLockCubit>()) {
+    sl.registerLazySingleton<AppLockCubit>(
+      () => AppLockCubit(sl<SecurityRepository>(), sl<DateService>()),
+      dispose: (cubit) => cubit.close(),
+    );
+  }
+  await sl<AppLockCubit>().initialize();
   if (!sl.isRegistered<GoRouter>()) {
     sl.registerLazySingleton<GoRouter>(
       () => AppRouter.create(
         localStorage: sl<LocalStorageService>(),
+        appLock: sl<AppLockCubit>(),
         createOnboardingCubit: () => sl<OnboardingCubit>(),
       ),
       dispose: (router) => router.dispose(),

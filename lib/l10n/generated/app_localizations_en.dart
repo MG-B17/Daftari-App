@@ -10,6 +10,135 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get securityTitle => 'Security';
+
+  @override
+  String get securityBrandCaption => 'Daftari • Ledger protection';
+
+  @override
+  String get securityPinHelper => 'Enter 4 digits to continue';
+
+  @override
+  String get securityClearAll => 'Clear all';
+
+  @override
+  String get securityPreview =>
+      'UI preview only — your app is not locked. Demo PIN: 1234.';
+
+  @override
+  String get securityPin => 'App PIN';
+
+  @override
+  String get securityPinDescription => 'Protect your ledger with a 4-digit PIN';
+
+  @override
+  String get securityChangePin => 'Change PIN';
+
+  @override
+  String get securityBiometrics => 'Biometric unlock';
+
+  @override
+  String get securityBiometricsDescription =>
+      'Use fingerprint or face recognition';
+
+  @override
+  String get securityAutoLock => 'Auto-lock';
+
+  @override
+  String get securityImmediate => 'Immediately';
+
+  @override
+  String get securityOneMinute => 'After 1 minute';
+
+  @override
+  String get securityFiveMinutes => 'After 5 minutes';
+
+  @override
+  String get securityUnlockTitle => 'Enter your PIN';
+
+  @override
+  String get securityUnlockSubtitle => 'Keep your customers and ledger private';
+
+  @override
+  String get securitySetupTitle => 'Create your PIN';
+
+  @override
+  String get securitySetupSubtitle => 'Choose a 4-digit PIN for your ledger';
+
+  @override
+  String get securityConfirmTitle => 'Confirm your PIN';
+
+  @override
+  String get securityConfirmSubtitle => 'Enter the same PIN again';
+
+  @override
+  String get securityChangeTitle => 'Change your PIN';
+
+  @override
+  String get securityDisableTitle => 'Turn off PIN';
+
+  @override
+  String get securityCurrentPin => 'Enter your current PIN to continue';
+
+  @override
+  String get securityResetTitle => 'Reset your PIN';
+
+  @override
+  String get securityPinError => 'PIN did not match. Please try again.';
+
+  @override
+  String get securityForgotPin => 'Forgot PIN?';
+
+  @override
+  String get securityBiometricAction => 'Unlock with biometrics';
+
+  @override
+  String get securityRecoveryTitle => 'Recover access';
+
+  @override
+  String get securityRecoveryGuidance =>
+      'Recovery requires a device screen lock. Without one, reinstalling the app is the only way to reset access and may permanently remove your local ledger. No data has been changed.';
+
+  @override
+  String get securityRecoveryPreview =>
+      'Preview device-credential recovery? No OS authentication will run and no real PIN will be reset.';
+
+  @override
+  String get securityBiometricPreview =>
+      'Preview biometric unlock? No OS authentication will run.';
+
+  @override
+  String get securityComplete => 'PIN updated';
+
+  @override
+  String get securityCompleteDescription =>
+      'Your security settings have been saved.';
+
+  @override
+  String get securityStorageError =>
+      'Security data could not be read or saved safely. Access is locked. Restart the app and try again. Your ledger has not been deleted.';
+
+  @override
+  String get securityAuthUnavailable =>
+      'Authentication was cancelled or unavailable. Please try again or use your app PIN.';
+
+  @override
+  String securityCooldown(int seconds) {
+    return 'Too many attempts. Try again in $seconds seconds.';
+  }
+
+  @override
+  String get securityDone => 'Done';
+
+  @override
+  String get securityDeleteDigit => 'Delete last digit';
+
+  @override
+  String securityPinProgress(int count) {
+    return '$count of 4 PIN digits entered';
+  }
+
+  @override
   String get appTitle => 'Daftari';
 
   @override
