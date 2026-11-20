@@ -505,4 +505,78 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dashboardTipMessage =>
       'سجل كل قرش أول بأول عشان حسابك وحق زباينك ما يضيعش.';
+
+  @override
+  String get statementTitle => 'كشف حساب العميل';
+
+  @override
+  String get statementPreviewTitle => 'معاينة الرسالة قبل الإرسال للعميل';
+
+  @override
+  String get statementPreviewSubtitle =>
+      'يمكنك مراجعة البنود والمبالغ قبل مشاركتها مع العميل.';
+
+  @override
+  String get statementMockNotice =>
+      'كشف تجريبي — ليس من بيانات هذا العميل. التصفية والمشاركة والنسخ غير متاحة في هذه المعاينة.';
+
+  @override
+  String statementGeneratedAt(String date, String time) {
+    return 'بتاريخ: $date • $time';
+  }
+
+  @override
+  String get statementBalance => 'إجمالي الحساب المستحق (عليه)';
+
+  @override
+  String get statementBalanceHint => 'مطلوب سداد المبلغ أو دفعة منه';
+
+  @override
+  String get statementRangeAll => 'كل الفترات';
+
+  @override
+  String get statementRangeLast30Days => 'آخر 30 يوم';
+
+  @override
+  String get statementRangeThisMonth => 'هذا الشهر';
+
+  @override
+  String get statementRangeCustom => 'فترة مخصصة';
+
+  @override
+  String get statementEntriesTitle => 'حركات الحساب';
+
+  @override
+  String get statementFooter => 'شكرًا لتعاملكم معنا، نسعد بخدمتكم دائمًا.';
+
+  @override
+  String get statementWhatsApp => 'إرسال عبر واتساب';
+
+  @override
+  String get statementCopy => 'نسخ النص';
+
+  @override
+  String get statementShareHint =>
+      'سيتم فتح واتساب وإعداد نص الكشف، وتختار أنت وقت الإرسال.';
+
+  @override
+  String get statementShareWithCustomer => 'مشاركة كشف الحساب مع العميل';
+
+  @override
+  String get statementSampleCustomer => 'الحاج محمود الشناوي';
+
+  @override
+  String get statementSampleCredit1 => 'سكر وزيت كرتونة';
+
+  @override
+  String get statementSampleCredit2 => 'جبنة بيضاء 2 كجم';
+
+  @override
+  String get statementSampleCredit3 => 'طلبات تموين منزلية';
+
+  @override
+  String get statementSamplePayment1 => 'دفعة نقدية باليد';
+
+  @override
+  String get statementSamplePayment2 => 'تحويل فودافون كاش';
 }

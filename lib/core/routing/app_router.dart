@@ -15,6 +15,7 @@ import '../../features/layout/presentation/screens/app_layout_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
+import '../../features/statements/presentation/screens/statement_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
 import '../services/local_storage_service.dart';
 import '../animation/screen_transition_animation/fade_transition_page.dart';
@@ -154,6 +155,14 @@ abstract final class AppRouter {
                 sl<CustomerFormCubit>()..load(state.pathParameters['id']!),
             child: CustomerFormScreen(customerId: state.pathParameters['id']!),
           ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.customerStatement,
+        name: AppRoutes.customerStatementName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: StatementScreen(customerId: state.pathParameters['id']!),
         ),
       ),
       GoRoute(

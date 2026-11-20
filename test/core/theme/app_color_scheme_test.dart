@@ -19,6 +19,10 @@ List<Color> _values(AppColorScheme colors) => [
   colors.onboardingGradientMiddle,
   colors.onboardingGradientEnd,
   colors.customersAccentSurface,
+  colors.whatsappColor,
+  colors.onWhatsappColor,
+  colors.creditSurface,
+  colors.paymentSurface,
 ];
 
 void main() {
@@ -60,6 +64,10 @@ void main() {
       onboardingGradientMiddle: AppColors.creditSurface,
       onboardingGradientEnd: AppColors.paymentSurface,
       customersAccentSurface: AppColors.input,
+      whatsappColor: AppColors.text,
+      onWhatsappColor: AppColors.paper,
+      creditSurface: AppColors.background,
+      paymentSurface: AppColors.paper,
     );
     final base = AppColorScheme.light;
     final copies = [
@@ -77,6 +85,10 @@ void main() {
       ),
       base.copyWith(onboardingGradientEnd: replacement.onboardingGradientEnd),
       base.copyWith(customersAccentSurface: replacement.customersAccentSurface),
+      base.copyWith(whatsappColor: replacement.whatsappColor),
+      base.copyWith(onWhatsappColor: replacement.onWhatsappColor),
+      base.copyWith(creditSurface: replacement.creditSurface),
+      base.copyWith(paymentSurface: replacement.paymentSurface),
     ];
     for (var index = 0; index < copies.length; index++) {
       final expected = _values(base);

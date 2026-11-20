@@ -1033,6 +1033,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record every penny as it happens so your accounts and your customers\' rights are never lost.'**
   String get dashboardTipMessage;
+
+  /// No description provided for @statementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer statement'**
+  String get statementTitle;
+
+  /// No description provided for @statementPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview before sending'**
+  String get statementPreviewTitle;
+
+  /// No description provided for @statementPreviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the entries before sharing with your customer.'**
+  String get statementPreviewSubtitle;
+
+  /// No description provided for @statementMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample statement — not this customer\'s data. Filters, sharing, and copying are not available in this preview.'**
+  String get statementMockNotice;
+
+  /// No description provided for @statementGeneratedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Generated: {date} • {time}'**
+  String statementGeneratedAt(String date, String time);
+
+  /// No description provided for @statementBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Total outstanding balance'**
+  String get statementBalance;
+
+  /// No description provided for @statementBalanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Please pay the balance or make a payment'**
+  String get statementBalanceHint;
+
+  /// No description provided for @statementRangeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get statementRangeAll;
+
+  /// No description provided for @statementRangeLast30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 days'**
+  String get statementRangeLast30Days;
+
+  /// No description provided for @statementRangeThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get statementRangeThisMonth;
+
+  /// No description provided for @statementRangeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom range'**
+  String get statementRangeCustom;
+
+  /// No description provided for @statementEntriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account activity'**
+  String get statementEntriesTitle;
+
+  /// No description provided for @statementFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for shopping with us. We\'re always happy to help.'**
+  String get statementFooter;
+
+  /// No description provided for @statementWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send via WhatsApp'**
+  String get statementWhatsApp;
+
+  /// No description provided for @statementCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get statementCopy;
+
+  /// No description provided for @statementShareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens WhatsApp with the statement ready. You choose when to send.'**
+  String get statementShareHint;
+
+  /// No description provided for @statementShareWithCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Share statement with customer'**
+  String get statementShareWithCustomer;
+
+  /// No description provided for @statementSampleCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mahmoud El Shenawy'**
+  String get statementSampleCustomer;
+
+  /// No description provided for @statementSampleCredit1.
+  ///
+  /// In en, this message translates to:
+  /// **'Sugar and a carton of oil'**
+  String get statementSampleCredit1;
+
+  /// No description provided for @statementSampleCredit2.
+  ///
+  /// In en, this message translates to:
+  /// **'2 kg of cheese'**
+  String get statementSampleCredit2;
+
+  /// No description provided for @statementSampleCredit3.
+  ///
+  /// In en, this message translates to:
+  /// **'Household groceries'**
+  String get statementSampleCredit3;
+
+  /// No description provided for @statementSamplePayment1.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash payment'**
+  String get statementSamplePayment1;
+
+  /// No description provided for @statementSamplePayment2.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash wallet transfer'**
+  String get statementSamplePayment2;
 }
 
 class _AppLocalizationsDelegate
