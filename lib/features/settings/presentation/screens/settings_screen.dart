@@ -10,6 +10,7 @@ import '../widgets/about_section.dart';
 import '../widgets/language_tile.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/theme_mode_selector.dart';
+import '../../../security/presentation/widgets/security_settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -36,6 +37,8 @@ class SettingsScreen extends StatelessWidget {
                 title: context.l10n.settingsLanguageTitle,
                 child: const LanguageTile(),
               ),
+              SizedBox(height: AppSpacing.settingsSectionGap),
+              const SecuritySettingsSection(),
               SizedBox(height: AppSpacing.settingsSectionGap),
               const AboutSection(),
             ],

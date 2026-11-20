@@ -2,10 +2,12 @@ import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:drift/native.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 Future<AppDatabase> setupCustomerTests({bool seed = true}) async {
   await sl.reset();
   SharedPreferences.setMockInitialValues({});
+  FlutterSecureStorage.setMockInitialValues({});
   final database = AppDatabase(NativeDatabase.memory());
   sl.registerSingleton<AppDatabase>(database, dispose: (db) => db.close());
   await configureDependencies();

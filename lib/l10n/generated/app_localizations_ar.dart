@@ -10,6 +10,134 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get securityTitle => 'الأمان';
+
+  @override
+  String get securityBrandCaption => 'دفتري • حماية الدفتر';
+
+  @override
+  String get securityPinHelper => 'أدخل 4 أرقام للمتابعة';
+
+  @override
+  String get securityClearAll => 'مسح الكل';
+
+  @override
+  String get securityPreview =>
+      'معاينة للواجهة فقط — التطبيق غير مقفل. رمز التجربة: 1234.';
+
+  @override
+  String get securityPin => 'رمز قفل التطبيق';
+
+  @override
+  String get securityPinDescription => 'احمِ دفترك برمز من 4 أرقام';
+
+  @override
+  String get securityChangePin => 'تغيير رمز القفل';
+
+  @override
+  String get securityBiometrics => 'الفتح بالبصمة';
+
+  @override
+  String get securityBiometricsDescription => 'استخدم بصمة الإصبع أو الوجه';
+
+  @override
+  String get securityAutoLock => 'القفل التلقائي';
+
+  @override
+  String get securityImmediate => 'فورًا';
+
+  @override
+  String get securityOneMinute => 'بعد دقيقة';
+
+  @override
+  String get securityFiveMinutes => 'بعد 5 دقائق';
+
+  @override
+  String get securityUnlockTitle => 'أدخل الرقم السري';
+
+  @override
+  String get securityUnlockSubtitle =>
+      'لحماية حسابات الزبائن والديون من أعين المتطفلين';
+
+  @override
+  String get securitySetupTitle => 'إنشاء رمز القفل';
+
+  @override
+  String get securitySetupSubtitle => 'اختر رمزًا من 4 أرقام لحماية دفترك';
+
+  @override
+  String get securityConfirmTitle => 'تأكيد رمز القفل';
+
+  @override
+  String get securityConfirmSubtitle => 'أدخل نفس الرمز مرة أخرى';
+
+  @override
+  String get securityChangeTitle => 'تغيير رمز القفل';
+
+  @override
+  String get securityDisableTitle => 'إيقاف رمز القفل';
+
+  @override
+  String get securityCurrentPin => 'أدخل رمز القفل الحالي للمتابعة';
+
+  @override
+  String get securityResetTitle => 'إعادة تعيين رمز القفل';
+
+  @override
+  String get securityPinError => 'الرمز غير متطابق. حاول مرة أخرى.';
+
+  @override
+  String get securityForgotPin => 'نسيت رمز القفل؟';
+
+  @override
+  String get securityBiometricAction => 'الفتح بالبصمة';
+
+  @override
+  String get securityRecoveryTitle => 'استعادة الوصول';
+
+  @override
+  String get securityRecoveryGuidance =>
+      'تتطلب الاستعادة قفل شاشة الجهاز. بدونه، لا يمكن إعادة تعيين الوصول إلا بإعادة تثبيت التطبيق، وقد يؤدي ذلك إلى فقدان دفتر الديون المحلي نهائيًا. لم تتغير أي بيانات.';
+
+  @override
+  String get securityRecoveryPreview =>
+      'معاينة الاستعادة بقفل الجهاز؟ لن تُجرى مصادقة فعلية ولن يتغير أي رمز حقيقي.';
+
+  @override
+  String get securityBiometricPreview =>
+      'معاينة الفتح بالبصمة؟ لن تُجرى مصادقة فعلية.';
+
+  @override
+  String get securityComplete => 'تم تحديث رمز القفل';
+
+  @override
+  String get securityCompleteDescription => 'تم حفظ إعدادات الأمان.';
+
+  @override
+  String get securityStorageError =>
+      'تعذرت قراءة بيانات الأمان أو حفظها بأمان. الوصول مقفل. أعد تشغيل التطبيق وحاول مجددًا. لم يُحذف دفتر الديون.';
+
+  @override
+  String get securityAuthUnavailable =>
+      'أُلغيت المصادقة أو تعذرت. حاول مجددًا أو استخدم رمز قفل التطبيق.';
+
+  @override
+  String securityCooldown(int seconds) {
+    return 'محاولات كثيرة. حاول مجددًا بعد $seconds ثانية.';
+  }
+
+  @override
+  String get securityDone => 'تم';
+
+  @override
+  String get securityDeleteDigit => 'حذف آخر رقم';
+
+  @override
+  String securityPinProgress(int count) {
+    return 'تم إدخال $count من 4 أرقام';
+  }
+
+  @override
   String get appTitle => 'دفتري';
 
   @override

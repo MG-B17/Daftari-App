@@ -5,6 +5,16 @@ import 'app_colors.dart';
 
 /// All design-space sizing lives here, not in feature widgets.
 abstract final class AppSpacing {
+  static double get pinMaxWidth => 360.w.clamp(280, 400).toDouble();
+  static double get pinKeySize => 64.r.clamp(48, 80).toDouble();
+  static double get pinDotSize => 16.r;
+  static double get pinDotGap => 20.r;
+  static double get pinLogoSize => 72.r;
+  static double get pinBookSize => 36.r;
+  static double get pinBadgeSize => 26.r;
+  static double get pinBadgeIconSize => 16.r;
+  static double get pinSectionGap => 72.h;
+  static double get pinTopInset => 40.h;
   static const exportWidth = 420.0;
   static const exportPadding = 24.0;
   static const exportGap = 12.0;

@@ -7,6 +7,10 @@ abstract final class AppRoutes {
   static const onboardingName = 'onboarding';
   static const settings = '/settings';
   static const settingsName = 'settings';
+  static const lock = '/lock';
+  static const lockName = 'lock';
+  static const settingsPin = '/settings/pin';
+  static const settingsPinName = 'settings-pin';
   static const customers = '/customers';
   static const customersName = 'customers';
   static const customerNew = '/customers/new';

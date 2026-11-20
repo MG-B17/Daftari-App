@@ -10,6 +10,7 @@ import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/app_logger.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
+import 'features/security/presentation/cubit/app_lock_cubit.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -31,6 +32,10 @@ Future<void> main() async {
   };
 
   runApp(
-    DaftariApp(router: sl<GoRouter>(), settingsCubit: sl<SettingsCubit>()),
+    DaftariApp(
+      router: sl<GoRouter>(),
+      settingsCubit: sl<SettingsCubit>(),
+      appLockCubit: sl<AppLockCubit>(),
+    ),
   );
 }

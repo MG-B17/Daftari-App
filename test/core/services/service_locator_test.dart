@@ -28,6 +28,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:daftariapp/features/security/data/services/secure_storage_service.dart';
+import 'package:daftariapp/features/security/data/services/biometric_auth_service.dart';
+import 'package:daftariapp/features/security/domain/repositories/security_repository.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 
 void main() {
@@ -35,6 +40,7 @@ void main() {
   setUp(() async {
     await sl.reset();
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
   });
   tearDown(() => sl.reset());
 
@@ -69,6 +75,11 @@ void main() {
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
+        sl<FlutterSecureStorage>(),
+        sl<LocalAuthentication>(),
+        sl<SecureStorageService>(),
+        sl<BiometricAuthService>(),
+        sl<SecurityRepository>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -95,11 +106,20 @@ void main() {
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
+        sl<FlutterSecureStorage>(),
+        sl<LocalAuthentication>(),
+        sl<SecureStorageService>(),
+        sl<BiometricAuthService>(),
+        sl<SecurityRepository>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
       }
       expect(sl<DateService>(), isA<SystemDateService>());
+      expect(
+        sl<FlutterSecureStorage>().aOptions.toMap()['resetOnError'],
+        'false',
+      );
       // Debug setup and handling do not access Firebase without initialization.
       await sl<ErrorHandler>().handle(Exception('private details'));
     },

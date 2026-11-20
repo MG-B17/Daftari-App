@@ -98,6 +98,240 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @securityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get securityTitle;
+
+  /// No description provided for @securityBrandCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Daftari • Ledger protection'**
+  String get securityBrandCaption;
+
+  /// No description provided for @securityPinHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 4 digits to continue'**
+  String get securityPinHelper;
+
+  /// No description provided for @securityClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get securityClearAll;
+
+  /// No description provided for @securityPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'UI preview only — your app is not locked. Demo PIN: 1234.'**
+  String get securityPreview;
+
+  /// No description provided for @securityPin.
+  ///
+  /// In en, this message translates to:
+  /// **'App PIN'**
+  String get securityPin;
+
+  /// No description provided for @securityPinDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your ledger with a 4-digit PIN'**
+  String get securityPinDescription;
+
+  /// No description provided for @securityChangePin.
+  ///
+  /// In en, this message translates to:
+  /// **'Change PIN'**
+  String get securityChangePin;
+
+  /// No description provided for @securityBiometrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric unlock'**
+  String get securityBiometrics;
+
+  /// No description provided for @securityBiometricsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fingerprint or face recognition'**
+  String get securityBiometricsDescription;
+
+  /// No description provided for @securityAutoLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-lock'**
+  String get securityAutoLock;
+
+  /// No description provided for @securityImmediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get securityImmediate;
+
+  /// No description provided for @securityOneMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'After 1 minute'**
+  String get securityOneMinute;
+
+  /// No description provided for @securityFiveMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'After 5 minutes'**
+  String get securityFiveMinutes;
+
+  /// No description provided for @securityUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your PIN'**
+  String get securityUnlockTitle;
+
+  /// No description provided for @securityUnlockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your customers and ledger private'**
+  String get securityUnlockSubtitle;
+
+  /// No description provided for @securitySetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your PIN'**
+  String get securitySetupTitle;
+
+  /// No description provided for @securitySetupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a 4-digit PIN for your ledger'**
+  String get securitySetupSubtitle;
+
+  /// No description provided for @securityConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your PIN'**
+  String get securityConfirmTitle;
+
+  /// No description provided for @securityConfirmSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the same PIN again'**
+  String get securityConfirmSubtitle;
+
+  /// No description provided for @securityChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change your PIN'**
+  String get securityChangeTitle;
+
+  /// No description provided for @securityDisableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off PIN'**
+  String get securityDisableTitle;
+
+  /// No description provided for @securityCurrentPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current PIN to continue'**
+  String get securityCurrentPin;
+
+  /// No description provided for @securityResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset your PIN'**
+  String get securityResetTitle;
+
+  /// No description provided for @securityPinError.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN did not match. Please try again.'**
+  String get securityPinError;
+
+  /// No description provided for @securityForgotPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot PIN?'**
+  String get securityForgotPin;
+
+  /// No description provided for @securityBiometricAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with biometrics'**
+  String get securityBiometricAction;
+
+  /// No description provided for @securityRecoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover access'**
+  String get securityRecoveryTitle;
+
+  /// No description provided for @securityRecoveryGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery requires a device screen lock. Without one, reinstalling the app is the only way to reset access and may permanently remove your local ledger. No data has been changed.'**
+  String get securityRecoveryGuidance;
+
+  /// No description provided for @securityRecoveryPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview device-credential recovery? No OS authentication will run and no real PIN will be reset.'**
+  String get securityRecoveryPreview;
+
+  /// No description provided for @securityBiometricPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview biometric unlock? No OS authentication will run.'**
+  String get securityBiometricPreview;
+
+  /// No description provided for @securityComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN updated'**
+  String get securityComplete;
+
+  /// No description provided for @securityCompleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your security settings have been saved.'**
+  String get securityCompleteDescription;
+
+  /// No description provided for @securityStorageError.
+  ///
+  /// In en, this message translates to:
+  /// **'Security data could not be read or saved safely. Access is locked. Restart the app and try again. Your ledger has not been deleted.'**
+  String get securityStorageError;
+
+  /// No description provided for @securityAuthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication was cancelled or unavailable. Please try again or use your app PIN.'**
+  String get securityAuthUnavailable;
+
+  /// No description provided for @securityCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in {seconds} seconds.'**
+  String securityCooldown(int seconds);
+
+  /// No description provided for @securityDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get securityDone;
+
+  /// No description provided for @securityDeleteDigit.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete last digit'**
+  String get securityDeleteDigit;
+
+  /// No description provided for @securityPinProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of 4 PIN digits entered'**
+  String securityPinProgress(int count);
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
