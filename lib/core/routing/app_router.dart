@@ -16,6 +16,7 @@ import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/statements/presentation/screens/statement_screen.dart';
+import '../../features/statements/presentation/cubit/statement_cubit.dart';
 import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
 import '../services/local_storage_service.dart';
 import '../animation/screen_transition_animation/fade_transition_page.dart';
@@ -162,7 +163,11 @@ abstract final class AppRouter {
         name: AppRoutes.customerStatementName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: StatementScreen(customerId: state.pathParameters['id']!),
+          child: BlocProvider(
+            create: (_) =>
+                sl<StatementCubit>()..load(state.pathParameters['id']!),
+            child: StatementScreen(customerId: state.pathParameters['id']!),
+          ),
         ),
       ),
       GoRoute(

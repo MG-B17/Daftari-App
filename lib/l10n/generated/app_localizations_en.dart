@@ -518,6 +518,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementTitle => 'Customer statement';
 
   @override
+  String get statementLoadError =>
+      'Could not load the statement. Please try again.';
+
+  @override
+  String get statementShareError =>
+      'Could not share the statement. Please try again.';
+
+  @override
+  String get statementCopyError =>
+      'Could not copy the statement. Please try again.';
+
+  @override
+  String get statementCopied => 'Statement copied';
+
+  @override
+  String get statementEmpty => 'No transactions in this period.';
+
+  @override
+  String get statementSettledHint => 'No outstanding balance';
+
+  @override
+  String get statementCreditBalanceHint => 'Credit in the customer\'s favor';
+
+  @override
+  String statementPeriodCredit(String amount) {
+    return 'Period credit total: $amount';
+  }
+
+  @override
+  String statementPeriodPayment(String amount) {
+    return 'Period payment total: $amount';
+  }
+
+  @override
   String get statementPreviewTitle => 'Preview before sending';
 
   @override

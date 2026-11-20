@@ -510,6 +510,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get statementTitle => 'كشف حساب العميل';
 
   @override
+  String get statementLoadError => 'تعذر تحميل كشف الحساب. حاول مرة أخرى.';
+
+  @override
+  String get statementShareError => 'تعذرت مشاركة كشف الحساب. حاول مرة أخرى.';
+
+  @override
+  String get statementCopyError => 'تعذر نسخ كشف الحساب. حاول مرة أخرى.';
+
+  @override
+  String get statementCopied => 'تم نسخ كشف الحساب';
+
+  @override
+  String get statementEmpty => 'لا توجد معاملات في هذه الفترة.';
+
+  @override
+  String get statementSettledHint => 'لا يوجد رصيد مستحق';
+
+  @override
+  String get statementCreditBalanceHint => 'رصيد لصالح العميل';
+
+  @override
+  String statementPeriodCredit(String amount) {
+    return 'إجمالي الآجل للفترة: $amount';
+  }
+
+  @override
+  String statementPeriodPayment(String amount) {
+    return 'إجمالي السداد للفترة: $amount';
+  }
+
+  @override
   String get statementPreviewTitle => 'معاينة الرسالة قبل الإرسال للعميل';
 
   @override

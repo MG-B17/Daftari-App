@@ -1,25 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/app_date_utils.dart';
+import '../../../transactions/domain/entities/transaction_entity.dart';
+import '../../domain/entities/customer_statement_entity.dart';
+import '../../domain/entities/statement_date_range.dart';
+import '../cubit/statement_cubit.dart';
 
 class StatementPreviewCard extends StatelessWidget {
-  const StatementPreviewCard({super.key});
+  const StatementPreviewCard({super.key, required this.statement});
+
+  final CustomerStatementEntity statement;
+
+  Future<void> _customRange(BuildContext context) async {
+    final cubit = context.read<StatementCubit>();
+    final range = statement.range;
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(1),
+      lastDate: DateTime(9999, 12, 31),
+      currentDate: statement.generatedAt,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          datePickerTheme: DatePickerTheme.of(context).copyWith(
+            rangePickerHeaderHeadlineStyle: context.textTheme.titleMedium,
+          ),
+        ),
+        child: child!,
+      ),
+      initialDateRange: range.type == StatementDateRangeType.custom
+          ? DateTimeRange(start: range.start!, end: range.end!)
+          : null,
+    );
+    if (!context.mounted || picked == null) return;
+    await cubit.setRange(
+      StatementDateRange.custom(start: picked.start, end: picked.end),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final generatedAt = DateTime(2023, 10, 24, 15);
-    final entries = [
-      (note: l10n.statementSampleCredit1, amount: 45000, day: 24),
-      (note: l10n.statementSamplePayment1, amount: -20000, day: 24),
-      (note: l10n.statementSampleCredit2, amount: 30000, day: 23),
-      (note: l10n.statementSamplePayment2, amount: -50000, day: 12),
-      (note: l10n.statementSampleCredit3, amount: 120000, day: 10),
-    ];
-    final balance = entries.fold(0, (total, entry) => total + entry.amount);
+    final generatedAt = statement.generatedAt;
+    final balance = statement.balancePiasters;
+    final creditBalance = balance > 0;
     return ClipRRect(
       borderRadius: AppSpacing.borderRadius,
       child: ColoredBox(
@@ -78,11 +105,13 @@ class StatementPreviewCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l10n.statementSampleCustomer),
-                              const Text(
-                                '01098765432',
-                                textDirection: TextDirection.ltr,
-                              ),
+                              Text(statement.customer.name),
+                              if (statement.customer.phone?.trim().isNotEmpty ??
+                                  false)
+                                Text(
+                                  statement.customer.phone!.trim(),
+                                  textDirection: TextDirection.ltr,
+                                ),
                             ],
                           ),
                         ),
@@ -94,7 +123,9 @@ class StatementPreviewCard extends StatelessWidget {
             ),
             Container(
               padding: AppSpacing.pagePadding,
-              color: context.appColors.creditSurface,
+              color: creditBalance
+                  ? context.appColors.creditSurface
+                  : context.appColors.paymentSurface,
               child: Column(
                 children: [
                   Text(l10n.statementBalance, textAlign: TextAlign.center),
@@ -103,13 +134,19 @@ class StatementPreviewCard extends StatelessWidget {
                     context.formatMoney(balance),
                     key: const ValueKey('statement-balance'),
                     style: context.textTheme.headlineMedium?.copyWith(
-                      color: context.appColors.creditColor,
+                      color: creditBalance
+                          ? context.appColors.creditColor
+                          : context.appColors.paymentColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   SizedBox(height: AppSpacing.sm),
                   Text(
-                    l10n.statementBalanceHint,
+                    creditBalance
+                        ? l10n.statementBalanceHint
+                        : balance < 0
+                        ? l10n.statementCreditBalanceHint
+                        : l10n.statementSettledHint,
                     textAlign: TextAlign.center,
                     style: context.textTheme.bodySmall,
                   ),
@@ -133,11 +170,29 @@ class StatementPreviewCard extends StatelessWidget {
                       ].indexed)
                         ChoiceChip(
                           label: Text(label),
-                          selected: index == 0,
-                          onSelected: null,
+                          key: ValueKey('statement-range-$index'),
+                          selected: statement.range.type.index == index,
+                          onSelected: (_) {
+                            if (index == 3) {
+                              _customRange(context);
+                            } else {
+                              context.read<StatementCubit>().setRange(
+                                [
+                                  StatementDateRange.all,
+                                  StatementDateRange.last30Days,
+                                  StatementDateRange.thisMonth,
+                                ][index],
+                              );
+                            }
+                          },
                         ),
                     ],
                   ),
+                  if (statement.range.type == StatementDateRangeType.custom)
+                    Text(
+                      '${AppDateUtils.formatDate(statement.range.start!, locale: locale)}'
+                      ' – ${AppDateUtils.formatDate(statement.range.end!, locale: locale)}',
+                    ),
                   SizedBox(height: AppSpacing.sm),
                   const Divider(),
                   SizedBox(height: AppSpacing.sm),
@@ -146,15 +201,34 @@ class StatementPreviewCard extends StatelessWidget {
                     style: context.textTheme.titleMedium,
                   ),
                   SizedBox(height: AppSpacing.sm),
-                  for (final entry in entries)
+                  if (statement.entries.isEmpty) Text(l10n.statementEmpty),
+                  for (final entry in statement.entries)
                     _StatementEntry(
-                      note: entry.note,
-                      amount: entry.amount,
+                      key: ValueKey('statement-entry-${entry.id}'),
+                      note: entry.note?.trim().isNotEmpty ?? false
+                          ? entry.note!.trim()
+                          : entry.type == TransactionType.credit
+                          ? l10n.transactionCreditBadge
+                          : l10n.transactionPaymentBadge,
+                      amount: entry.type == TransactionType.credit
+                          ? entry.amountPiasters
+                          : -entry.amountPiasters,
                       date: AppDateUtils.formatDate(
-                        DateTime(2023, 10, entry.day),
+                        entry.transactionDate,
                         locale: locale,
                       ),
                     ),
+                  const Divider(),
+                  Text(
+                    l10n.statementPeriodCredit(
+                      context.formatMoney(statement.periodCreditPiasters),
+                    ),
+                  ),
+                  Text(
+                    l10n.statementPeriodPayment(
+                      context.formatMoney(statement.periodPaymentPiasters),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -176,6 +250,7 @@ class StatementPreviewCard extends StatelessWidget {
 
 class _StatementEntry extends StatelessWidget {
   const _StatementEntry({
+    super.key,
     required this.note,
     required this.amount,
     required this.date,

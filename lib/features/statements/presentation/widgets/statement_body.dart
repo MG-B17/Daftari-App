@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../cubit/statement_cubit.dart';
 import 'statement_actions_section.dart';
 import 'statement_preview_card.dart';
 
 class StatementBody extends StatelessWidget {
-  const StatementBody({super.key});
+  const StatementBody({super.key, required this.state});
+
+  final StatementState state;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -49,15 +52,9 @@ class StatementBody extends StatelessWidget {
               ),
             ),
             SizedBox(height: AppSpacing.compact),
-            Text(
-              context.l10n.statementMockNotice,
-              key: const ValueKey('statement-mock-notice'),
-              style: context.textTheme.bodySmall,
-            ),
+            StatementPreviewCard(statement: state.statement!),
             SizedBox(height: AppSpacing.compact),
-            const StatementPreviewCard(),
-            SizedBox(height: AppSpacing.compact),
-            const StatementActionsSection(),
+            StatementActionsSection(state: state),
           ],
         ),
       ),

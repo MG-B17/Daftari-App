@@ -7,6 +7,7 @@ import 'package:daftariapp/core/utils/money_utils.dart';
 import 'package:daftariapp/core/widgets/app_confirmation_dialog.dart';
 import 'package:daftariapp/features/customers/domain/entities/customer_entity.dart';
 import 'package:daftariapp/features/customers/presentation/widgets/customer_details_body.dart';
+import 'package:daftariapp/features/statements/presentation/screens/statement_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -52,6 +53,25 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('01124567890'), findsOneWidget);
         expect(find.byKey(const ValueKey('customer-call')), findsOneWidget);
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('customer-statement')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('customer-statement')));
+        await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+        });
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<StatementScreen>(find.byType(StatementScreen))
+              .customerId,
+          id,
+        );
+        expect(find.byKey(const ValueKey('statement-balance')), findsOneWidget);
+        router.pop();
+        await tester.pumpAndSettle();
         router.go('/customers/$id/edit');
         await tester.pumpAndSettle();
         expect(find.text('01124567890'), findsOneWidget);

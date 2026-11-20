@@ -1040,6 +1040,60 @@ abstract class AppLocalizations {
   /// **'Customer statement'**
   String get statementTitle;
 
+  /// No description provided for @statementLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the statement. Please try again.'**
+  String get statementLoadError;
+
+  /// No description provided for @statementShareError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share the statement. Please try again.'**
+  String get statementShareError;
+
+  /// No description provided for @statementCopyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not copy the statement. Please try again.'**
+  String get statementCopyError;
+
+  /// No description provided for @statementCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement copied'**
+  String get statementCopied;
+
+  /// No description provided for @statementEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions in this period.'**
+  String get statementEmpty;
+
+  /// No description provided for @statementSettledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No outstanding balance'**
+  String get statementSettledHint;
+
+  /// No description provided for @statementCreditBalanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit in the customer\'s favor'**
+  String get statementCreditBalanceHint;
+
+  /// No description provided for @statementPeriodCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Period credit total: {amount}'**
+  String statementPeriodCredit(String amount);
+
+  /// No description provided for @statementPeriodPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Period payment total: {amount}'**
+  String statementPeriodPayment(String amount);
+
   /// No description provided for @statementPreviewTitle.
   ///
   /// In en, this message translates to:
