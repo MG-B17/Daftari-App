@@ -513,4 +513,113 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dashboardTipMessage =>
       'Record every penny as it happens so your accounts and your customers\' rights are never lost.';
+
+  @override
+  String get statementTitle => 'Customer statement';
+
+  @override
+  String get statementLoadError =>
+      'Could not load the statement. Please try again.';
+
+  @override
+  String get statementShareError =>
+      'Could not share the statement. Please try again.';
+
+  @override
+  String get statementCopyError =>
+      'Could not copy the statement. Please try again.';
+
+  @override
+  String get statementCopied => 'Statement copied';
+
+  @override
+  String get statementEmpty => 'No transactions in this period.';
+
+  @override
+  String get statementSettledHint => 'No outstanding balance';
+
+  @override
+  String get statementCreditBalanceHint => 'Credit in the customer\'s favor';
+
+  @override
+  String statementPeriodCredit(String amount) {
+    return 'Period credit total: $amount';
+  }
+
+  @override
+  String statementPeriodPayment(String amount) {
+    return 'Period payment total: $amount';
+  }
+
+  @override
+  String get statementPreviewTitle => 'Preview before sending';
+
+  @override
+  String get statementPreviewSubtitle =>
+      'Review the entries before sharing with your customer.';
+
+  @override
+  String get statementMockNotice =>
+      'Sample statement — not this customer\'s data. Filters, sharing, and copying are not available in this preview.';
+
+  @override
+  String statementGeneratedAt(String date, String time) {
+    return 'Generated: $date • $time';
+  }
+
+  @override
+  String get statementBalance => 'Total outstanding balance';
+
+  @override
+  String get statementBalanceHint => 'Please pay the balance or make a payment';
+
+  @override
+  String get statementRangeAll => 'All time';
+
+  @override
+  String get statementRangeLast30Days => 'Last 30 days';
+
+  @override
+  String get statementRangeThisMonth => 'This month';
+
+  @override
+  String get statementRangeCustom => 'Custom range';
+
+  @override
+  String get statementEntriesTitle => 'Account activity';
+
+  @override
+  String get statementFooter =>
+      'Thank you for shopping with us. We\'re always happy to help.';
+
+  @override
+  String get statementWhatsApp => 'Send via WhatsApp';
+
+  @override
+  String get statementCopy => 'Copy text';
+
+  @override
+  String get statementShareHint =>
+      'Opens WhatsApp with the statement ready. You choose when to send.';
+
+  @override
+  String get statementShareWithCustomer => 'Share statement with customer';
+
+  @override
+  String get statementSampleCustomer => 'Mahmoud El Shenawy';
+
+  @override
+  String get statementSampleCredit1 => 'Sugar and a carton of oil';
+
+  @override
+  String get statementSampleCredit2 => '2 kg of cheese';
+
+  @override
+  String get statementSampleCredit3 => 'Household groceries';
+
+  @override
+  String get statementSamplePayment1 => 'Cash payment';
+
+  @override
+  String get statementSamplePayment2 => 'Cash wallet transfer';
 }

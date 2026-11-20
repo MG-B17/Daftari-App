@@ -26,6 +26,11 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_settings_usecase.dart';
 import '../../features/settings/domain/usecases/change_language_usecase.dart';
 import '../../features/settings/domain/usecases/change_theme_usecase.dart';
+import '../../features/statements/data/repositories/statement_repository_impl.dart';
+import '../../features/statements/data/services/statement_share_service.dart';
+import '../../features/statements/domain/repositories/statement_repository.dart';
+import '../../features/statements/domain/usecases/get_customer_statement_usecase.dart';
+import '../../features/statements/presentation/cubit/statement_cubit.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/create_transaction_usecase.dart';
@@ -125,6 +130,34 @@ Future<void> configureDependencies() async {
         sl<TransactionDao>(),
         sl<ErrorHandler>(),
         sl<DateService>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<StatementRepository>()) {
+    sl.registerLazySingleton<StatementRepository>(
+      () => StatementRepositoryImpl(
+        sl<CustomerDao>(),
+        sl<TransactionDao>(),
+        sl<DateService>(),
+        sl<ErrorHandler>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<GetCustomerStatementUseCase>()) {
+    sl.registerLazySingleton<GetCustomerStatementUseCase>(
+      () => GetCustomerStatementUseCase(sl<StatementRepository>()),
+    );
+  }
+  if (!sl.isRegistered<StatementShareService>()) {
+    sl.registerLazySingleton<StatementShareService>(
+      () => StatementShareService(sl<ErrorHandler>()),
+    );
+  }
+  if (!sl.isRegistered<StatementCubit>()) {
+    sl.registerFactory(
+      () => StatementCubit(
+        sl<GetCustomerStatementUseCase>(),
+        sl<StatementShareService>(),
       ),
     );
   }

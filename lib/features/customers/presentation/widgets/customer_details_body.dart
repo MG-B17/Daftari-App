@@ -157,6 +157,18 @@ class CustomerDetailsBody extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: AppSpacing.lg),
+                      FilledButton.tonalIcon(
+                        key: const ValueKey('customer-statement'),
+                        onPressed: deleting
+                            ? null
+                            : () => context.pushNamed(
+                                AppRoutes.customerStatementName,
+                                pathParameters: {'id': customer.id},
+                              ),
+                        icon: const Icon(Icons.share_outlined),
+                        label: Text(l10n.statementShareWithCustomer),
+                      ),
+                      SizedBox(height: AppSpacing.sm),
                       OutlinedButton.icon(
                         onPressed: deleting
                             ? null

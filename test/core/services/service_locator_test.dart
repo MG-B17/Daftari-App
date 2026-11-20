@@ -13,6 +13,11 @@ import 'package:daftariapp/features/settings/domain/repositories/settings_reposi
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
+import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
+import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
+import 'package:daftariapp/features/statements/domain/repositories/statement_repository.dart';
+import 'package:daftariapp/features/statements/domain/usecases/get_customer_statement_usecase.dart';
+import 'package:daftariapp/features/statements/presentation/cubit/statement_cubit.dart';
 import 'package:daftariapp/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/create_transaction_usecase.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/edit_transaction_usecase.dart';
@@ -61,6 +66,9 @@ void main() {
         sl<WatchCustomerTransactionsUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<StatementRepository>(),
+        sl<GetCustomerStatementUseCase>(),
+        sl<StatementShareService>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -84,6 +92,9 @@ void main() {
         sl<WatchCustomerTransactionsUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<StatementRepository>(),
+        sl<GetCustomerStatementUseCase>(),
+        sl<StatementShareService>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
@@ -114,6 +125,23 @@ void main() {
     expect(second.state.pageIndex, 0);
     await first.close();
     await second.close();
+  });
+
+  test('statement cubit is factory scoped after repeated setup', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    sl.registerSingleton<AppDatabase>(database);
+    await Future.wait([configureDependencies(), configureDependencies()]);
+    final first = sl<StatementCubit>();
+    await configureDependencies();
+    final second = sl<StatementCubit>();
+    addTearDown(first.close);
+    addTearDown(second.close);
+    expect(first, isNot(same(second)));
+    expect(first.state, const StatementState());
+    expect(second.state, const StatementState());
+    await first.setRange(StatementDateRange.thisMonth);
+    expect(second.state.range, StatementDateRange.all);
   });
 
   test(

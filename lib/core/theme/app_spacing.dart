@@ -5,6 +5,9 @@ import 'app_colors.dart';
 
 /// All design-space sizing lives here, not in feature widgets.
 abstract final class AppSpacing {
+  static double get statementMaxWidth => 520.w.clamp(0, 520).toDouble();
+  static double get statementBrandBar => 6.r;
+  static double get statementActionHeight => 56.r;
   static double get xs => 4.r;
   static double get sm => 8.r;
   static double get md => 16.r;

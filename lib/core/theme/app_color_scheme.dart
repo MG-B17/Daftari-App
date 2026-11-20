@@ -14,6 +14,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     required this.onboardingGradientMiddle,
     required this.onboardingGradientEnd,
     required this.customersAccentSurface,
+    required this.whatsappColor,
+    required this.onWhatsappColor,
+    required this.creditSurface,
+    required this.paymentSurface,
   });
 
   static const light = AppColorScheme(
@@ -27,6 +31,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onboardingGradientMiddle: AppColors.surface,
     onboardingGradientEnd: AppColors.onboardingGradientEnd,
     customersAccentSurface: AppColors.customersAccentSurface,
+    whatsappColor: AppColors.whatsapp,
+    onWhatsappColor: AppColors.text,
+    creditSurface: AppColors.creditSurface,
+    paymentSurface: AppColors.paymentSurface,
   );
 
   static final dark = AppColorScheme(
@@ -44,6 +52,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     )!,
     onboardingGradientEnd: AppColors.darkSurface,
     customersAccentSurface: AppColors.customersDarkAccentSurface,
+    whatsappColor: AppColors.whatsapp,
+    onWhatsappColor: AppColors.text,
+    creditSurface: Color.lerp(AppColors.darkSurface, AppColors.credit, .2)!,
+    paymentSurface: Color.lerp(AppColors.darkSurface, AppColors.payment, .2)!,
   );
 
   final Color brand;
@@ -56,6 +68,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
   final Color onboardingGradientMiddle;
   final Color onboardingGradientEnd;
   final Color customersAccentSurface;
+  final Color whatsappColor;
+  final Color onWhatsappColor;
+  final Color creditSurface;
+  final Color paymentSurface;
 
   @override
   AppColorScheme copyWith({
@@ -69,6 +85,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     Color? onboardingGradientMiddle,
     Color? onboardingGradientEnd,
     Color? customersAccentSurface,
+    Color? whatsappColor,
+    Color? onWhatsappColor,
+    Color? creditSurface,
+    Color? paymentSurface,
   }) => AppColorScheme(
     brand: brand ?? this.brand,
     paperBackground: paperBackground ?? this.paperBackground,
@@ -83,6 +103,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     onboardingGradientEnd: onboardingGradientEnd ?? this.onboardingGradientEnd,
     customersAccentSurface:
         customersAccentSurface ?? this.customersAccentSurface,
+    whatsappColor: whatsappColor ?? this.whatsappColor,
+    onWhatsappColor: onWhatsappColor ?? this.onWhatsappColor,
+    creditSurface: creditSurface ?? this.creditSurface,
+    paymentSurface: paymentSurface ?? this.paymentSurface,
   );
 
   @override
@@ -98,6 +122,10 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
       )!,
       paymentColor: Color.lerp(paymentColor, other.paymentColor, t)!,
       creditColor: Color.lerp(creditColor, other.creditColor, t)!,
+      whatsappColor: Color.lerp(whatsappColor, other.whatsappColor, t)!,
+      onWhatsappColor: Color.lerp(onWhatsappColor, other.onWhatsappColor, t)!,
+      creditSurface: Color.lerp(creditSurface, other.creditSurface, t)!,
+      paymentSurface: Color.lerp(paymentSurface, other.paymentSurface, t)!,
       warningColor: Color.lerp(warningColor, other.warningColor, t)!,
       onboardingGradientStart: Color.lerp(
         onboardingGradientStart,
