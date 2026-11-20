@@ -13,7 +13,6 @@ import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/theme/app_color_scheme.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
 import 'package:daftariapp/features/statements/data/repositories/statement_repository_impl.dart';
-import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
 import 'package:daftariapp/features/statements/domain/entities/customer_statement_entity.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
 import 'package:daftariapp/features/statements/domain/formatters/statement_formatter.dart';
@@ -31,6 +30,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../domain/statement_fixtures.dart';
+import '../statement_image_fakes.dart';
 
 typedef _Result = Either<AppFailure, CustomerStatementEntity?>;
 
@@ -67,7 +67,6 @@ void main() {
   late List<Uri> launches;
   late List<ShareParams> shares;
   late List<String> logs;
-  late bool launchSucceeds;
   late bool shareThrows;
   late bool clipboardThrows;
   late ShareResultStatus shareStatus;
@@ -83,7 +82,6 @@ void main() {
     launches = [];
     shares = [];
     logs = [];
-    launchSucceeds = true;
     shareThrows = false;
     clipboardThrows = false;
     shareStatus = ShareResultStatus.success;
@@ -92,18 +90,15 @@ void main() {
     sl.registerFactory<StatementCubit>(() {
       cubit = StatementCubit(
         GetCustomerStatementUseCase(source),
-        StatementShareService(
+        MemoryStatementShareService(
           ErrorHandler(AppLogger(output: logs.add)),
-          launcher: (uri, {required mode}) async {
-            launches.add(uri);
-            return launchSucceeds;
-          },
-          systemShare: (params) async {
+          handler: (params) async {
             shares.add(params);
             if (shareThrows) throw StateError('Private platform error');
             return pendingShare?.future ?? ShareResult('', shareStatus);
           },
         ),
+        FakeStatementImageRenderer(),
       );
       return cubit;
     });
@@ -148,9 +143,14 @@ void main() {
   Future<void> tapAction(WidgetTester tester, String key) async {
     final finder = find.byKey(ValueKey(key));
     await tester.ensureVisible(finder);
-    await tester.pumpAndSettle();
+    if (cubit.state.sharing) {
+      await tester.pump();
+    } else {
+      await tester.pumpAndSettle();
+    }
     await tester.tap(finder);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    if (!cubit.state.sharing) await tester.pumpAndSettle();
   }
 
   for (final locale in ['ar', 'en']) {
@@ -271,36 +271,45 @@ void main() {
     },
   );
 
-  testWidgets(
-    'WhatsApp failure falls back with exact text and nonempty origin',
-    (tester) async {
-      launchSucceeds = false;
-      await pump(tester);
-      await tapAction(tester, 'statement-whatsapp');
-      expect(launches.single.scheme, 'whatsapp');
-      expect(
-        shares.single.text,
-        StatementFormatter.format(cubit.state.statement!, locale: 'en'),
-      );
-      expect(shares.single.sharePositionOrigin!.isEmpty, isFalse);
-      expect(find.text(l10n(tester).statementShareError), findsNothing);
-      expect(logs, isEmpty);
-    },
-  );
+  testWidgets('primary action shares PNG files with nonempty origin', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tapAction(tester, 'statement-whatsapp');
+    expect(launches, isEmpty);
+    expect(shares.single.text, isNull);
+    expect(shares.single.files!.single.mimeType, 'image/png');
+    expect(shares.single.sharePositionOrigin!.isEmpty, isFalse);
+    expect(find.text(l10n(tester).statementShareError), findsNothing);
+    expect(logs, isEmpty);
+  });
 
   testWidgets(
     'sharing disables duplicate actions and dismissal is not an error',
     (tester) async {
-      launchSucceeds = false;
       pendingShare = Completer<ShareResult>();
       await pump(tester);
+      final preview = tester.widget(
+        find.byKey(const ValueKey('statement-balance')),
+      );
       await tapAction(tester, 'statement-whatsapp');
-      for (final key in ['statement-whatsapp', 'statement-copy']) {
+      for (final key in ['statement-whatsapp']) {
         expect(
           tester.widget<FilledButton>(find.byKey(ValueKey(key))).onPressed,
           isNull,
         );
       }
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester.widget(find.byKey(const ValueKey('statement-balance'))),
+        same(preview),
+      );
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const ValueKey('statement-copy')))
+            .onPressed,
+        isNotNull,
+      );
       pendingShare!.complete(
         const ShareResult('', ShareResultStatus.dismissed),
       );
@@ -313,7 +322,6 @@ void main() {
   testWidgets('share and clipboard errors display safe localized feedback', (
     tester,
   ) async {
-    launchSucceeds = false;
     shareThrows = true;
     clipboardThrows = true;
     await pump(tester);

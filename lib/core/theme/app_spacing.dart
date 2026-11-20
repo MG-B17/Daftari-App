@@ -5,6 +5,14 @@ import 'app_colors.dart';
 
 /// All design-space sizing lives here, not in feature widgets.
 abstract final class AppSpacing {
+  static const exportWidth = 420.0;
+  static const exportPadding = 24.0;
+  static const exportGap = 12.0;
+  static const exportSmallGap = 6.0;
+  static const exportFont = 14.0;
+  static const exportTitleFont = 22.0;
+  static const exportAmountFont = 28.0;
+  static const exportRadius = 16.0;
   static double get statementMaxWidth => 520.w.clamp(0, 520).toDouble();
   static double get statementBrandBar => 6.r;
   static double get statementActionHeight => 56.r;

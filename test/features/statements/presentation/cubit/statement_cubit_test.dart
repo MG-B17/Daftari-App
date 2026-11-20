@@ -11,7 +11,6 @@ import 'package:daftariapp/features/statements/data/services/statement_share_ser
 import 'package:daftariapp/features/statements/domain/entities/customer_statement_entity.dart';
 import 'package:daftariapp/features/statements/domain/entities/share_statement_result.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
-import 'package:daftariapp/features/statements/domain/formatters/statement_formatter.dart';
 import 'package:daftariapp/features/statements/domain/repositories/statement_repository.dart';
 import 'package:daftariapp/features/statements/domain/usecases/get_customer_statement_usecase.dart';
 import 'package:daftariapp/features/statements/presentation/cubit/statement_cubit.dart';
@@ -20,6 +19,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../domain/statement_fixtures.dart';
+import '../../statement_image_fakes.dart';
 
 typedef _StatementResult = Either<AppFailure, CustomerStatementEntity?>;
 
@@ -47,13 +47,16 @@ void main() {
   late List<Uri> launches;
   late List<ShareParams> shares;
   late List<String> logs;
-  late bool launchSucceeds;
+  late FakeStatementImageRenderer renderer;
   late ShareResultStatus shareStatus;
   late bool shareThrows;
   Completer<ShareResult>? pendingShare;
 
-  StatementCubit build() =>
-      StatementCubit(GetCustomerStatementUseCase(repository), service);
+  StatementCubit build() => StatementCubit(
+    GetCustomerStatementUseCase(repository),
+    service,
+    renderer,
+  );
 
   setUpAll(AppDateUtils.initialize);
   setUp(() {
@@ -61,17 +64,13 @@ void main() {
     launches = [];
     shares = [];
     logs = [];
-    launchSucceeds = true;
+    renderer = FakeStatementImageRenderer();
     shareStatus = ShareResultStatus.success;
     shareThrows = false;
     pendingShare = null;
-    service = StatementShareService(
+    service = MemoryStatementShareService(
       ErrorHandler(AppLogger(output: logs.add)),
-      launcher: (uri, {required mode}) async {
-        launches.add(uri);
-        return launchSucceeds;
-      },
-      systemShare: (params) async {
+      handler: (params) async {
         shares.add(params);
         if (shareThrows) throw StateError('PRIVATE statement and phone');
         return pendingShare?.future ?? ShareResult('', shareStatus);
@@ -258,7 +257,7 @@ void main() {
 
   for (final locale in ['ar', 'en']) {
     blocTest<StatementCubit, StatementState>(
-      'WhatsApp shares the exact $locale snapshot and phone',
+      'image renderer receives the exact $locale snapshot',
       build: build,
       setUp: () => repository.handler = (_, _) async => Right(statement),
       act: (cubit) async {
@@ -271,22 +270,22 @@ void main() {
         StatementState(
           loading: false,
           statement: statement,
-          shareResult: ShareStatementResult.whatsapp,
+          shareResult: ShareStatementResult.systemShare,
         ),
       ],
       verify: (_) {
-        expect(launches.single.queryParameters['phone'], '201012345678');
-        expect(
-          launches.single.queryParameters['text'],
-          StatementFormatter.format(statement, locale: locale),
-        );
-        expect(shares, isEmpty);
+        expect(renderer.requests.single, (
+          statement: statement,
+          locale: locale,
+        ));
+        expect(shares.single.text, isNull);
+        expect(shares.single.files!.single.mimeType, 'image/png');
       },
     );
   }
 
   blocTest<StatementCubit, StatementState>(
-    'direct system sharing passes full filtered text and share-sheet origin',
+    'system sharing renders filtered snapshot and preserves share-sheet origin',
     build: build,
     act: (cubit) async {
       await cubit.load('c1', range: StatementDateRange.thisMonth);
@@ -306,17 +305,15 @@ void main() {
     verify: (cubit) {
       expect(launches, isEmpty);
       expect(shares.single.sharePositionOrigin, origin);
-      expect(
-        shares.single.text,
-        StatementFormatter.format(cubit.state.statement!, locale: 'en'),
-      );
+      expect(shares.single.text, isNull);
+      expect(renderer.requests.single.statement, cubit.state.statement);
+      expect(renderer.requests.single.locale, 'en');
     },
   );
 
   test(
-    'WhatsApp fallback is reported as system sharing and preserves origin',
+    'WhatsApp action uses native image sharing and preserves origin',
     () async {
-      launchSucceeds = false;
       final cubit = build();
       addTearDown(cubit.close);
       await cubit.load('c1');
@@ -394,7 +391,7 @@ void main() {
       expect(cubit.state.sharing, isFalse);
       expect(cubit.state.shareResult, isNull);
       await cubit.shareViaWhatsApp();
-      expect(launches, hasLength(1));
+      expect(shares, hasLength(2));
     },
   );
 
@@ -452,4 +449,29 @@ void main() {
     await share;
     expect(cubit.state, closedState);
   });
+
+  test(
+    'async renderer stream failure is private, resets busy, and allows retry',
+    () async {
+      final cubit = build();
+      addTearDown(cubit.close);
+      await cubit.load('c1');
+      renderer.throwsError = true;
+      final share = cubit.shareViaSystem();
+      expect(cubit.state.sharing, isTrue);
+      expect(renderer.requests, isEmpty);
+      await share;
+      expect(renderer.requests, hasLength(1));
+      expect(
+        cubit.state.shareFailure,
+        const AppFailure(AppErrorCode.unexpected),
+      );
+      expect(cubit.state.sharing, isFalse);
+      expect(shares, isEmpty);
+      expect(logs, isEmpty);
+      renderer.throwsError = false;
+      await cubit.shareViaSystem();
+      expect(cubit.state.shareResult, ShareStatementResult.systemShare);
+    },
+  );
 }

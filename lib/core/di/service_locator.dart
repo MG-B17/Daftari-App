@@ -31,6 +31,7 @@ import '../../features/statements/data/services/statement_share_service.dart';
 import '../../features/statements/domain/repositories/statement_repository.dart';
 import '../../features/statements/domain/usecases/get_customer_statement_usecase.dart';
 import '../../features/statements/presentation/cubit/statement_cubit.dart';
+import '../../features/statements/presentation/services/statement_image_renderer.dart';
 import '../../features/transactions/data/repositories/transaction_repository_impl.dart';
 import '../../features/transactions/domain/repositories/transaction_repository.dart';
 import '../../features/transactions/domain/usecases/create_transaction_usecase.dart';
@@ -49,6 +50,7 @@ import '../services/connectivity_service.dart';
 import '../services/contact_picker_service.dart';
 import '../services/date_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/widget_image_exporter.dart';
 import '../utils/app_date_utils.dart';
 
 final sl = GetIt.instance;
@@ -148,6 +150,14 @@ Future<void> configureDependencies() async {
       () => GetCustomerStatementUseCase(sl<StatementRepository>()),
     );
   }
+  if (!sl.isRegistered<WidgetImageExporter>()) {
+    sl.registerLazySingleton<WidgetImageExporter>(WidgetImageExporter.new);
+  }
+  if (!sl.isRegistered<StatementImageRenderer>()) {
+    sl.registerLazySingleton<StatementImageRenderer>(
+      () => WidgetStatementImageRenderer(sl<WidgetImageExporter>()),
+    );
+  }
   if (!sl.isRegistered<StatementShareService>()) {
     sl.registerLazySingleton<StatementShareService>(
       () => StatementShareService(sl<ErrorHandler>()),
@@ -158,6 +168,7 @@ Future<void> configureDependencies() async {
       () => StatementCubit(
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
+        sl<StatementImageRenderer>(),
       ),
     );
   }

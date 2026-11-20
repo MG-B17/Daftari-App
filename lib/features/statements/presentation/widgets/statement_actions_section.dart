@@ -14,7 +14,11 @@ class StatementActionsSection extends StatelessWidget {
 
   Future<void> _copy(BuildContext context) async {
     final cubit = context.read<StatementCubit>();
-    if (!cubit.state.canShare) return;
+    if (cubit.state.loading ||
+        cubit.state.failure != null ||
+        cubit.state.statement == null) {
+      return;
+    }
     final snapshot = cubit.state.statement!;
     final locale = Localizations.localeOf(context).languageCode;
     var succeeded = false;
@@ -44,13 +48,18 @@ class StatementActionsSection extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Builder(
-        builder: (buttonContext) => FilledButton.icon(
+      BlocSelector<
+        StatementCubit,
+        StatementState,
+        ({bool enabled, bool sharing})
+      >(
+        selector: (state) => (enabled: state.canShare, sharing: state.sharing),
+        builder: (buttonContext, action) => FilledButton.icon(
           key: const ValueKey('statement-whatsapp'),
-          onPressed: state.canShare
+          onPressed: action.enabled
               ? () {
                   final box = buttonContext.findRenderObject()! as RenderBox;
-                  context.read<StatementCubit>().shareViaWhatsApp(
+                  context.read<StatementCubit>().shareViaSystem(
                     locale: Localizations.localeOf(context).languageCode,
                     sharePositionOrigin:
                         box.localToGlobal(Offset.zero) & box.size,
@@ -62,14 +71,22 @@ class StatementActionsSection extends StatelessWidget {
             foregroundColor: context.appColors.onWhatsappColor,
             minimumSize: Size.fromHeight(AppSpacing.statementActionHeight),
           ),
-          icon: const Icon(Icons.chat_outlined),
-          label: Text(context.l10n.statementWhatsApp),
+          icon: action.sharing
+              ? SizedBox.square(
+                  dimension: AppSpacing.iconSmall,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.share_outlined),
+          label: Text(context.l10n.statementImageShare),
         ),
       ),
       SizedBox(height: AppSpacing.sm),
       FilledButton.tonalIcon(
         key: const ValueKey('statement-copy'),
-        onPressed: state.canShare ? () => _copy(context) : null,
+        onPressed:
+            !state.loading && state.failure == null && state.statement != null
+            ? () => _copy(context)
+            : null,
         style: FilledButton.styleFrom(
           backgroundColor: context.appColors.customersAccentSurface,
           foregroundColor: context.colorScheme.onSurface,
