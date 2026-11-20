@@ -10,7 +10,7 @@ import '../../data/services/statement_share_service.dart';
 import '../../domain/entities/customer_statement_entity.dart';
 import '../../domain/entities/share_statement_result.dart';
 import '../../domain/entities/statement_date_range.dart';
-import '../../domain/formatters/statement_formatter.dart';
+import '../services/statement_image_renderer.dart';
 import '../../domain/usecases/get_customer_statement_usecase.dart';
 
 class StatementState extends Equatable {
@@ -52,11 +52,12 @@ class StatementState extends Equatable {
 }
 
 class StatementCubit extends Cubit<StatementState> {
-  StatementCubit(this._getStatement, this._shareService)
+  StatementCubit(this._getStatement, this._shareService, this._imageRenderer)
     : super(const StatementState());
 
   final GetCustomerStatementUseCase _getStatement;
   final StatementShareService _shareService;
+  final StatementImageRenderer _imageRenderer;
   String? _customerId;
   int _generation = 0;
   bool _sharing = false;
@@ -108,23 +109,14 @@ class StatementCubit extends Cubit<StatementState> {
   Future<void> shareViaWhatsApp({
     String locale = 'ar',
     Rect? sharePositionOrigin,
-  }) => _share(
-    viaWhatsApp: true,
-    locale: locale,
-    sharePositionOrigin: sharePositionOrigin,
-  );
+  }) => _share(locale: locale, sharePositionOrigin: sharePositionOrigin);
 
   Future<void> shareViaSystem({
     String locale = 'ar',
     Rect? sharePositionOrigin,
-  }) => _share(
-    viaWhatsApp: false,
-    locale: locale,
-    sharePositionOrigin: sharePositionOrigin,
-  );
+  }) => _share(locale: locale, sharePositionOrigin: sharePositionOrigin);
 
   Future<void> _share({
-    required bool viaWhatsApp,
     required String locale,
     Rect? sharePositionOrigin,
   }) async {
@@ -135,17 +127,10 @@ class StatementCubit extends Cubit<StatementState> {
     _emitShare(sharing: true);
     Either<AppFailure, ShareStatementResult> result;
     try {
-      final text = StatementFormatter.format(statement, locale: locale);
-      result = viaWhatsApp
-          ? await _shareService.shareViaWhatsApp(
-              text: text,
-              phone: statement.customer.phone,
-              sharePositionOrigin: sharePositionOrigin,
-            )
-          : await _shareService.shareViaSystem(
-              text: text,
-              sharePositionOrigin: sharePositionOrigin,
-            );
+      result = await _shareService.shareImages(
+        pages: _imageRenderer.render(statement, locale: locale),
+        sharePositionOrigin: sharePositionOrigin,
+      );
     } catch (_) {
       // Do not forward private formatter/plugin errors to observers or logs.
       result = const Left(AppFailure(AppErrorCode.unexpected));

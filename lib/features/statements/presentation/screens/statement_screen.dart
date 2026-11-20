@@ -15,6 +15,11 @@ class StatementScreen extends StatelessWidget {
   Widget build(BuildContext context) => AppScaffold(
     title: context.l10n.statementTitle,
     body: BlocConsumer<StatementCubit, StatementState>(
+      buildWhen: (previous, current) =>
+          previous.loading != current.loading ||
+          previous.range != current.range ||
+          previous.statement != current.statement ||
+          previous.failure != current.failure,
       listenWhen: (previous, current) =>
           current.shareFailure != null &&
           previous.shareFailure != current.shareFailure,

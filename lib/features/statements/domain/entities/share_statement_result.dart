@@ -1,1 +1,1 @@
-enum ShareStatementResult { whatsapp, systemShare, dismissed }
+enum ShareStatementResult { systemShare, dismissed }

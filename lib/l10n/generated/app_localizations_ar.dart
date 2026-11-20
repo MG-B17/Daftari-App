@@ -588,7 +588,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statementShareHint =>
-      'سيتم فتح واتساب وإعداد نص الكشف، وتختار أنت وقت الإرسال.';
+      'مشاركة صور كشف الحساب. اختر واتساب أو تطبيقًا آخر ثم أرسل.';
+
+  @override
+  String get statementImageTitle => 'كشف حساب';
+
+  @override
+  String get statementImageShare => 'مشاركة صورة كشف الحساب';
+
+  @override
+  String get statementImageFooter => 'تم إنشاء كشف الحساب بواسطة دفتري';
+
+  @override
+  String statementImagePage(int page, int total) {
+    return '$page / $total';
+  }
 
   @override
   String get statementShareWithCustomer => 'مشاركة كشف الحساب مع العميل';
