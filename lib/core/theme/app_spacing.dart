@@ -100,6 +100,13 @@ abstract final class AppSpacing {
       BorderRadius.circular(compact);
   static BorderRadius get settingsSheetRadius =>
       BorderRadius.vertical(top: Radius.circular(largeRadius));
+  static double get authMaxWidth => 520.w.clamp(0, 520).toDouble();
+  static double get authHeroSize => 96.r;
+  static double get authHeroIcon => 44.r;
+  static double get authBadgeIcon => 16.r;
+  static double get authNoteIcon => 22.r;
+  static EdgeInsets get authCardPadding => EdgeInsets.all(md);
+  static EdgeInsets get authNotePadding => EdgeInsets.all(compact);
   static double get customersMaxWidth => 520.w.clamp(0, 520).toDouble();
   static double get customersAvatarRadius => 24.r;
   static double get customersIllustrationSize => 144.r;

@@ -1483,6 +1483,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cash wallet transfer'**
   String get statementSamplePayment2;
+
+  /// No description provided for @authLoginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authLoginTitle;
+
+  /// No description provided for @authRegisterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get authRegisterTitle;
+
+  /// No description provided for @authForgotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get authForgotTitle;
+
+  /// No description provided for @authVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get authVerifyTitle;
+
+  /// No description provided for @authUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get authUpdateTitle;
+
+  /// No description provided for @authLoginHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your data from loss'**
+  String get authLoginHeading;
+
+  /// No description provided for @authLoginSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your local ledger to your account so customer balances and debts are never lost if your phone changes or is lost.'**
+  String get authLoginSubtitle;
+
+  /// No description provided for @authRegisterHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your data from loss'**
+  String get authRegisterHeading;
+
+  /// No description provided for @authRegisterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to link your local ledger for optional secure backup and restore, even if your phone is lost.'**
+  String get authRegisterSubtitle;
+
+  /// No description provided for @authForgotHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot your password?'**
+  String get authForgotHeading;
+
+  /// No description provided for @authForgotSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email and we will send you a link to reset your password.'**
+  String get authForgotSubtitle;
+
+  /// No description provided for @authVerifyHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inbox'**
+  String get authVerifyHeading;
+
+  /// No description provided for @authVerifySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a verification link to {email}. Open it to activate your account.'**
+  String authVerifySubtitle(String email);
+
+  /// No description provided for @authVerifyGenericSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the verification link in your email to activate your account.'**
+  String get authVerifyGenericSubtitle;
+
+  /// No description provided for @authUpdateHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password'**
+  String get authUpdateHeading;
+
+  /// No description provided for @authUpdateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new password for your account.'**
+  String get authUpdateSubtitle;
+
+  /// No description provided for @authSecureBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure encryption'**
+  String get authSecureBadge;
+
+  /// No description provided for @authEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get authEmail;
+
+  /// No description provided for @authEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'example@gmail.com'**
+  String get authEmailHint;
+
+  /// No description provided for @authPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPassword;
+
+  /// No description provided for @authPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get authPasswordHint;
+
+  /// No description provided for @authShowPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get authShowPassword;
+
+  /// No description provided for @authHidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get authHidePassword;
+
+  /// No description provided for @authForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// No description provided for @authSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authSignIn;
+
+  /// No description provided for @authNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account?'**
+  String get authNoAccount;
+
+  /// No description provided for @authCreateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new account'**
+  String get authCreateAccount;
+
+  /// No description provided for @authShopName.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop / merchant name'**
+  String get authShopName;
+
+  /// No description provided for @authShopNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Al-Amana Grocery or Abu Omar'**
+  String get authShopNameHint;
+
+  /// No description provided for @authShopNameViewerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on customer statements'**
+  String get authShopNameViewerHint;
+
+  /// No description provided for @authConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get authConfirmPassword;
+
+  /// No description provided for @authRegisterAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account and save ledger'**
+  String get authRegisterAction;
+
+  /// No description provided for @authHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get authHaveAccount;
+
+  /// No description provided for @authSignInLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authSignInLink;
+
+  /// No description provided for @authRegisterConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'By creating an account, you agree to the terms of use and data protection policy. Your ledger data remains yours alone.'**
+  String get authRegisterConsent;
+
+  /// No description provided for @authOfflineNoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ledger always works offline'**
+  String get authOfflineNoteTitle;
+
+  /// No description provided for @authOfflineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in enables optional secure backup to help protect your ledger if your phone is stolen or damaged.'**
+  String get authOfflineNote;
+
+  /// No description provided for @authContinueOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with local ledger (later)'**
+  String get authContinueOffline;
+
+  /// No description provided for @authContinueOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can keep using the ledger locally and back up later.'**
+  String get authContinueOfflineHint;
+
+  /// No description provided for @authLoginMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — sign-in isn\'t available yet.'**
+  String get authLoginMockNotice;
+
+  /// No description provided for @authRegisterMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — account creation isn\'t available yet.'**
+  String get authRegisterMockNotice;
+
+  /// No description provided for @authSendResetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset link'**
+  String get authSendResetLink;
+
+  /// No description provided for @authResetSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email'**
+  String get authResetSentTitle;
+
+  /// No description provided for @authResetSentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a password reset link to {email}.'**
+  String authResetSentMessage(String email);
+
+  /// No description provided for @authBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get authBackToLogin;
+
+  /// No description provided for @authForgotMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — no email will be sent.'**
+  String get authForgotMockNotice;
+
+  /// No description provided for @authResendVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend verification link'**
+  String get authResendVerification;
+
+  /// No description provided for @authResendSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification link sent again.'**
+  String get authResendSent;
+
+  /// No description provided for @authVerifiedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ve verified my email'**
+  String get authVerifiedAction;
+
+  /// No description provided for @authVerifyMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — email verification isn\'t available yet.'**
+  String get authVerifyMockNotice;
+
+  /// No description provided for @authNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get authNewPassword;
+
+  /// No description provided for @authUpdatePasswordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save password'**
+  String get authUpdatePasswordAction;
+
+  /// No description provided for @authUpdateMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — password update isn\'t available yet.'**
+  String get authUpdateMockNotice;
+
+  /// No description provided for @authPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get authPasswordMismatch;
+
+  /// No description provided for @authShopNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a shop name'**
+  String get authShopNameRequired;
+
+  /// No description provided for @authLinkDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link this ledger to your account?'**
+  String get authLinkDialogTitle;
+
+  /// No description provided for @authLinkDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This device\'s local ledger will be linked to your account. Nothing is uploaded yet, and your data stays on your device. Once linked, this device\'s ledger can only be used with this account.'**
+  String get authLinkDialogMessage;
+
+  /// No description provided for @authLinkDialogConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Link ledger'**
+  String get authLinkDialogConfirm;
+
+  /// No description provided for @authAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get authAccountTitle;
+
+  /// No description provided for @authAccountSignedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get authAccountSignedOutTitle;
+
+  /// No description provided for @authAccountSignedOutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Link your ledger to an account so your data is never lost.'**
+  String get authAccountSignedOutDescription;
+
+  /// No description provided for @authAccountSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get authAccountSignIn;
+
+  /// No description provided for @authAccountCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get authAccountCreate;
+
+  /// No description provided for @authAccountLinkedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger linked'**
+  String get authAccountLinkedTitle;
+
+  /// No description provided for @authAccountLinkedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked to {email}'**
+  String authAccountLinkedTo(String email);
+
+  /// No description provided for @authAccountVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get authAccountVerified;
+
+  /// No description provided for @authAccountEmailUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email not verified'**
+  String get authAccountEmailUnverified;
+
+  /// No description provided for @authAccountSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get authAccountSignOut;
+
+  /// No description provided for @authAccountLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is stored on this device'**
+  String get authAccountLocalOnly;
+
+  /// No description provided for @authAccountMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — account is not connected yet.'**
+  String get authAccountMockNotice;
+
+  /// No description provided for @authAccountSignOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out? Your local ledger data will not be deleted.'**
+  String get authAccountSignOutMessage;
 }
 
 class _AppLocalizationsDelegate

@@ -68,9 +68,8 @@ class AppTextField extends StatelessWidget {
             SizedBox(width: AppSpacing.sm),
             Flexible(
               child: Text(
-                isRequired
-                    ? l10n.requiredField
-                    : optionalLabel ?? l10n.optional,
+                optionalLabel ??
+                    (isRequired ? l10n.requiredField : l10n.optional),
                 style: theme.textTheme.bodySmall,
               ),
             ),

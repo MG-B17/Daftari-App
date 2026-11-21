@@ -1,6 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/update_password_screen.dart';
+import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/customers/domain/entities/picked_contact.dart';
 import '../../features/customers/presentation/cubit/customer_details_cubit.dart';
 import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
@@ -112,6 +117,46 @@ abstract final class AppRouter {
                 createOnboardingCubit?.call() ?? OnboardingCubit(localStorage!),
             child: const OnboardingScreen(),
           ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authLogin,
+        name: AppRoutes.authLoginName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authRegister,
+        name: AppRoutes.authRegisterName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authForgotPassword,
+        name: AppRoutes.authForgotPasswordName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const ForgotPasswordScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authVerifyEmail,
+        name: AppRoutes.authVerifyEmailName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: VerifyEmailScreen(email: state.uri.queryParameters['email']),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.authUpdatePassword,
+        name: AppRoutes.authUpdatePasswordName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const UpdatePasswordScreen(),
         ),
       ),
       StatefulShellRoute.indexedStack(
