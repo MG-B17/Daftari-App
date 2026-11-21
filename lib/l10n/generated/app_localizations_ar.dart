@@ -752,4 +752,235 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statementSamplePayment2 => 'تحويل فودافون كاش';
+
+  @override
+  String get authLoginTitle => 'تسجيل الدخول';
+
+  @override
+  String get authRegisterTitle => 'إنشاء حساب جديد';
+
+  @override
+  String get authForgotTitle => 'استعادة كلمة المرور';
+
+  @override
+  String get authVerifyTitle => 'تأكيد البريد الإلكتروني';
+
+  @override
+  String get authUpdateTitle => 'كلمة مرور جديدة';
+
+  @override
+  String get authLoginHeading => 'احم بياناتك من الضياع';
+
+  @override
+  String get authLoginSubtitle =>
+      'اربط دفترك المحلي بحسابك لضمان عدم ضياع حسابات الزبائن والديون في حالة تغير أو فقدان الهاتف.';
+
+  @override
+  String get authRegisterHeading => 'احم بياناتك من الضياع';
+
+  @override
+  String get authRegisterSubtitle =>
+      'أنشئ حسابك لربط دفترك المحلي وإتاحة النسخ الاحتياطي الآمن الاختياري واستعادة بياناتك حتى لو فقدت الهاتف.';
+
+  @override
+  String get authForgotHeading => 'نسيت كلمة المرور؟';
+
+  @override
+  String get authForgotSubtitle =>
+      'أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.';
+
+  @override
+  String get authVerifyHeading => 'تحقق من بريدك';
+
+  @override
+  String authVerifySubtitle(String email) {
+    return 'أرسلنا رابط تأكيد إلى $email. افتحه لتفعيل حسابك.';
+  }
+
+  @override
+  String get authVerifyGenericSubtitle =>
+      'افتح رابط التأكيد في بريدك الإلكتروني لتفعيل حسابك.';
+
+  @override
+  String get authUpdateHeading => 'اختر كلمة مرور جديدة';
+
+  @override
+  String get authUpdateSubtitle => 'اختر كلمة مرور جديدة لحسابك.';
+
+  @override
+  String get authSecureBadge => 'تشفير آمن';
+
+  @override
+  String get authEmail => 'البريد الإلكتروني';
+
+  @override
+  String get authEmailHint => 'example@gmail.com';
+
+  @override
+  String get authPassword => 'كلمة المرور';
+
+  @override
+  String get authPasswordHint => 'أدخل كلمة المرور';
+
+  @override
+  String get authShowPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get authHidePassword => 'إخفاء كلمة المرور';
+
+  @override
+  String get authForgotPassword => 'نسيت كلمة السر؟';
+
+  @override
+  String get authSignIn => 'تسجيل الدخول';
+
+  @override
+  String get authNoAccount => 'ليس لديك حساب؟';
+
+  @override
+  String get authCreateAccount => 'إنشاء حساب جديد';
+
+  @override
+  String get authShopName => 'اسم المحل / التاجر';
+
+  @override
+  String get authShopNameHint => 'مثال: بقالة الأمانة أو أبو عمر';
+
+  @override
+  String get authShopNameViewerHint => 'يظهر في كشف الحساب';
+
+  @override
+  String get authConfirmPassword => 'تأكيد كلمة المرور';
+
+  @override
+  String get authRegisterAction => 'إنشاء حساب وحفظ الدفتر';
+
+  @override
+  String get authHaveAccount => 'لديك حساب بالفعل؟';
+
+  @override
+  String get authSignInLink => 'تسجيل الدخول';
+
+  @override
+  String get authRegisterConsent =>
+      'بإنشاء الحساب، أنت توافق على شروط الاستخدام وسياسة حماية البيانات. خصوصية الدفتر: بياناتك تظل ملكًا لك وحدك.';
+
+  @override
+  String get authOfflineNoteTitle => 'دفترك يعمل بدون إنترنت دائمًا';
+
+  @override
+  String get authOfflineNote =>
+      'التسجيل يتيح لك النسخ الاحتياطي الآمن الاختياري للمساعدة في حماية دفترك عند سرقة الهاتف أو تلفه.';
+
+  @override
+  String get authContinueOffline => 'المتابعة كدفتر محلي (لاحقًا)';
+
+  @override
+  String get authContinueOfflineHint =>
+      'يمكنك متابعة استخدام الدفتر محليًا والنسخ لاحقًا.';
+
+  @override
+  String get authLoginMockNotice => 'معاينة فقط — تسجيل الدخول غير متاح بعد.';
+
+  @override
+  String get authRegisterMockNotice =>
+      'معاينة فقط — إنشاء الحساب غير متاح بعد.';
+
+  @override
+  String get authSendResetLink => 'إرسال رابط الاستعادة';
+
+  @override
+  String get authResetSentTitle => 'تحقق من بريدك';
+
+  @override
+  String authResetSentMessage(String email) {
+    return 'أرسلنا رابط إعادة تعيين كلمة المرور إلى $email.';
+  }
+
+  @override
+  String get authBackToLogin => 'العودة لتسجيل الدخول';
+
+  @override
+  String get authForgotMockNotice => 'معاينة فقط — لن يُرسل أي بريد.';
+
+  @override
+  String get authResendVerification => 'إعادة إرسال رابط التأكيد';
+
+  @override
+  String get authResendSent => 'تم إرسال رابط التأكيد مرة أخرى.';
+
+  @override
+  String get authVerifiedAction => 'تحققت من بريدي';
+
+  @override
+  String get authVerifyMockNotice => 'معاينة فقط — تأكيد البريد غير متاح بعد.';
+
+  @override
+  String get authNewPassword => 'كلمة المرور الجديدة';
+
+  @override
+  String get authUpdatePasswordAction => 'حفظ كلمة المرور';
+
+  @override
+  String get authUpdateMockNotice =>
+      'معاينة فقط — تحديث كلمة المرور غير متاح بعد.';
+
+  @override
+  String get authPasswordMismatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get authShopNameRequired => 'أدخل اسم المحل';
+
+  @override
+  String get authLinkDialogTitle => 'ربط الدفتر بحسابك؟';
+
+  @override
+  String get authLinkDialogMessage =>
+      'سيتم ربط بيانات الدفتر المحلي على هذا الجهاز بحسابك. لن يتم رفع أي بيانات الآن، وتبقى بياناتك على جهازك. بعد الربط، لا يمكن استخدام دفتر هذا الجهاز إلا مع هذا الحساب.';
+
+  @override
+  String get authLinkDialogConfirm => 'ربط الدفتر';
+
+  @override
+  String get authAccountTitle => 'الحساب';
+
+  @override
+  String get authAccountSignedOutTitle => 'لم تسجل الدخول';
+
+  @override
+  String get authAccountSignedOutDescription =>
+      'اربط دفترك بحساب لضمان عدم ضياع البيانات.';
+
+  @override
+  String get authAccountSignIn => 'تسجيل الدخول';
+
+  @override
+  String get authAccountCreate => 'إنشاء حساب';
+
+  @override
+  String get authAccountLinkedTitle => 'تم ربط الدفتر';
+
+  @override
+  String authAccountLinkedTo(String email) {
+    return 'مرتبط بـ $email';
+  }
+
+  @override
+  String get authAccountVerified => 'مؤكد';
+
+  @override
+  String get authAccountEmailUnverified => 'البريد غير مؤكد';
+
+  @override
+  String get authAccountSignOut => 'تسجيل الخروج';
+
+  @override
+  String get authAccountLocalOnly => 'بياناتك محلية على هذا الجهاز';
+
+  @override
+  String get authAccountMockNotice => 'معاينة فقط — الحساب غير متصل بعد.';
+
+  @override
+  String get authAccountSignOutMessage =>
+      'تسجيل الخروج؟ لن يتم حذف بيانات الدفتر المحلي.';
 }

@@ -765,4 +765,238 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statementSamplePayment2 => 'Cash wallet transfer';
+
+  @override
+  String get authLoginTitle => 'Sign in';
+
+  @override
+  String get authRegisterTitle => 'Create account';
+
+  @override
+  String get authForgotTitle => 'Reset password';
+
+  @override
+  String get authVerifyTitle => 'Verify your email';
+
+  @override
+  String get authUpdateTitle => 'New password';
+
+  @override
+  String get authLoginHeading => 'Protect your data from loss';
+
+  @override
+  String get authLoginSubtitle =>
+      'Link your local ledger to your account so customer balances and debts are never lost if your phone changes or is lost.';
+
+  @override
+  String get authRegisterHeading => 'Protect your data from loss';
+
+  @override
+  String get authRegisterSubtitle =>
+      'Create your account to link your local ledger for optional secure backup and restore, even if your phone is lost.';
+
+  @override
+  String get authForgotHeading => 'Forgot your password?';
+
+  @override
+  String get authForgotSubtitle =>
+      'Enter your email and we will send you a link to reset your password.';
+
+  @override
+  String get authVerifyHeading => 'Check your inbox';
+
+  @override
+  String authVerifySubtitle(String email) {
+    return 'We sent a verification link to $email. Open it to activate your account.';
+  }
+
+  @override
+  String get authVerifyGenericSubtitle =>
+      'Open the verification link in your email to activate your account.';
+
+  @override
+  String get authUpdateHeading => 'Choose a new password';
+
+  @override
+  String get authUpdateSubtitle => 'Choose a new password for your account.';
+
+  @override
+  String get authSecureBadge => 'Secure encryption';
+
+  @override
+  String get authEmail => 'Email';
+
+  @override
+  String get authEmailHint => 'example@gmail.com';
+
+  @override
+  String get authPassword => 'Password';
+
+  @override
+  String get authPasswordHint => 'Enter your password';
+
+  @override
+  String get authShowPassword => 'Show password';
+
+  @override
+  String get authHidePassword => 'Hide password';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authSignIn => 'Sign in';
+
+  @override
+  String get authNoAccount => 'Don\'t have an account?';
+
+  @override
+  String get authCreateAccount => 'Create a new account';
+
+  @override
+  String get authShopName => 'Shop / merchant name';
+
+  @override
+  String get authShopNameHint => 'e.g. Al-Amana Grocery or Abu Omar';
+
+  @override
+  String get authShopNameViewerHint => 'Shown on customer statements';
+
+  @override
+  String get authConfirmPassword => 'Confirm password';
+
+  @override
+  String get authRegisterAction => 'Create account and save ledger';
+
+  @override
+  String get authHaveAccount => 'Already have an account?';
+
+  @override
+  String get authSignInLink => 'Sign in';
+
+  @override
+  String get authRegisterConsent =>
+      'By creating an account, you agree to the terms of use and data protection policy. Your ledger data remains yours alone.';
+
+  @override
+  String get authOfflineNoteTitle => 'Your ledger always works offline';
+
+  @override
+  String get authOfflineNote =>
+      'Signing in enables optional secure backup to help protect your ledger if your phone is stolen or damaged.';
+
+  @override
+  String get authContinueOffline => 'Continue with local ledger (later)';
+
+  @override
+  String get authContinueOfflineHint =>
+      'You can keep using the ledger locally and back up later.';
+
+  @override
+  String get authLoginMockNotice =>
+      'Preview only — sign-in isn\'t available yet.';
+
+  @override
+  String get authRegisterMockNotice =>
+      'Preview only — account creation isn\'t available yet.';
+
+  @override
+  String get authSendResetLink => 'Send reset link';
+
+  @override
+  String get authResetSentTitle => 'Check your email';
+
+  @override
+  String authResetSentMessage(String email) {
+    return 'We sent a password reset link to $email.';
+  }
+
+  @override
+  String get authBackToLogin => 'Back to sign in';
+
+  @override
+  String get authForgotMockNotice => 'Preview only — no email will be sent.';
+
+  @override
+  String get authResendVerification => 'Resend verification link';
+
+  @override
+  String get authResendSent => 'Verification link sent again.';
+
+  @override
+  String get authVerifiedAction => 'I\'ve verified my email';
+
+  @override
+  String get authVerifyMockNotice =>
+      'Preview only — email verification isn\'t available yet.';
+
+  @override
+  String get authNewPassword => 'New password';
+
+  @override
+  String get authUpdatePasswordAction => 'Save password';
+
+  @override
+  String get authUpdateMockNotice =>
+      'Preview only — password update isn\'t available yet.';
+
+  @override
+  String get authPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get authShopNameRequired => 'Enter a shop name';
+
+  @override
+  String get authLinkDialogTitle => 'Link this ledger to your account?';
+
+  @override
+  String get authLinkDialogMessage =>
+      'This device\'s local ledger will be linked to your account. Nothing is uploaded yet, and your data stays on your device. Once linked, this device\'s ledger can only be used with this account.';
+
+  @override
+  String get authLinkDialogConfirm => 'Link ledger';
+
+  @override
+  String get authAccountTitle => 'Account';
+
+  @override
+  String get authAccountSignedOutTitle => 'Not signed in';
+
+  @override
+  String get authAccountSignedOutDescription =>
+      'Link your ledger to an account so your data is never lost.';
+
+  @override
+  String get authAccountSignIn => 'Sign in';
+
+  @override
+  String get authAccountCreate => 'Create account';
+
+  @override
+  String get authAccountLinkedTitle => 'Ledger linked';
+
+  @override
+  String authAccountLinkedTo(String email) {
+    return 'Linked to $email';
+  }
+
+  @override
+  String get authAccountVerified => 'Verified';
+
+  @override
+  String get authAccountEmailUnverified => 'Email not verified';
+
+  @override
+  String get authAccountSignOut => 'Sign out';
+
+  @override
+  String get authAccountLocalOnly => 'Your data is stored on this device';
+
+  @override
+  String get authAccountMockNotice =>
+      'Preview only — account is not connected yet.';
+
+  @override
+  String get authAccountSignOutMessage =>
+      'Sign out? Your local ledger data will not be deleted.';
 }

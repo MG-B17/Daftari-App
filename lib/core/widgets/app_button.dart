@@ -14,6 +14,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.isLoading = false,
     this.icon,
+    this.trailingIcon,
     this.fullWidth = false,
   });
 
@@ -22,6 +23,7 @@ class AppButton extends StatelessWidget {
   final AppButtonVariant variant;
   final bool isLoading;
   final IconData? icon;
+  final IconData? trailingIcon;
   final bool fullWidth;
 
   @override
@@ -49,6 +51,10 @@ class AppButton extends StatelessWidget {
                 SizedBox(width: AppSpacing.sm),
               ],
               Flexible(child: Text(label, textAlign: TextAlign.center)),
+              if (trailingIcon != null) ...[
+                SizedBox(width: AppSpacing.sm),
+                Icon(trailingIcon, size: AppSpacing.icon),
+              ],
             ],
           );
     final callback = isLoading ? null : onPressed;

@@ -13,6 +13,8 @@ import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/features/auth/presentation/screens/login_screen.dart';
+import 'package:daftariapp/features/auth/presentation/screens/register_screen.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
@@ -92,12 +94,22 @@ Future<void> _digits(WidgetTester tester, String value) async {
   }
 }
 
+/// Scrolls [finder] into view, building it first when the list has not
+/// created its element yet.
+Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openTile(WidgetTester tester, String label) async {
-  await tester.scrollUntilVisible(
-    find.text(label),
-    200,
-    scrollable: find.byType(Scrollable).first,
-  );
+  await _scrollTo(tester, find.text(label));
   await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
@@ -150,11 +162,7 @@ void main() {
         .element(find.byType(SettingsScreen))
         .read<AppLockCubit>();
     Future<void> openPin() async {
-      await tester.scrollUntilVisible(
-        find.text('App PIN'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await _scrollTo(tester, find.text('App PIN'));
       await tester.tap(find.text('App PIN'));
       await tester.pumpAndSettle();
     }
@@ -178,11 +186,7 @@ void main() {
     expect(cubit.state.settings.isPinEnabled, isTrue);
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.byType(PinLockScreen), findsNothing);
-    await tester.scrollUntilVisible(
-      find.text('Change PIN'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollTo(tester, find.text('Change PIN'));
     await tester.tap(find.text('Change PIN'));
     await tester.pumpAndSettle();
     await digits('9876');
@@ -215,6 +219,7 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.text(l10n.authAccountTitle), findsOneWidget);
     expect(find.text(l10n.settingsAppearanceTitle), findsOneWidget);
     expect(find.text(l10n.settingsThemeLight), findsOneWidget);
     expect(find.text(l10n.settingsThemeDark), findsOneWidget);
@@ -222,11 +227,7 @@ void main() {
     expect(find.text(l10n.settingsAppearanceCaption), findsOneWidget);
     expect(find.text(l10n.settingsLanguageTitle), findsOneWidget);
     expect(find.text(l10n.settingsLanguageArabic), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text(l10n.settingsAboutTitle),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollTo(tester, find.text(l10n.settingsAboutTitle));
     expect(find.text(l10n.settingsAboutTitle), findsOneWidget);
     expect(find.text(l10n.settingsVersionLabel), findsOneWidget);
     expect(
@@ -247,11 +248,7 @@ void main() {
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('App language'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('About'),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _scrollTo(tester, find.text('About'));
     expect(find.text('About'), findsOneWidget);
     await _dispose(tester, harness);
   });
@@ -329,6 +326,7 @@ void main() {
     var context = tester.element(find.byType(SettingsScreen));
     expect(Directionality.of(context), TextDirection.rtl);
 
+    await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
     await tester.tap(find.byKey(const ValueKey('language-tile')));
     await tester.pumpAndSettle();
     expect(find.byType(LanguagePickerSheet), findsOneWidget);
@@ -350,6 +348,7 @@ void main() {
     expect(harness.storage.localeCode, 'en');
     expect(harness.cubit.state.localeCode, 'en');
 
+    await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
     await tester.tap(find.byKey(const ValueKey('language-tile')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('language-option-ar')));
@@ -401,9 +400,9 @@ void main() {
     router.go(AppRoutes.settings);
     await tester.pumpAndSettle();
 
+    await _scrollTo(tester, find.byKey(const ValueKey('theme-dark')));
     await tester.tap(find.byKey(const ValueKey('theme-dark')));
     await tester.pumpAndSettle();
-
     final context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.light);
     expect(cubit.state.hasError, isTrue);
@@ -426,6 +425,7 @@ void main() {
     final harness = await _pumpSettings(tester, size: const Size(320, 640));
     expect(tester.takeException(), isNull);
 
+    await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
     await tester.tap(find.byKey(const ValueKey('language-tile')));
     await tester.pumpAndSettle();
     expect(find.byType(LanguagePickerSheet), findsOneWidget);
@@ -433,6 +433,40 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('language-option-en')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('account section opens the login screen', (tester) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+
+    await _scrollTo(tester, find.text('Sign in'));
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(harness.router.state.uri.path, AppRoutes.authLogin);
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('Settings create account switches to login and back', (
+    tester,
+  ) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+    final l10n = tester.element(find.byType(SettingsScreen)).l10n;
+    await _openTile(tester, l10n.authAccountCreate);
+    expect(find.byType(RegisterScreen), findsOneWidget);
+
+    await _openTile(tester, l10n.authSignInLink);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(harness.router.state.uri.path, AppRoutes.authLogin);
+
+    await _openTile(tester, l10n.authCreateAccount);
+    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(harness.router.state.uri.path, AppRoutes.authRegister);
+
+    harness.router.pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
     await _dispose(tester, harness);
   });
 

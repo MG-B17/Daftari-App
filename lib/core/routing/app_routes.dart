@@ -25,4 +25,14 @@ abstract final class AppRoutes {
   static const transactionNewName = 'transaction-new';
   static const transactionEdit = '/transactions/:id/edit';
   static const transactionEditName = 'transaction-edit';
+  static const authLogin = '/auth/login';
+  static const authLoginName = 'auth-login';
+  static const authRegister = '/auth/register';
+  static const authRegisterName = 'auth-register';
+  static const authForgotPassword = '/auth/forgot-password';
+  static const authForgotPasswordName = 'auth-forgot-password';
+  static const authVerifyEmail = '/auth/verify-email';
+  static const authVerifyEmailName = 'auth-verify-email';
+  static const authUpdatePassword = '/auth/update-password';
+  static const authUpdatePasswordName = 'auth-update-password';
 }
