@@ -433,7 +433,7 @@ void main() {
       repository = AuthRepositoryImpl(
         authService,
         ownerStorage,
-        database.customerDao,
+        database.customerDao.hasAnyCustomers,
         ErrorHandler(logger),
       );
     });
@@ -835,7 +835,7 @@ void main() {
       final liveRepo = AuthRepositoryImpl(
         SupabaseAuthService(bootstrap),
         ownerStorage,
-        database.customerDao,
+        database.customerDao.hasAnyCustomers,
         ErrorHandler(
           AppLogger(output: logOutput.add, enableCrashReporting: false),
         ),

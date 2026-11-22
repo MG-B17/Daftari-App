@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:fpdart/fpdart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import '../../../../core/database/daos/customer_dao.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/error_handler.dart';
@@ -19,13 +18,13 @@ class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl(
     this._authService,
     this._ownerStorage,
-    this._customerDao,
+    this._hasLocalLedgerData,
     this._errorHandler,
   );
 
   final AuthService _authService;
   final LedgerOwnerStorage _ownerStorage;
-  final CustomerDao _customerDao;
+  final Future<bool> Function() _hasLocalLedgerData;
   final ErrorHandler _errorHandler;
 
   @override
@@ -151,7 +150,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<AppFailure, bool>> hasLocalLedgerData() =>
-      _guard(_customerDao.hasAnyCustomers);
+      _guard(_hasLocalLedgerData);
 
   Future<Either<AppFailure, T>> _guard<T>(Future<T> Function() action) async {
     try {
