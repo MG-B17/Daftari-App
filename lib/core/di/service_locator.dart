@@ -183,7 +183,7 @@ Future<void> configureDependencies() async {
       () => AuthRepositoryImpl(
         sl<AuthService>(),
         sl<LedgerOwnerStorage>(),
-        sl<CustomerDao>(),
+        () => sl<CustomerDao>().hasAnyCustomers(),
         sl<ErrorHandler>(),
       ),
     );
