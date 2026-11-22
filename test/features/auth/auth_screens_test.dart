@@ -3,6 +3,15 @@ import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/utils/validators.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
+import 'package:daftariapp/features/auth/domain/entities/auth_user.dart';
+import 'package:daftariapp/features/auth/domain/usecases/confirm_ledger_link_usecase.dart';
+import 'package:daftariapp/features/auth/domain/usecases/send_password_reset_usecase.dart';
+import 'package:daftariapp/features/auth/domain/usecases/sign_in_usecase.dart';
+import 'package:daftariapp/features/auth/domain/usecases/sign_out_usecase.dart';
+import 'package:daftariapp/features/auth/domain/usecases/sign_up_usecase.dart';
+import 'package:daftariapp/features/auth/domain/usecases/update_password_usecase.dart';
+import 'package:daftariapp/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:daftariapp/features/auth/presentation/cubit/auth_state.dart';
 import 'package:daftariapp/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:daftariapp/features/auth/presentation/screens/login_screen.dart';
 import 'package:daftariapp/features/auth/presentation/screens/register_screen.dart';
@@ -12,12 +21,38 @@ import 'package:daftariapp/features/auth/presentation/widgets/account_settings_s
 import 'package:daftariapp/features/auth/presentation/widgets/ledger_link_confirmation_dialog.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+
+import 'presentation/auth_cubit_test.dart';
+
+const _testUser = AuthUser(
+  id: 'user-a',
+  email: 'shop@example.com',
+  shopName: 'Al-Amana Grocery',
+  emailVerified: true,
+);
+
+Future<AuthCubit> _createAuthCubit(FakeCubitAuthRepository repo) async {
+  final cubit = AuthCubit(
+    repo,
+    SignInUseCase(repo),
+    SignUpUseCase(repo),
+    SignOutUseCase(repo),
+    ConfirmLedgerLinkUseCase(repo),
+    SendPasswordResetUseCase(repo),
+    UpdatePasswordUseCase(repo),
+  );
+  await cubit.initialize();
+  return cubit;
+}
 
 Future<void> _pump(
   WidgetTester tester,
   Widget screen, {
+  AuthCubit? authCubit,
   String locale = 'ar',
   ThemeMode themeMode = ThemeMode.light,
   Size size = const Size(400, 900),
@@ -26,21 +61,22 @@ Future<void> _pump(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: AppConstants.designSize,
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) => MaterialApp(
-        locale: Locale(locale),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppConstants.supportedLocales,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode,
-        home: screen,
-      ),
+  final app = ScreenUtilInit(
+    designSize: AppConstants.designSize,
+    minTextAdapt: true,
+    splitScreenMode: true,
+    builder: (context, child) => MaterialApp(
+      locale: Locale(locale),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppConstants.supportedLocales,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      home: screen,
     ),
+  );
+  await tester.pumpWidget(
+    authCubit == null ? app : BlocProvider.value(value: authCubit, child: app),
   );
   await tester.pumpAndSettle();
 }
@@ -62,32 +98,55 @@ Future<void> _tapButton(WidgetTester tester, String label) async {
 }
 
 void main() {
-  testWidgets('login renders RTL Arabic content and validates fields', (
-    tester,
-  ) async {
-    await _pump(tester, const LoginScreen());
-    final context = tester.element(find.byType(LoginScreen));
-    final l10n = context.l10n;
+  testWidgets(
+    'login renders RTL Arabic, validates fields, and prompts first-time ledger link confirmation',
+    (tester) async {
+      final repo = FakeCubitAuthRepository()
+        ..signInOverride = const Right(_testUser);
+      final cubit = await _createAuthCubit(repo);
+      addTearDown(() async {
+        await cubit.close();
+        await repo.dispose();
+      });
 
-    expect(Directionality.of(context), TextDirection.rtl);
-    expect(find.text(l10n.authLoginHeading), findsOneWidget);
-    expect(find.text(l10n.authLoginSubtitle), findsOneWidget);
-    expect(find.textContaining(l10n.authEmail), findsOneWidget);
-    expect(find.text(l10n.authForgotPassword), findsOneWidget);
-    expect(find.text(l10n.authSecureBadge), findsOneWidget);
-    expect(find.text(l10n.authOfflineNoteTitle), findsOneWidget);
+      await _pump(tester, const LoginScreen(), authCubit: cubit);
+      final context = tester.element(find.byType(LoginScreen));
+      final l10n = context.l10n;
 
-    await _tapButton(tester, l10n.authSignIn);
+      expect(Directionality.of(context), TextDirection.rtl);
+      expect(find.text(l10n.authLoginHeading), findsOneWidget);
+      expect(find.text(l10n.authLoginSubtitle), findsOneWidget);
+      expect(find.textContaining(l10n.authEmail), findsOneWidget);
+      expect(find.text(l10n.authForgotPassword), findsOneWidget);
+      expect(find.text(l10n.authSecureBadge), findsOneWidget);
+      expect(find.text(l10n.authOfflineNoteTitle), findsOneWidget);
 
-    expect(find.text(Validators.email('', locale: 'ar')!), findsOneWidget);
-    expect(find.text(Validators.password('', locale: 'ar')!), findsOneWidget);
+      await _tapButton(tester, l10n.authSignIn);
 
-    await tester.enterText(_formField('auth-login-email'), 'shop@example.com');
-    await tester.enterText(_formField('auth-login-password'), 'password1');
-    await _tapButton(tester, l10n.authSignIn);
+      expect(find.text(Validators.email('', locale: 'ar')!), findsOneWidget);
+      expect(find.text(Validators.password('', locale: 'ar')!), findsOneWidget);
 
-    expect(_snackBarText(l10n.authLoginMockNotice), findsOneWidget);
-  });
+      await tester.enterText(
+        _formField('auth-login-email'),
+        'shop@example.com',
+      );
+      await tester.enterText(_formField('auth-login-password'), 'password1');
+      await _tapButton(tester, l10n.authSignIn);
+
+      expect(find.text(l10n.authLinkDialogTitle), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(AppButton, l10n.authLinkDialogConfirm),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(repo.linkedUserId, _testUser.id);
+      expect(_snackBarText(l10n.authLinkedSuccess), findsOneWidget);
+    },
+  );
 
   testWidgets('login password visibility can be toggled', (tester) async {
     await _pump(tester, const LoginScreen());
@@ -145,8 +204,15 @@ void main() {
     expect(find.text(l10n.authPasswordMismatch), findsOneWidget);
   });
 
-  testWidgets('register submits with mock feedback when valid', (tester) async {
-    await _pump(tester, const RegisterScreen());
+  testWidgets('register submits to AuthCubit when valid', (tester) async {
+    final repo = FakeCubitAuthRepository();
+    final cubit = await _createAuthCubit(repo);
+    addTearDown(() async {
+      await cubit.close();
+      await repo.dispose();
+    });
+
+    await _pump(tester, const RegisterScreen(), authCubit: cubit);
     final l10n = tester.element(find.byType(RegisterScreen)).l10n;
 
     await tester.enterText(
@@ -161,13 +227,20 @@ void main() {
     await tester.enterText(_formField('auth-register-confirm'), 'password1');
     await _tapButton(tester, l10n.authRegisterAction);
 
-    expect(_snackBarText(l10n.authRegisterMockNotice), findsOneWidget);
+    expect(cubit.state.status, AuthStatus.emailVerificationRequired);
   });
 
   testWidgets('forgot password moves to the sent confirmation state', (
     tester,
   ) async {
-    await _pump(tester, const ForgotPasswordScreen());
+    final repo = FakeCubitAuthRepository();
+    final cubit = await _createAuthCubit(repo);
+    addTearDown(() async {
+      await cubit.close();
+      await repo.dispose();
+    });
+
+    await _pump(tester, const ForgotPasswordScreen(), authCubit: cubit);
     final l10n = tester.element(find.byType(ForgotPasswordScreen)).l10n;
 
     await tester.enterText(_formField('auth-forgot-email'), 'shop@example.com');
@@ -184,10 +257,21 @@ void main() {
     );
   });
 
-  testWidgets('verify email shows the address and mock feedback', (
+  testWidgets('verify email resends link and checks verification status', (
     tester,
   ) async {
-    await _pump(tester, const VerifyEmailScreen(email: 'shop@example.com'));
+    final repo = FakeCubitAuthRepository();
+    final cubit = await _createAuthCubit(repo);
+    addTearDown(() async {
+      await cubit.close();
+      await repo.dispose();
+    });
+
+    await _pump(
+      tester,
+      const VerifyEmailScreen(email: 'shop@example.com'),
+      authCubit: cubit,
+    );
     final l10n = tester.element(find.byType(VerifyEmailScreen)).l10n;
 
     expect(find.text('shop@example.com'), findsOneWidget);
@@ -197,21 +281,37 @@ void main() {
     );
 
     await _tapButton(tester, l10n.authResendVerification);
+    expect(repo.resendCalls, 1);
     expect(_snackBarText(l10n.authResendSent), findsOneWidget);
 
     await _tapButton(tester, l10n.authVerifiedAction);
-    expect(_snackBarText(l10n.authVerifyMockNotice), findsOneWidget);
+    expect(_snackBarText(l10n.authEmailNotVerifiedYet), findsOneWidget);
   });
 
-  testWidgets('update password validates the confirmation', (tester) async {
-    await _pump(tester, const UpdatePasswordScreen());
+  testWidgets('update password validates confirmation and updates password', (
+    tester,
+  ) async {
+    final repo = FakeCubitAuthRepository(
+      currentUser: _testUser,
+      linkedUserId: _testUser.id,
+    );
+    final cubit = await _createAuthCubit(repo);
+    addTearDown(() async {
+      await cubit.close();
+      await repo.dispose();
+    });
+
+    await _pump(tester, const UpdatePasswordScreen(), authCubit: cubit);
     final l10n = tester.element(find.byType(UpdatePasswordScreen)).l10n;
 
     await tester.enterText(_formField('auth-update-password'), 'password1');
     await tester.enterText(_formField('auth-update-confirm'), 'password2');
     await _tapButton(tester, l10n.authUpdatePasswordAction);
-
     expect(find.text(l10n.authPasswordMismatch), findsOneWidget);
+
+    await tester.enterText(_formField('auth-update-confirm'), 'password1');
+    await _tapButton(tester, l10n.authUpdatePasswordAction);
+    expect(_snackBarText(l10n.authPasswordUpdated), findsOneWidget);
   });
 
   testWidgets('login renders LTR English in dark mode', (tester) async {
@@ -232,7 +332,18 @@ void main() {
   testWidgets('account section shows signed-out and signed-in states', (
     tester,
   ) async {
-    await _pump(tester, const Scaffold(body: AccountSettingsSection()));
+    final signedOutRepo = FakeCubitAuthRepository();
+    final signedOutCubit = await _createAuthCubit(signedOutRepo);
+    addTearDown(() async {
+      await signedOutCubit.close();
+      await signedOutRepo.dispose();
+    });
+
+    await _pump(
+      tester,
+      const Scaffold(body: AccountSettingsSection()),
+      authCubit: signedOutCubit,
+    );
     final l10n = tester.element(find.byType(AccountSettingsSection)).l10n;
 
     expect(find.text(l10n.authAccountSignedOutTitle), findsOneWidget);
@@ -246,15 +357,20 @@ void main() {
       findsOneWidget,
     );
 
+    final signedInRepo = FakeCubitAuthRepository(
+      currentUser: _testUser,
+      linkedUserId: _testUser.id,
+    );
+    final signedInCubit = await _createAuthCubit(signedInRepo);
+    addTearDown(() async {
+      await signedInCubit.close();
+      await signedInRepo.dispose();
+    });
+
     await _pump(
       tester,
-      const Scaffold(
-        body: AccountSettingsSection(
-          mockEmail: 'shop@example.com',
-          mockShopName: 'Al-Amana Grocery',
-          mockEmailVerified: true,
-        ),
-      ),
+      const Scaffold(body: AccountSettingsSection()),
+      authCubit: signedInCubit,
     );
     final signedInContext = tester.element(find.byType(AccountSettingsSection));
     final signedInL10n = signedInContext.l10n;
@@ -273,11 +389,20 @@ void main() {
   testWidgets('signing out asks for confirmation and preserves local data', (
     tester,
   ) async {
+    final repo = FakeCubitAuthRepository(
+      currentUser: _testUser,
+      linkedUserId: _testUser.id,
+    );
+    final cubit = await _createAuthCubit(repo);
+    addTearDown(() async {
+      await cubit.close();
+      await repo.dispose();
+    });
+
     await _pump(
       tester,
-      const Scaffold(
-        body: AccountSettingsSection(mockEmail: 'shop@example.com'),
-      ),
+      const Scaffold(body: AccountSettingsSection()),
+      authCubit: cubit,
     );
     final l10n = tester.element(find.byType(AccountSettingsSection)).l10n;
 
@@ -300,7 +425,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(_snackBarText(l10n.authAccountMockNotice), findsOneWidget);
+    expect(repo.signOutCalls, 1);
+    expect(repo.linkedUserId, _testUser.id);
+    expect(cubit.state.status, AuthStatus.unauthenticated);
+    expect(_snackBarText(l10n.authSignedOutSuccess), findsOneWidget);
   });
 
   testWidgets('ledger link confirmation returns the user decision', (

@@ -57,6 +57,7 @@ app.*.map.json
 # Local credentials and signing material (Firebase client config stays tracked)
 .env
 .env.*
+env/supabase.json
 secrets/
 **/*service-account*.json
 **/*service_account*.json

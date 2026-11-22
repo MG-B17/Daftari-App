@@ -983,4 +983,37 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get authAccountSignOutMessage =>
       'تسجيل الخروج؟ لن يتم حذف بيانات الدفتر المحلي.';
+
+  @override
+  String get authErrorAccountMismatch =>
+      'دفتر هذا الجهاز مرتبط بحساب آخر. سجّل الدخول بالحساب الأصلي للمتابعة.';
+
+  @override
+  String get authErrorAuth =>
+      'تعذر تسجيل الدخول. تأكد من البريد الإلكتروني وكلمة المرور وحاول مرة أخرى.';
+
+  @override
+  String get authErrorNetwork =>
+      'تعذر الاتصال. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get authErrorUnconfigured =>
+      'تسجيل الدخول غير مفعّل في هذه النسخة. يواصل دفترك العمل محليًا.';
+
+  @override
+  String get authErrorGeneric => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get authPasswordUpdated => 'تم تحديث كلمة المرور بنجاح.';
+
+  @override
+  String get authEmailNotVerifiedYet =>
+      'لم يتم تأكيد بريدك الإلكتروني بعد. افتح الرابط في بريدك وحاول مرة أخرى.';
+
+  @override
+  String get authSignedOutSuccess =>
+      'تم تسجيل الخروج. بيانات دفترك المحلي محفوظة على هذا الجهاز.';
+
+  @override
+  String get authLinkedSuccess => 'تم ربط الدفتر بحسابك.';
 }

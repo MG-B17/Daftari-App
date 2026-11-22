@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
@@ -8,19 +9,13 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_confirmation_dialog.dart';
 import '../../../settings/presentation/widgets/settings_icon_box.dart';
 import '../../../settings/presentation/widgets/settings_section_card.dart';
+import '../../domain/entities/auth_user.dart';
+import '../cubit/auth_cubit.dart';
+import '../cubit/auth_state.dart';
+import 'auth_feedback_mapper.dart';
 
 class AccountSettingsSection extends StatelessWidget {
-  const AccountSettingsSection({
-    super.key,
-    this.mockEmail,
-    this.mockShopName,
-    this.mockEmailVerified = false,
-  });
-
-  /// Preview-only session data. Task 4 replaces this with `AuthCubit` state.
-  final String? mockEmail;
-  final String? mockShopName;
-  final bool mockEmailVerified;
+  const AccountSettingsSection({super.key});
 
   Future<void> _signOut(BuildContext context) async {
     final l10n = context.l10n;
@@ -31,16 +26,51 @@ class AccountSettingsSection extends StatelessWidget {
       confirmLabel: l10n.authAccountSignOut,
     );
     if (!confirmed || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(l10n.authAccountMockNotice)));
+    await context.read<AuthCubit?>()?.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AuthCubit?>();
+    if (cubit == null) {
+      return _AccountSectionBody(
+        user: null,
+        busy: false,
+        onSignOut: () => _signOut(context),
+      );
+    }
+    return AuthFlowListener(
+      navigateOnVerifyEmail: false,
+      popOnAuthenticated: false,
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, state) => _AccountSectionBody(
+          user: state.isAuthenticated ? state.user : null,
+          busy: state.busy,
+          onSignOut: () => _signOut(context),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountSectionBody extends StatelessWidget {
+  const _AccountSectionBody({
+    required this.user,
+    required this.busy,
+    required this.onSignOut,
+  });
+
+  final AuthUser? user;
+  final bool busy;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final email = mockEmail?.trim();
+    final email = user?.email.trim();
     final signedIn = email != null && email.isNotEmpty;
+    final shopName = user?.shopName?.trim();
+    final emailVerified = user?.emailVerified ?? false;
     return SettingsSectionCard(
       title: l10n.authAccountTitle,
       child: Column(
@@ -74,9 +104,11 @@ class AccountSettingsSection extends StatelessWidget {
                         color: context.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    if (signedIn && mockShopName != null) ...[
+                    if (signedIn &&
+                        shopName != null &&
+                        shopName.isNotEmpty) ...[
                       SizedBox(height: AppSpacing.xxs),
-                      Text(mockShopName!, style: context.textTheme.bodySmall),
+                      Text(shopName, style: context.textTheme.bodySmall),
                     ],
                   ],
                 ),
@@ -85,17 +117,17 @@ class AccountSettingsSection extends StatelessWidget {
                 Container(
                   padding: AppSpacing.badgePadding,
                   decoration: BoxDecoration(
-                    color: mockEmailVerified
+                    color: emailVerified
                         ? context.appColors.paymentSurface
                         : context.appColors.creditSurface,
                     borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
                   ),
                   child: Text(
-                    mockEmailVerified
+                    emailVerified
                         ? l10n.authAccountVerified
                         : l10n.authAccountEmailUnverified,
                     style: context.textTheme.labelMedium?.copyWith(
-                      color: mockEmailVerified
+                      color: emailVerified
                           ? context.appColors.paymentColor
                           : context.appColors.creditColor,
                     ),
@@ -109,6 +141,7 @@ class AccountSettingsSection extends StatelessWidget {
               type: MaterialType.transparency,
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
+                enabled: !busy,
                 leading: const SettingsIconBox(icon: Icons.logout_rounded),
                 title: Text(l10n.authAccountSignOut),
                 subtitle: Text(l10n.authAccountLocalOnly),
@@ -118,28 +151,23 @@ class AccountSettingsSection extends StatelessWidget {
                       : Icons.chevron_right_rounded,
                   size: AppSpacing.iconSmall,
                 ),
-                onTap: () => _signOut(context),
+                onTap: busy ? null : onSignOut,
               ),
             )
           else ...[
             AppButton(
               label: l10n.authAccountSignIn,
               fullWidth: true,
-              onPressed: () => context.push(AppRoutes.authLogin),
+              onPressed: busy ? null : () => context.push(AppRoutes.authLogin),
             ),
             SizedBox(height: AppSpacing.sm),
             AppButton(
               label: l10n.authAccountCreate,
               variant: AppButtonVariant.secondary,
               fullWidth: true,
-              onPressed: () => context.push(AppRoutes.authRegister),
-            ),
-            SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.authAccountMockNotice,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: context.colorScheme.onSurfaceVariant,
-              ),
+              onPressed: busy
+                  ? null
+                  : () => context.push(AppRoutes.authRegister),
             ),
           ],
         ],

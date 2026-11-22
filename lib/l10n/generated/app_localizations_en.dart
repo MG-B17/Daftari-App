@@ -999,4 +999,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authAccountSignOutMessage =>
       'Sign out? Your local ledger data will not be deleted.';
+
+  @override
+  String get authErrorAccountMismatch =>
+      'This device\'s ledger is linked to another account. Sign in with the original account to continue.';
+
+  @override
+  String get authErrorAuth =>
+      'Authentication failed. Check your email and password and try again.';
+
+  @override
+  String get authErrorNetwork =>
+      'Could not connect. Check your internet connection and try again.';
+
+  @override
+  String get authErrorUnconfigured =>
+      'Account sign-in is not configured in this build. Your ledger continues to work locally.';
+
+  @override
+  String get authErrorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get authPasswordUpdated => 'Password updated successfully.';
+
+  @override
+  String get authEmailNotVerifiedYet =>
+      'Your email is not verified yet. Open the link in your inbox and try again.';
+
+  @override
+  String get authSignedOutSuccess =>
+      'Signed out. Your local ledger data is safe on this device.';
+
+  @override
+  String get authLinkedSuccess => 'Ledger linked to your account.';
 }
