@@ -1,13 +1,18 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/cubit/auth_cubit.dart';
-import '../../features/auth/presentation/screens/forgot_password_screen.dart';
-import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/auth/presentation/screens/update_password_screen.dart';
-import '../../features/auth/presentation/screens/verify_email_screen.dart';
+import '../../features/auth/forgot_password/presentation/cubit/forgot_password_cubit.dart';
+import '../../features/auth/forgot_password/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/login/presentation/cubit/login_cubit.dart';
+import '../../features/auth/login/presentation/screens/login_screen.dart';
+import '../../features/auth/session/presentation/cubit/auth_session_cubit.dart';
+import '../../features/auth/sign_up/presentation/cubit/sign_up_cubit.dart';
+import '../../features/auth/sign_up/presentation/screens/register_screen.dart';
+import '../../features/auth/update_password/presentation/cubit/update_password_cubit.dart';
+import '../../features/auth/update_password/presentation/screens/update_password_screen.dart';
+import '../../features/auth/verify_email/presentation/cubit/verify_email_cubit.dart';
+import '../../features/auth/verify_email/presentation/screens/verify_email_screen.dart';
 import '../../features/customers/domain/entities/picked_contact.dart';
 import '../../features/customers/presentation/cubit/customer_details_cubit.dart';
 import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
@@ -38,22 +43,36 @@ import 'app_routes.dart';
 abstract final class AppRouter {
   static Listenable? _combineListenables(
     AppLockCubit? appLock,
-    AuthCubit? authCubit,
+    AuthSessionCubit? authSessionCubit,
   ) {
-    if (appLock != null && authCubit != null) {
-      return Listenable.merge([appLock, authCubit]);
+    if (appLock != null && authSessionCubit != null) {
+      return Listenable.merge([appLock, authSessionCubit]);
     }
-    return appLock ?? authCubit;
+    return appLock ?? authSessionCubit;
+  }
+
+  static Widget _withOptionalCubit<T extends StateStreamableSource<Object?>>({
+    required T Function()? factory,
+    required Widget child,
+  }) {
+    final create = factory ?? (sl.isRegistered<T>() ? () => sl<T>() : null);
+    if (create == null) return child;
+    return BlocProvider<T>(create: (_) => create(), child: child);
   }
 
   static GoRouter create({
     LocalStorageService? localStorage,
     OnboardingCubit Function()? createOnboardingCubit,
     AppLockCubit? appLock,
-    AuthCubit? authCubit,
+    AuthSessionCubit? authSessionCubit,
+    LoginCubit Function()? createLoginCubit,
+    SignUpCubit Function()? createSignUpCubit,
+    ForgotPasswordCubit Function()? createForgotPasswordCubit,
+    VerifyEmailCubit Function()? createVerifyEmailCubit,
+    UpdatePasswordCubit Function()? createUpdatePasswordCubit,
   }) => GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: _combineListenables(appLock, authCubit),
+    refreshListenable: _combineListenables(appLock, authSessionCubit),
     redirect: (context, state) {
       final path = state.uri.path;
       if (appLock != null) {
@@ -64,7 +83,7 @@ abstract final class AppRouter {
           return path == AppRoutes.lock ? null : AppRoutes.lock;
         }
         if (path == AppRoutes.lock) {
-          if (authCubit?.state.passwordRecoveryPending == true) {
+          if (authSessionCubit?.state.passwordRecoveryPending == true) {
             return AppRoutes.authUpdatePassword;
           }
           return localStorage != null && !localStorage.onboardingCompleted
@@ -82,7 +101,8 @@ abstract final class AppRouter {
           }
         }
       }
-      if (authCubit != null && authCubit.state.passwordRecoveryPending) {
+      if (authSessionCubit != null &&
+          authSessionCubit.state.passwordRecoveryPending) {
         if (path != AppRoutes.authUpdatePassword && path != AppRoutes.splash) {
           return AppRoutes.authUpdatePassword;
         }
@@ -146,7 +166,10 @@ abstract final class AppRouter {
         name: AppRoutes.authLoginName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const LoginScreen(),
+          child: _withOptionalCubit<LoginCubit>(
+            factory: createLoginCubit,
+            child: const LoginScreen(),
+          ),
         ),
       ),
       GoRoute(
@@ -154,7 +177,10 @@ abstract final class AppRouter {
         name: AppRoutes.authRegisterName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const RegisterScreen(),
+          child: _withOptionalCubit<SignUpCubit>(
+            factory: createSignUpCubit,
+            child: const RegisterScreen(),
+          ),
         ),
       ),
       GoRoute(
@@ -162,7 +188,10 @@ abstract final class AppRouter {
         name: AppRoutes.authForgotPasswordName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const ForgotPasswordScreen(),
+          child: _withOptionalCubit<ForgotPasswordCubit>(
+            factory: createForgotPasswordCubit,
+            child: const ForgotPasswordScreen(),
+          ),
         ),
       ),
       GoRoute(
@@ -170,7 +199,10 @@ abstract final class AppRouter {
         name: AppRoutes.authVerifyEmailName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: VerifyEmailScreen(email: state.uri.queryParameters['email']),
+          child: _withOptionalCubit<VerifyEmailCubit>(
+            factory: createVerifyEmailCubit,
+            child: VerifyEmailScreen(email: state.uri.queryParameters['email']),
+          ),
         ),
       ),
       GoRoute(
@@ -178,7 +210,10 @@ abstract final class AppRouter {
         name: AppRoutes.authUpdatePasswordName,
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
-          child: const UpdatePasswordScreen(),
+          child: _withOptionalCubit<UpdatePasswordCubit>(
+            factory: createUpdatePasswordCubit,
+            child: const UpdatePasswordScreen(),
+          ),
         ),
       ),
       StatefulShellRoute.indexedStack(

@@ -10,7 +10,7 @@ import '../widgets/about_section.dart';
 import '../widgets/language_tile.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/theme_mode_selector.dart';
-import '../../../auth/presentation/widgets/account_settings_section.dart';
+import '../../../auth/widgets/account_settings_section.dart';
 import '../../../security/presentation/widgets/security_settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {

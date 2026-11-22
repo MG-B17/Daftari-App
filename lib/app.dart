@@ -7,7 +7,7 @@ import 'core/constants/app_constants.dart';
 import 'core/animation/app_theme_transition.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
 import 'features/security/presentation/cubit/app_lock_cubit.dart';
@@ -22,7 +22,7 @@ class DaftariApp extends StatefulWidget {
     this.router,
     this.settingsCubit,
     this.appLockCubit,
-    this.authCubit,
+    this.authSessionCubit,
   });
 
   final Locale locale;
@@ -30,7 +30,7 @@ class DaftariApp extends StatefulWidget {
   final GoRouter? router;
   final SettingsCubit? settingsCubit;
   final AppLockCubit? appLockCubit;
-  final AuthCubit? authCubit;
+  final AuthSessionCubit? authSessionCubit;
 
   @override
   State<DaftariApp> createState() => _DaftariAppState();
@@ -45,7 +45,7 @@ class _DaftariAppState extends State<DaftariApp> {
     if (widget.router == null) {
       _ownedRouter = AppRouter.create(
         appLock: widget.appLockCubit,
-        authCubit: widget.authCubit,
+        authSessionCubit: widget.authSessionCubit,
       );
     }
   }
@@ -60,7 +60,7 @@ class _DaftariAppState extends State<DaftariApp> {
   @override
   Widget build(BuildContext context) {
     Widget child = _buildSettingsApp();
-    final auth = widget.authCubit;
+    final auth = widget.authSessionCubit;
     if (auth != null) {
       child = BlocProvider.value(value: auth, child: child);
     }
