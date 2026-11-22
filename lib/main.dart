@@ -9,6 +9,7 @@ import 'package:marionette_flutter/marionette_flutter.dart';
 import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/app_logger.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/security/presentation/cubit/app_lock_cubit.dart';
 import 'firebase_options.dart';
@@ -36,6 +37,7 @@ Future<void> main() async {
       router: sl<GoRouter>(),
       settingsCubit: sl<SettingsCubit>(),
       appLockCubit: sl<AppLockCubit>(),
+      authCubit: sl<AuthCubit>(),
     ),
   );
 }

@@ -1909,6 +1909,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign out? Your local ledger data will not be deleted.'**
   String get authAccountSignOutMessage;
+
+  /// No description provided for @authErrorAccountMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'This device\'s ledger is linked to another account. Sign in with the original account to continue.'**
+  String get authErrorAccountMismatch;
+
+  /// No description provided for @authErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Check your email and password and try again.'**
+  String get authErrorAuth;
+
+  /// No description provided for @authErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect. Check your internet connection and try again.'**
+  String get authErrorNetwork;
+
+  /// No description provided for @authErrorUnconfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Account sign-in is not configured in this build. Your ledger continues to work locally.'**
+  String get authErrorUnconfigured;
+
+  /// No description provided for @authErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get authErrorGeneric;
+
+  /// No description provided for @authPasswordUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully.'**
+  String get authPasswordUpdated;
+
+  /// No description provided for @authEmailNotVerifiedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is not verified yet. Open the link in your inbox and try again.'**
+  String get authEmailNotVerifiedYet;
+
+  /// No description provided for @authSignedOutSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out. Your local ledger data is safe on this device.'**
+  String get authSignedOutSuccess;
+
+  /// No description provided for @authLinkedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger linked to your account.'**
+  String get authLinkedSuccess;
 }
 
 class _AppLocalizationsDelegate

@@ -88,6 +88,17 @@ class CustomerDao extends DatabaseAccessor<AppDatabase>
   Future<List<Customer>> getActiveCustomers() =>
       runDatabaseOperation(_activeCustomers().get);
 
+  /// Returns `true` when at least one customer record exists, including
+  /// soft-deleted (archived) records.
+  Future<bool> hasAnyCustomers() {
+    return runDatabaseOperation(() async {
+      final query = selectOnly(customers)
+        ..addColumns([customers.id])
+        ..limit(1);
+      return await query.getSingleOrNull() != null;
+    });
+  }
+
   Stream<List<Customer>> watchActiveCustomers() => _activeCustomers().watch();
 
   Stream<List<CustomerWithBalance>> watchCustomersWithBalances({String? id}) {

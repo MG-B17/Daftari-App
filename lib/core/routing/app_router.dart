@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -34,35 +36,55 @@ import '../di/service_locator.dart';
 import 'app_routes.dart';
 
 abstract final class AppRouter {
+  static Listenable? _combineListenables(
+    AppLockCubit? appLock,
+    AuthCubit? authCubit,
+  ) {
+    if (appLock != null && authCubit != null) {
+      return Listenable.merge([appLock, authCubit]);
+    }
+    return appLock ?? authCubit;
+  }
+
   static GoRouter create({
     LocalStorageService? localStorage,
     OnboardingCubit Function()? createOnboardingCubit,
     AppLockCubit? appLock,
+    AuthCubit? authCubit,
   }) => GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: appLock,
+    refreshListenable: _combineListenables(appLock, authCubit),
     redirect: (context, state) {
-      if (appLock == null) return null;
       final path = state.uri.path;
-      if (!appLock.state.initialized) {
-        return path == AppRoutes.splash ? null : AppRoutes.splash;
+      if (appLock != null) {
+        if (!appLock.state.initialized) {
+          return path == AppRoutes.splash ? null : AppRoutes.splash;
+        }
+        if (appLock.state.locked) {
+          return path == AppRoutes.lock ? null : AppRoutes.lock;
+        }
+        if (path == AppRoutes.lock) {
+          if (authCubit?.state.passwordRecoveryPending == true) {
+            return AppRoutes.authUpdatePassword;
+          }
+          return localStorage != null && !localStorage.onboardingCompleted
+              ? AppRoutes.onboarding
+              : AppRoutes.root;
+        }
+        if (path == AppRoutes.settingsPin) {
+          final mode = state.uri.queryParameters['mode'];
+          if (mode == 'reset' ||
+              mode == 'unlock' ||
+              (mode == 'setup' && appLock.state.settings.isPinEnabled) ||
+              ((mode == 'change' || mode == 'disable') &&
+                  !appLock.state.settings.isPinEnabled)) {
+            return AppRoutes.settings;
+          }
+        }
       }
-      if (appLock.state.locked) {
-        return path == AppRoutes.lock ? null : AppRoutes.lock;
-      }
-      if (path == AppRoutes.lock) {
-        return localStorage != null && !localStorage.onboardingCompleted
-            ? AppRoutes.onboarding
-            : AppRoutes.root;
-      }
-      if (path == AppRoutes.settingsPin) {
-        final mode = state.uri.queryParameters['mode'];
-        if (mode == 'reset' ||
-            mode == 'unlock' ||
-            (mode == 'setup' && appLock.state.settings.isPinEnabled) ||
-            ((mode == 'change' || mode == 'disable') &&
-                !appLock.state.settings.isPinEnabled)) {
-          return AppRoutes.settings;
+      if (authCubit != null && authCubit.state.passwordRecoveryPending) {
+        if (path != AppRoutes.authUpdatePassword && path != AppRoutes.splash) {
+          return AppRoutes.authUpdatePassword;
         }
       }
       return null;

@@ -8,6 +8,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/auth/data/services/ledger_owner_storage.dart';
+import '../../features/auth/data/services/supabase_auth_service.dart';
+import '../../features/auth/data/services/supabase_bootstrap.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/auth/domain/usecases/confirm_ledger_link_usecase.dart';
+import '../../features/auth/domain/usecases/send_password_reset_usecase.dart';
+import '../../features/auth/domain/usecases/sign_in_usecase.dart';
+import '../../features/auth/domain/usecases/sign_out_usecase.dart';
+import '../../features/auth/domain/usecases/sign_up_usecase.dart';
+import '../../features/auth/domain/usecases/update_password_usecase.dart';
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/create_customer_usecase.dart';
@@ -151,6 +163,74 @@ Future<void> configureDependencies() async {
   }
   if (!sl.isRegistered<CustomerDao>()) {
     sl.registerLazySingleton<CustomerDao>(() => sl<AppDatabase>().customerDao);
+  }
+  if (!sl.isRegistered<SupabaseBootstrap>()) {
+    sl.registerLazySingleton<SupabaseBootstrap>(SupabaseBootstrap.new);
+  }
+  await sl<SupabaseBootstrap>().initialize(sl<FlutterSecureStorage>());
+  if (!sl.isRegistered<LedgerOwnerStorage>()) {
+    sl.registerLazySingleton<LedgerOwnerStorage>(
+      () => LedgerOwnerStorage(sl<FlutterSecureStorage>()),
+    );
+  }
+  if (!sl.isRegistered<AuthService>()) {
+    sl.registerLazySingleton<AuthService>(
+      () => SupabaseAuthService(sl<SupabaseBootstrap>()),
+    );
+  }
+  if (!sl.isRegistered<AuthRepository>()) {
+    sl.registerLazySingleton<AuthRepository>(
+      () => AuthRepositoryImpl(
+        sl<AuthService>(),
+        sl<LedgerOwnerStorage>(),
+        sl<CustomerDao>(),
+        sl<ErrorHandler>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<SignInUseCase>()) {
+    sl.registerLazySingleton<SignInUseCase>(
+      () => SignInUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SignUpUseCase>()) {
+    sl.registerLazySingleton<SignUpUseCase>(
+      () => SignUpUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SignOutUseCase>()) {
+    sl.registerLazySingleton<SignOutUseCase>(
+      () => SignOutUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<ConfirmLedgerLinkUseCase>()) {
+    sl.registerLazySingleton<ConfirmLedgerLinkUseCase>(
+      () => ConfirmLedgerLinkUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SendPasswordResetUseCase>()) {
+    sl.registerLazySingleton<SendPasswordResetUseCase>(
+      () => SendPasswordResetUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<UpdatePasswordUseCase>()) {
+    sl.registerLazySingleton<UpdatePasswordUseCase>(
+      () => UpdatePasswordUseCase(sl<AuthRepository>()),
+    );
+  }
+  if (!sl.isRegistered<AuthCubit>()) {
+    sl.registerLazySingleton<AuthCubit>(
+      () => AuthCubit(
+        sl<AuthRepository>(),
+        sl<SignInUseCase>(),
+        sl<SignUpUseCase>(),
+        sl<SignOutUseCase>(),
+        sl<ConfirmLedgerLinkUseCase>(),
+        sl<SendPasswordResetUseCase>(),
+        sl<UpdatePasswordUseCase>(),
+      ),
+      dispose: (cubit) => cubit.close(),
+    );
   }
   if (!sl.isRegistered<TransactionDao>()) {
     sl.registerLazySingleton<TransactionDao>(
@@ -374,11 +454,13 @@ Future<void> configureDependencies() async {
     );
   }
   await sl<AppLockCubit>().initialize();
+  await sl<AuthCubit>().initialize();
   if (!sl.isRegistered<GoRouter>()) {
     sl.registerLazySingleton<GoRouter>(
       () => AppRouter.create(
         localStorage: sl<LocalStorageService>(),
         appLock: sl<AppLockCubit>(),
+        authCubit: sl<AuthCubit>(),
         createOnboardingCubit: () => sl<OnboardingCubit>(),
       ),
       dispose: (router) => router.dispose(),
