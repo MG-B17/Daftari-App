@@ -11,49 +11,74 @@ class BackupAccountCard extends StatelessWidget {
   final String? email;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: AppSpacing.settingsCardPadding,
-    decoration: BoxDecoration(
-      color: context.appColors.customersAccentSurface,
-      borderRadius: AppSpacing.settingsOptionRadius,
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SettingsIconBox(icon: Icons.storefront_outlined),
-        SizedBox(width: AppSpacing.compact),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (shopName case final name? when name.isNotEmpty)
-                Text(name, style: context.textTheme.titleMedium),
-              if (email case final address? when address.isNotEmpty)
-                Text(
-                  address,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colorScheme.onSurfaceVariant,
+  Widget build(BuildContext context) {
+    final trimmedShop = shopName?.trim();
+    final trimmedEmail = email?.trim();
+    final hasAccount =
+        (trimmedShop != null && trimmedShop.isNotEmpty) ||
+        (trimmedEmail != null && trimmedEmail.isNotEmpty);
+    final captionStyle = context.textTheme.bodySmall?.copyWith(
+      color: context.colorScheme.onSurfaceVariant,
+    );
+    return Container(
+      width: double.infinity,
+      padding: AppSpacing.settingsCardPadding,
+      decoration: BoxDecoration(
+        color: context.appColors.customersAccentSurface,
+        borderRadius: AppSpacing.settingsOptionRadius,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SettingsIconBox(
+            icon: hasAccount
+                ? Icons.storefront_outlined
+                : Icons.person_outline_rounded,
+          ),
+          SizedBox(width: AppSpacing.compact),
+          Expanded(
+            child: hasAccount
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (trimmedShop != null && trimmedShop.isNotEmpty)
+                        Text(trimmedShop, style: context.textTheme.titleMedium),
+                      if (trimmedEmail != null && trimmedEmail.isNotEmpty)
+                        Text(trimmedEmail, style: captionStyle),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.backupAccountSignedOutTitle,
+                        style: context.textTheme.titleMedium,
+                      ),
+                      Text(
+                        context.l10n.backupAccountSignedOutSubtitle,
+                        style: captionStyle,
+                      ),
+                    ],
                   ),
+          ),
+          if (hasAccount) ...[
+            SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: AppSpacing.badgePadding,
+              decoration: BoxDecoration(
+                color: context.colorScheme.primary,
+                borderRadius: AppSpacing.settingsOptionRadius,
+              ),
+              child: Text(
+                context.l10n.backupActiveAccount,
+                style: context.textTheme.labelMedium?.copyWith(
+                  color: context.colorScheme.onPrimary,
                 ),
-            ],
-          ),
-        ),
-        SizedBox(width: AppSpacing.sm),
-        Container(
-          padding: AppSpacing.badgePadding,
-          decoration: BoxDecoration(
-            color: context.colorScheme.primary,
-            borderRadius: AppSpacing.settingsOptionRadius,
-          ),
-          child: Text(
-            context.l10n.backupActiveAccount,
-            style: context.textTheme.labelMedium?.copyWith(
-              color: context.colorScheme.onPrimary,
+              ),
             ),
-          ),
-        ),
-      ],
-    ),
-  );
+          ],
+        ],
+      ),
+    );
+  }
 }

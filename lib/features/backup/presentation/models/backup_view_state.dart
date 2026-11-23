@@ -1,10 +1,12 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../auth/session/domain/entities/auth_user.dart';
+
 enum BackupStatus { neverBackedUp, pending, running, failed, upToDate }
 
 enum BackupSchedule { daily, weekly, monthly }
 
-/// Presentation snapshot rendered by the backup UI (mock data in Task 1).
+/// Presentation snapshot rendered by the backup UI (preview state in Task 1).
 final class BackupViewState extends Equatable {
   const BackupViewState({
     required this.status,
@@ -13,16 +15,16 @@ final class BackupViewState extends Equatable {
     this.lastConfirmedAt,
     this.accountEmail,
     this.accountShopName,
+    this.isPreview = false,
   });
 
-  /// Default preview: a linked ledger with local changes waiting for upload
-  /// and no schedule chosen yet.
-  static final mock = BackupViewState(
-    status: BackupStatus.pending,
-    pendingChanges: 3,
-    lastConfirmedAt: DateTime.now().subtract(const Duration(hours: 2)),
-    accountEmail: 'mohamed.store@gmail.com',
-    accountShopName: 'بقالة الأمانة - محمد',
+  /// Default empty preview before cloud backup is wired in later tasks.
+  factory BackupViewState.preview({AuthUser? user}) => BackupViewState(
+    status: BackupStatus.neverBackedUp,
+    pendingChanges: 0,
+    accountEmail: user?.email,
+    accountShopName: user?.shopName,
+    isPreview: true,
   );
 
   final BackupStatus status;
@@ -31,6 +33,7 @@ final class BackupViewState extends Equatable {
   final DateTime? lastConfirmedAt;
   final String? accountEmail;
   final String? accountShopName;
+  final bool isPreview;
 
   bool get isRunning => status == BackupStatus.running;
 
@@ -44,5 +47,6 @@ final class BackupViewState extends Equatable {
     lastConfirmedAt,
     accountEmail,
     accountShopName,
+    isPreview,
   ];
 }

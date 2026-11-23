@@ -18,44 +18,50 @@ class BackupSettingsSection extends StatelessWidget {
   final BackupViewState? state;
 
   @override
-  Widget build(BuildContext context) {
-    final view = state ?? BackupViewState.mock;
-    final l10n = context.l10n;
-    return SettingsSectionCard(
-      title: l10n.backupSectionTitle,
-      child: Material(
-        color: context.appColors.cardPaperSurface,
-        child: Column(
-          children: [
-            if (view.isRunning) ...[
-              const LinearProgressIndicator(),
-              SizedBox(height: AppSpacing.compact),
+  Widget build(BuildContext context) => BackupViewStateBuilder(
+    state: state,
+    builder: (context, view) {
+      final l10n = context.l10n;
+      return SettingsSectionCard(
+        title: l10n.backupSectionTitle,
+        child: Material(
+          color: context.appColors.cardPaperSurface,
+          child: Column(
+            children: [
+              if (view.isPreview) ...[
+                const BackupPreviewBanner(),
+                SizedBox(height: AppSpacing.compact),
+              ],
+              if (view.isRunning) ...[
+                const LinearProgressIndicator(),
+                SizedBox(height: AppSpacing.compact),
+              ],
+              _StatusRow(state: view),
+              Divider(height: AppSpacing.lg),
+              _BackupNowRow(state: view),
+              Divider(height: AppSpacing.lg),
+              ListTile(
+                key: const ValueKey('backup-manage-tile'),
+                contentPadding: EdgeInsets.zero,
+                leading: const SettingsIconBox(
+                  icon: Icons.drive_folder_upload_outlined,
+                ),
+                title: Text(l10n.backupManageTitle),
+                subtitle: Text(l10n.backupManageSubtitle),
+                trailing: Icon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Icons.chevron_left_rounded
+                      : Icons.chevron_right_rounded,
+                  size: AppSpacing.iconSmall,
+                ),
+                onTap: () => context.push(AppRoutes.settingsBackup),
+              ),
             ],
-            _StatusRow(state: view),
-            Divider(height: AppSpacing.lg),
-            _BackupNowRow(state: view),
-            Divider(height: AppSpacing.lg),
-            ListTile(
-              key: const ValueKey('backup-manage-tile'),
-              contentPadding: EdgeInsets.zero,
-              leading: const SettingsIconBox(
-                icon: Icons.drive_folder_upload_outlined,
-              ),
-              title: Text(l10n.backupManageTitle),
-              subtitle: Text(l10n.backupManageSubtitle),
-              trailing: Icon(
-                Directionality.of(context) == TextDirection.rtl
-                    ? Icons.chevron_left_rounded
-                    : Icons.chevron_right_rounded,
-                size: AppSpacing.iconSmall,
-              ),
-              onTap: () => context.push(AppRoutes.settingsBackup),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 class _StatusRow extends StatelessWidget {
@@ -68,6 +74,7 @@ class _StatusRow extends StatelessWidget {
     final captionStyle = context.textTheme.bodySmall?.copyWith(
       color: context.colorScheme.onSurfaceVariant,
     );
+    final failureText = state.failureHint(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -92,9 +99,9 @@ class _StatusRow extends StatelessWidget {
               SizedBox(height: AppSpacing.xxs),
               Text(state.lastConfirmedLabel(context), style: captionStyle),
               Text(state.pendingLabel(context), style: captionStyle),
-              if (state.status == BackupStatus.failed)
+              if (failureText != null)
                 Text(
-                  context.l10n.backupFailedHint,
+                  failureText,
                   style: context.textTheme.bodySmall?.copyWith(
                     color: context.appColors.creditColor,
                   ),

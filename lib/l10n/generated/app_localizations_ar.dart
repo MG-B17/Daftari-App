@@ -1066,6 +1066,21 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم تكتمل المحاولة الأخيرة. نسختك السابقة محفوظة.';
 
   @override
+  String get backupFailedFirstHint =>
+      'لم تكتمل محاولة النسخ. دفترك المحلي محفوظ بأمان على هذا الجهاز.';
+
+  @override
+  String get backupPreviewBanner =>
+      'معاينة — النسخ الاحتياطي السحابي غير متصل بعد.';
+
+  @override
+  String get backupAccountSignedOutTitle => 'غير مسجل الدخول';
+
+  @override
+  String get backupAccountSignedOutSubtitle =>
+      'سجّل الدخول من إعدادات الحساب لتفعيل النسخ السحابي.';
+
+  @override
   String get backupNowAction => 'نسخ احتياطي الآن';
 
   @override
