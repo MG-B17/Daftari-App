@@ -17,6 +17,7 @@ class BackupStatusCard extends StatelessWidget {
     final captionStyle = context.textTheme.bodySmall?.copyWith(
       color: context.colorScheme.onSurfaceVariant,
     );
+    final failureText = state.failureHint(context);
     return Container(
       width: double.infinity,
       padding: AppSpacing.settingsCardPadding,
@@ -48,9 +49,9 @@ class BackupStatusCard extends StatelessWidget {
                       style: context.textTheme.titleLarge,
                     ),
                     Text(state.pendingLabel(context), style: captionStyle),
-                    if (state.status == BackupStatus.failed)
+                    if (failureText != null)
                       Text(
-                        context.l10n.backupFailedHint,
+                        failureText,
                         style: context.textTheme.bodySmall?.copyWith(
                           color: context.appColors.creditColor,
                         ),

@@ -2030,6 +2030,30 @@ abstract class AppLocalizations {
   /// **'The last attempt didn\'t finish. Your previous backup is safe.'**
   String get backupFailedHint;
 
+  /// No description provided for @backupFailedFirstHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup attempt didn\'t finish. Your local ledger is safe on this device.'**
+  String get backupFailedFirstHint;
+
+  /// No description provided for @backupPreviewBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview — cloud backup is not connected yet.'**
+  String get backupPreviewBanner;
+
+  /// No description provided for @backupAccountSignedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get backupAccountSignedOutTitle;
+
+  /// No description provided for @backupAccountSignedOutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in from Account settings to enable cloud backup.'**
+  String get backupAccountSignedOutSubtitle;
+
   /// No description provided for @backupNowAction.
   ///
   /// In en, this message translates to:

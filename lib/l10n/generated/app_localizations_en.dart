@@ -1079,6 +1079,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'The last attempt didn\'t finish. Your previous backup is safe.';
 
   @override
+  String get backupFailedFirstHint =>
+      'The backup attempt didn\'t finish. Your local ledger is safe on this device.';
+
+  @override
+  String get backupPreviewBanner =>
+      'Preview — cloud backup is not connected yet.';
+
+  @override
+  String get backupAccountSignedOutTitle => 'Signed out';
+
+  @override
+  String get backupAccountSignedOutSubtitle =>
+      'Sign in from Account settings to enable cloud backup.';
+
+  @override
   String get backupNowAction => 'Back up now';
 
   @override
