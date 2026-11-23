@@ -1,10 +1,11 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../auth/session/domain/entities/auth_user.dart';
+import '../../domain/entities/backup_schedule.dart';
+
+export '../../domain/entities/backup_schedule.dart' show BackupSchedule;
 
 enum BackupStatus { neverBackedUp, pending, running, failed, upToDate }
-
-enum BackupSchedule { daily, weekly, monthly }
 
 /// Presentation snapshot rendered by the backup UI (preview state in Task 1).
 final class BackupViewState extends Equatable {
