@@ -15,6 +15,7 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/auth/login/presentation/screens/login_screen.dart';
 import 'package:daftariapp/features/auth/sign_up/presentation/screens/register_screen.dart';
+import 'package:daftariapp/features/backup/presentation/screens/backup_screen.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
@@ -220,6 +221,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.authAccountTitle), findsOneWidget);
+    await _scrollTo(tester, find.text(l10n.settingsAppearanceTitle));
     expect(find.text(l10n.settingsAppearanceTitle), findsOneWidget);
     expect(find.text(l10n.settingsThemeLight), findsOneWidget);
     expect(find.text(l10n.settingsThemeDark), findsOneWidget);
@@ -245,6 +247,7 @@ void main() {
       find.descendant(of: find.byType(AppBar), matching: find.text('Settings')),
       findsOneWidget,
     );
+    await _scrollTo(tester, find.text('Appearance'));
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('App language'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
@@ -274,6 +277,7 @@ void main() {
 
   testWidgets('theme changes apply immediately and persist', (tester) async {
     final harness = await _pumpSettings(tester, themeMode: ThemeMode.light);
+    await _scrollTo(tester, find.byKey(const ValueKey('theme-light')));
     var context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.light);
     expect(
@@ -433,6 +437,21 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('language-option-en')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    await _dispose(tester, harness);
+  });
+
+  testWidgets('backup section opens the backup screen', (tester) async {
+    final harness = await _pumpSettings(tester, localeCode: 'en');
+    final l10n = tester.element(find.byType(SettingsScreen)).l10n;
+    expect(find.text(l10n.backupSectionTitle), findsOneWidget);
+
+    await _openTile(tester, l10n.backupManageTitle);
+
+    expect(find.byType(BackupScreen), findsOneWidget);
+    expect(harness.router.state.uri.path, AppRoutes.settingsBackup);
+    harness.router.pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
     await _dispose(tester, harness);
   });
 

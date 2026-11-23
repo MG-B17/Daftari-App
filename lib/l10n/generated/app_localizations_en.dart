@@ -1032,4 +1032,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authLinkedSuccess => 'Ledger linked to your account.';
+
+  @override
+  String get backupSectionTitle => 'Cloud backup';
+
+  @override
+  String get backupSyncStatusTitle => 'Cloud sync status';
+
+  @override
+  String get backupStatusNeverBackedUp => 'Not backed up yet';
+
+  @override
+  String get backupStatusPending => 'Changes pending';
+
+  @override
+  String get backupStatusRunning => 'Backing up…';
+
+  @override
+  String get backupStatusFailed => 'Backup failed';
+
+  @override
+  String get backupStatusUpToDate => 'Connected & secure';
+
+  @override
+  String backupLastConfirmed(String day, String time) {
+    return 'Last backup: $day, $time';
+  }
+
+  @override
+  String get backupNeverConfirmed => 'No backup yet';
+
+  @override
+  String backupPendingChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes pending',
+      one: '1 change pending',
+      zero: 'No pending changes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupFailedHint =>
+      'The last attempt didn\'t finish. Your previous backup is safe.';
+
+  @override
+  String get backupNowAction => 'Back up now';
+
+  @override
+  String get backupNowTitle => 'Save an instant cloud copy';
+
+  @override
+  String get backupNowSubtitle => 'Secure all debts and payments now';
+
+  @override
+  String get backupManageTitle => 'Manage backup';
+
+  @override
+  String get backupManageSubtitle => 'Backup schedule and status';
+
+  @override
+  String get backupScreenTitle => 'Backup settings';
+
+  @override
+  String get backupActiveAccount => 'Active account';
+
+  @override
+  String get backupScheduleTitle => 'Backup schedule';
+
+  @override
+  String get backupScheduleDaily => 'Daily';
+
+  @override
+  String get backupScheduleWeekly => 'Weekly';
+
+  @override
+  String get backupScheduleMonthly => 'Monthly';
+
+  @override
+  String get backupScheduleCaption =>
+      'Choose how often to back up automatically when Android allows.';
+
+  @override
+  String get backupMockNotice => 'Preview only — backup isn\'t available yet.';
 }

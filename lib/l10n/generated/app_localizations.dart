@@ -1963,6 +1963,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ledger linked to your account.'**
   String get authLinkedSuccess;
+
+  /// No description provided for @backupSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup'**
+  String get backupSectionTitle;
+
+  /// No description provided for @backupSyncStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync status'**
+  String get backupSyncStatusTitle;
+
+  /// No description provided for @backupStatusNeverBackedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Not backed up yet'**
+  String get backupStatusNeverBackedUp;
+
+  /// No description provided for @backupStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes pending'**
+  String get backupStatusPending;
+
+  /// No description provided for @backupStatusRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up…'**
+  String get backupStatusRunning;
+
+  /// No description provided for @backupStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup failed'**
+  String get backupStatusFailed;
+
+  /// No description provided for @backupStatusUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected & secure'**
+  String get backupStatusUpToDate;
+
+  /// No description provided for @backupLastConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last backup: {day}, {time}'**
+  String backupLastConfirmed(String day, String time);
+
+  /// No description provided for @backupNeverConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'No backup yet'**
+  String get backupNeverConfirmed;
+
+  /// No description provided for @backupPendingChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No pending changes} =1{1 change pending} other{{count} changes pending}}'**
+  String backupPendingChanges(int count);
+
+  /// No description provided for @backupFailedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The last attempt didn\'t finish. Your previous backup is safe.'**
+  String get backupFailedHint;
+
+  /// No description provided for @backupNowAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up now'**
+  String get backupNowAction;
+
+  /// No description provided for @backupNowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save an instant cloud copy'**
+  String get backupNowTitle;
+
+  /// No description provided for @backupNowSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure all debts and payments now'**
+  String get backupNowSubtitle;
+
+  /// No description provided for @backupManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage backup'**
+  String get backupManageTitle;
+
+  /// No description provided for @backupManageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup schedule and status'**
+  String get backupManageSubtitle;
+
+  /// No description provided for @backupScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup settings'**
+  String get backupScreenTitle;
+
+  /// No description provided for @backupActiveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Active account'**
+  String get backupActiveAccount;
+
+  /// No description provided for @backupScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup schedule'**
+  String get backupScheduleTitle;
+
+  /// No description provided for @backupScheduleDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get backupScheduleDaily;
+
+  /// No description provided for @backupScheduleWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get backupScheduleWeekly;
+
+  /// No description provided for @backupScheduleMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get backupScheduleMonthly;
+
+  /// No description provided for @backupScheduleCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how often to back up automatically when Android allows.'**
+  String get backupScheduleCaption;
+
+  /// No description provided for @backupMockNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only — backup isn\'t available yet.'**
+  String get backupMockNotice;
 }
 
 class _AppLocalizationsDelegate

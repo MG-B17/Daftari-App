@@ -11,6 +11,7 @@ import '../widgets/language_tile.dart';
 import '../widgets/settings_section_card.dart';
 import '../widgets/theme_mode_selector.dart';
 import '../../../auth/widgets/account_settings_section.dart';
+import '../../../backup/presentation/widgets/backup_settings_section.dart';
 import '../../../security/presentation/widgets/security_settings_section.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -30,6 +31,8 @@ class SettingsScreen extends StatelessWidget {
           body: ListView(
             children: [
               const AccountSettingsSection(),
+              SizedBox(height: AppSpacing.settingsSectionGap),
+              const BackupSettingsSection(),
               SizedBox(height: AppSpacing.settingsSectionGap),
               SettingsSectionCard(
                 title: context.l10n.settingsAppearanceTitle,

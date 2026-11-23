@@ -11,6 +11,8 @@ abstract final class AppRoutes {
   static const lockName = 'lock';
   static const settingsPin = '/settings/pin';
   static const settingsPinName = 'settings-pin';
+  static const settingsBackup = '/settings/backup';
+  static const settingsBackupName = 'settings-backup';
   static const customers = '/customers';
   static const customersName = 'customers';
   static const customerNew = '/customers/new';

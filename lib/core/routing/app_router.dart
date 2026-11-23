@@ -13,6 +13,7 @@ import '../../features/auth/update_password/presentation/cubit/update_password_c
 import '../../features/auth/update_password/presentation/screens/update_password_screen.dart';
 import '../../features/auth/verify_email/presentation/cubit/verify_email_cubit.dart';
 import '../../features/auth/verify_email/presentation/screens/verify_email_screen.dart';
+import '../../features/backup/presentation/screens/backup_screen.dart';
 import '../../features/customers/domain/entities/picked_contact.dart';
 import '../../features/customers/presentation/cubit/customer_details_cubit.dart';
 import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
@@ -130,6 +131,14 @@ abstract final class AppRouter {
             child: PinLockScreen(mode: mode),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.settingsBackup,
+        name: AppRoutes.settingsBackupName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: const BackupScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.splash,
