@@ -74,3 +74,6 @@ vendor/bundle/
 **/fastlane/screenshots/
 /screenshots/
 /tmp_screenshots/
+
+# Supabase migration test Node dependencies
+supabase/tests/node_modules/

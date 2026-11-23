@@ -39,6 +39,12 @@ import '../../features/auth/verify_email/domain/repositories/verify_email_reposi
 import '../../features/auth/verify_email/domain/usecases/check_email_verified_usecase.dart';
 import '../../features/auth/verify_email/domain/usecases/resend_verification_email_usecase.dart';
 import '../../features/auth/verify_email/presentation/cubit/verify_email_cubit.dart';
+import '../../features/backup/data/repositories/drift_backup_local_store.dart';
+import '../../features/backup/data/repositories/supabase_backup_cloud_publisher.dart';
+import '../../features/backup/data/services/backup_device_storage.dart';
+import '../../features/backup/domain/repositories/backup_cloud_publisher.dart';
+import '../../features/backup/domain/repositories/backup_local_store.dart';
+import '../../features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/create_customer_usecase.dart';
@@ -91,6 +97,7 @@ import '../services/connectivity_service.dart';
 import '../services/contact_picker_service.dart';
 import '../services/date_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/session_commit_gate.dart';
 import '../services/widget_image_exporter.dart';
 import '../utils/app_date_utils.dart';
 
@@ -192,9 +199,15 @@ Future<void> configureDependencies() async {
       () => LedgerOwnerStorage(sl<FlutterSecureStorage>()),
     );
   }
+  if (!sl.isRegistered<SessionCommitGate>()) {
+    sl.registerLazySingleton<SessionCommitGate>(SessionCommitGate.new);
+  }
   if (!sl.isRegistered<AuthService>()) {
     sl.registerLazySingleton<AuthService>(
-      () => SupabaseAuthService(sl<SupabaseBootstrap>()),
+      () => SupabaseAuthService(
+        sl<SupabaseBootstrap>(),
+        commitGate: sl<SessionCommitGate>(),
+      ),
     );
   }
   if (!sl.isRegistered<AuthErrorMapper>()) {
@@ -339,6 +352,45 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<TransactionDao>()) {
     sl.registerLazySingleton<TransactionDao>(
       () => sl<AppDatabase>().transactionDao,
+    );
+  }
+  if (!sl.isRegistered<BackupDao>()) {
+    sl.registerLazySingleton<BackupDao>(() => sl<AppDatabase>().backupDao);
+  }
+  if (!sl.isRegistered<BackupDeviceStorage>()) {
+    sl.registerLazySingleton<BackupDeviceStorage>(
+      () => BackupDeviceStorage(sl<FlutterSecureStorage>(), sl<BackupDao>()),
+    );
+  }
+  if (!sl.isRegistered<BackupLocalStore>()) {
+    sl.registerLazySingleton<BackupLocalStore>(
+      () => DriftBackupLocalStore(
+        backupDao: sl<BackupDao>(),
+        authService: sl<AuthService>(),
+        ownerStorage: sl<LedgerOwnerStorage>(),
+        deviceStorage: sl<BackupDeviceStorage>(),
+        connectivityService: sl<ConnectivityService>(),
+        errorHandler: sl<ErrorHandler>(),
+        commitGate: sl<SessionCommitGate>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<BackupCloudPublisher>()) {
+    sl.registerLazySingleton<BackupCloudPublisher>(
+      () => SupabaseBackupCloudPublisher(
+        bootstrap: sl<SupabaseBootstrap>(),
+        authService: sl<AuthService>(),
+        deviceStorage: sl<BackupDeviceStorage>(),
+        errorHandler: sl<ErrorHandler>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<UpdateBackupScheduleUseCase>()) {
+    sl.registerLazySingleton<UpdateBackupScheduleUseCase>(
+      () => UpdateBackupScheduleUseCase(
+        localStore: sl<BackupLocalStore>(),
+        dateService: sl<DateService>(),
+      ),
     );
   }
   if (!sl.isRegistered<ContactPickerService>()) {

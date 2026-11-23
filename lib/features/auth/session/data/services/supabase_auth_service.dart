@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../../../core/errors/app_exception.dart';
+import '../../../../../core/services/session_commit_gate.dart';
 import '../../domain/entities/auth_session_event.dart';
 import '../../domain/entities/auth_user.dart';
 import 'supabase_bootstrap.dart';
@@ -36,9 +37,10 @@ abstract interface class AuthService {
 }
 
 class SupabaseAuthService implements AuthService {
-  SupabaseAuthService(this._bootstrap);
+  SupabaseAuthService(this._bootstrap, {this._commitGate});
 
   final SupabaseBootstrap _bootstrap;
+  final SessionCommitGate? _commitGate;
 
   sb.SupabaseClient? get _client => _bootstrap.client;
 
@@ -144,13 +146,20 @@ class SupabaseAuthService implements AuthService {
   }
 
   @override
-  Future<void> signOut({String? expectedUserId}) async {
-    final client = _client;
-    if (client == null) return;
-    if (expectedUserId != null && currentUser?.id != expectedUserId) {
-      return;
+  Future<void> signOut({String? expectedUserId}) {
+    Future<void> performSignOut() async {
+      final client = _client;
+      if (client == null) return;
+      if (expectedUserId != null && currentUser?.id != expectedUserId) {
+        return;
+      }
+      await client.auth.signOut(scope: sb.SignOutScope.local);
     }
-    await client.auth.signOut(scope: sb.SignOutScope.local);
+
+    final gate = _commitGate;
+    return gate == null
+        ? performSignOut()
+        : gate.runSessionInvalidation(performSignOut);
   }
 
   @override

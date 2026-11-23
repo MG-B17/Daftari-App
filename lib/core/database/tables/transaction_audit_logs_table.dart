@@ -36,8 +36,12 @@ class TransactionAuditLogs extends Table {
 
   DateTimeColumn get createdAt => dateTime().clientDefault(DateTime.now)();
 
-  /// Monotonic local version used by the future backup sync.
+  /// Monotonic local version used by backup sync.
   IntColumn get localRevision => integer().withDefault(const Constant(1))();
+
+  /// Highest [localRevision] confirmed by cloud backup (`0` means never backed up).
+  IntColumn get acknowledgedRevision =>
+      integer().withDefault(const Constant(0))();
 
   DateTimeColumn get syncedAt => dateTime().nullable()();
 

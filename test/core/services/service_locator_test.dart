@@ -5,6 +5,11 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
+import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
+import 'package:daftariapp/features/backup/domain/repositories/backup_local_store.dart';
+import 'package:daftariapp/features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import 'package:daftariapp/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:daftariapp/features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import 'package:daftariapp/features/dashboard/presentation/cubit/dashboard_cubit.dart';
@@ -80,6 +85,12 @@ void main() {
         sl<SecureStorageService>(),
         sl<BiometricAuthService>(),
         sl<SecurityRepository>(),
+        sl<BackupDao>(),
+        sl<BackupDeviceStorage>(),
+        sl<SessionCommitGate>(),
+        sl<BackupLocalStore>(),
+        sl<BackupCloudPublisher>(),
+        sl<UpdateBackupScheduleUseCase>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -111,6 +122,12 @@ void main() {
         sl<SecureStorageService>(),
         sl<BiometricAuthService>(),
         sl<SecurityRepository>(),
+        sl<BackupDao>(),
+        sl<BackupDeviceStorage>(),
+        sl<SessionCommitGate>(),
+        sl<BackupLocalStore>(),
+        sl<BackupCloudPublisher>(),
+        sl<UpdateBackupScheduleUseCase>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
@@ -193,6 +210,7 @@ void main() {
       expect(sl<AppDatabase>(), same(database));
       expect(sl<CustomerDao>(), same(database.customerDao));
       expect(sl<TransactionDao>(), same(database.transactionDao));
+      expect(sl<BackupDao>(), same(database.backupDao));
     },
   );
 }

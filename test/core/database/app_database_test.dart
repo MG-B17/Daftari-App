@@ -20,11 +20,18 @@ void main() {
     return rows.map((row) => row.data['name']).toSet();
   }
 
-  test('onCreate creates every table and index at schema version 1', () async {
-    expect(database.schemaVersion, 1);
+  test('onCreate creates every table and index at schema version 2', () async {
+    expect(database.schemaVersion, 2);
     expect(
       await schemaNames('table'),
-      containsAll(['customers', 'transactions', 'transaction_audit_logs']),
+      containsAll([
+        'customers',
+        'transactions',
+        'transaction_audit_logs',
+        'backup_metadata',
+        'backup_in_flight_batches',
+        'backup_device_identities',
+      ]),
     );
     expect(
       await schemaNames('index'),
@@ -41,7 +48,7 @@ void main() {
     final version = await database
         .customSelect('PRAGMA user_version')
         .getSingle();
-    expect(version.data['user_version'], 1);
+    expect(version.data['user_version'], 2);
   });
 
   test(
@@ -118,6 +125,97 @@ void main() {
     expect(
       await database.transactionDao.getCustomerTransactions(customer.id),
       isEmpty,
+    );
+  });
+
+  test('CHECK constraints enforce single-row backup metadata and in-flight batch invariants', () async {
+    await expectLater(
+      database
+          .into(database.backupMetadata)
+          .insert(const BackupMetadataCompanion(id: Value(2))),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupMetadata)
+          .insert(
+            const BackupMetadataCompanion(
+              id: Value(1),
+              schedule: Value('hourly'),
+              nextDueAtIso: Value('2026-11-24T10:00:00.000Z'),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupMetadata)
+          .insert(
+            const BackupMetadataCompanion(
+              id: Value(1),
+              schedule: Value('daily'),
+              nextDueAtIso: Value(null),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupInFlightBatches)
+          .insert(
+            const BackupInFlightBatchesCompanion(
+              id: Value(2),
+              batchId: Value('b-1'),
+              ownerUserId: Value('u-1'),
+              deviceId: Value('d-1'),
+              capturedAtIso: Value('2026-11-24T10:00:00.000Z'),
+              payloadJson: Value('{}'),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupInFlightBatches)
+          .insert(
+            const BackupInFlightBatchesCompanion(
+              id: Value(1),
+              batchId: Value('   '),
+              ownerUserId: Value('u-1'),
+              deviceId: Value('d-1'),
+              capturedAtIso: Value('2026-11-24T10:00:00.000Z'),
+              payloadJson: Value('{}'),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupDeviceIdentities)
+          .insert(
+            const BackupDeviceIdentitiesCompanion(
+              id: Value(2),
+              deviceId: Value('device-1'),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
+    );
+
+    await expectLater(
+      database
+          .into(database.backupDeviceIdentities)
+          .insert(
+            const BackupDeviceIdentitiesCompanion(
+              id: Value(1),
+              deviceId: Value('   '),
+            ),
+          ),
+      throwsA(isA<SqliteException>()),
     );
   });
 }
