@@ -1016,4 +1016,92 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authLinkedSuccess => 'تم ربط الدفتر بحسابك.';
+
+  @override
+  String get backupSectionTitle => 'النسخ الاحتياطي السحابي';
+
+  @override
+  String get backupSyncStatusTitle => 'حالة المزامنة السحابية';
+
+  @override
+  String get backupStatusNeverBackedUp => 'لم يتم النسخ بعد';
+
+  @override
+  String get backupStatusPending => 'تغييرات بانتظار النسخ';
+
+  @override
+  String get backupStatusRunning => 'جارٍ النسخ…';
+
+  @override
+  String get backupStatusFailed => 'فشل النسخ';
+
+  @override
+  String get backupStatusUpToDate => 'متصل وآمن';
+
+  @override
+  String backupLastConfirmed(String day, String time) {
+    return 'آخر نسخة: $day $time';
+  }
+
+  @override
+  String get backupNeverConfirmed => 'لا توجد نسخة بعد';
+
+  @override
+  String backupPendingChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تغيير بانتظار النسخ',
+      many: '$count تغييرًا بانتظار النسخ',
+      few: '$count تغييرات بانتظار النسخ',
+      two: 'تغييران بانتظار النسخ',
+      one: 'تغيير واحد بانتظار النسخ',
+      zero: 'لا توجد تغييرات معلقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get backupFailedHint =>
+      'لم تكتمل المحاولة الأخيرة. نسختك السابقة محفوظة.';
+
+  @override
+  String get backupNowAction => 'نسخ احتياطي الآن';
+
+  @override
+  String get backupNowTitle => 'حفظ نسخة فورية للسحابة';
+
+  @override
+  String get backupNowSubtitle => 'تأمين كافة الديون والتسديدات الآن';
+
+  @override
+  String get backupManageTitle => 'إدارة النسخ الاحتياطي';
+
+  @override
+  String get backupManageSubtitle => 'جدول النسخ وحالته';
+
+  @override
+  String get backupScreenTitle => 'إعدادات النسخ الاحتياطي';
+
+  @override
+  String get backupActiveAccount => 'حساب نشط';
+
+  @override
+  String get backupScheduleTitle => 'جدول النسخ الاحتياطي';
+
+  @override
+  String get backupScheduleDaily => 'يوميًا';
+
+  @override
+  String get backupScheduleWeekly => 'أسبوعيًا';
+
+  @override
+  String get backupScheduleMonthly => 'شهريًا';
+
+  @override
+  String get backupScheduleCaption =>
+      'اختر عدد مرات النسخ التلقائي عندما يسمح أندرويد بذلك.';
+
+  @override
+  String get backupMockNotice => 'معاينة فقط — النسخ الاحتياطي غير متاح بعد.';
 }
