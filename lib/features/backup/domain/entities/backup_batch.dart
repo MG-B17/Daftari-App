@@ -157,22 +157,25 @@ final class BackupBatch extends Equatable {
 
   bool get isNotEmpty => !isEmpty;
 
-  BackupBatchAcknowledgment toAcknowledgment({required DateTime confirmedAt}) =>
-      BackupBatchAcknowledgment(
-        batchId: batchId,
-        ownerUserId: ownerUserId,
-        deviceId: deviceId,
-        confirmedAt: confirmedAt,
-        customerRevisions: {
-          for (final record in customers) record.id: record.localRevision,
-        },
-        transactionRevisions: {
-          for (final record in transactions) record.id: record.localRevision,
-        },
-        auditLogRevisions: {
-          for (final record in auditLogs) record.id: record.localRevision,
-        },
-      );
+  BackupBatchAcknowledgment toAcknowledgment({
+    required DateTime confirmedAt,
+    String? authorizedSessionId,
+  }) => BackupBatchAcknowledgment(
+    batchId: batchId,
+    ownerUserId: ownerUserId,
+    deviceId: deviceId,
+    confirmedAt: confirmedAt,
+    authorizedSessionId: authorizedSessionId,
+    customerRevisions: {
+      for (final record in customers) record.id: record.localRevision,
+    },
+    transactionRevisions: {
+      for (final record in transactions) record.id: record.localRevision,
+    },
+    auditLogRevisions: {
+      for (final record in auditLogs) record.id: record.localRevision,
+    },
+  );
 
   @override
   List<Object?> get props => [
@@ -197,6 +200,7 @@ final class BackupBatchAcknowledgment extends Equatable {
     required Map<String, int> customerRevisions,
     required Map<String, int> transactionRevisions,
     required Map<String, int> auditLogRevisions,
+    this.authorizedSessionId,
   }) : confirmedAt = confirmedAt.toUtc(),
        customerRevisions = Map.unmodifiable(customerRevisions),
        transactionRevisions = Map.unmodifiable(transactionRevisions),
@@ -209,6 +213,7 @@ final class BackupBatchAcknowledgment extends Equatable {
   final Map<String, int> customerRevisions;
   final Map<String, int> transactionRevisions;
   final Map<String, int> auditLogRevisions;
+  final String? authorizedSessionId;
 
   int get totalRecords =>
       customerRevisions.length +
@@ -224,6 +229,7 @@ final class BackupBatchAcknowledgment extends Equatable {
     customerRevisions,
     transactionRevisions,
     auditLogRevisions,
+    authorizedSessionId,
   ];
 }
 

@@ -76,6 +76,7 @@ abstract final class BackupCutoffPolicy {
     required String batchOwnerUserId,
     required String batchDeviceId,
     required BackupEligibilityContext currentContext,
+    String? authorizedSessionId,
   }) {
     if (!currentContext.hasAuthenticatedUser) {
       return BackupIneligibilityReason.signedOut;
@@ -89,6 +90,11 @@ abstract final class BackupCutoffPolicy {
     if (currentContext.authenticatedUserId != batchOwnerUserId ||
         currentContext.linkedOwnerUserId != batchOwnerUserId) {
       return BackupIneligibilityReason.accountMismatch;
+    }
+    if (authorizedSessionId != null &&
+        authorizedSessionId.trim().isNotEmpty &&
+        currentContext.sessionInstanceId != authorizedSessionId) {
+      return BackupIneligibilityReason.signedOut;
     }
     if (!currentContext.hasDeviceId ||
         currentContext.deviceId != batchDeviceId ||

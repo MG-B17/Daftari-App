@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,6 +10,7 @@ import 'core/animation/app_theme_transition.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
+import 'features/backup/presentation/cubit/backup_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/settings/presentation/cubit/settings_state.dart';
 import 'features/security/presentation/cubit/app_lock_cubit.dart';
@@ -23,6 +26,7 @@ class DaftariApp extends StatefulWidget {
     this.settingsCubit,
     this.appLockCubit,
     this.authSessionCubit,
+    this.backupCubit,
   });
 
   final Locale locale;
@@ -31,17 +35,19 @@ class DaftariApp extends StatefulWidget {
   final SettingsCubit? settingsCubit;
   final AppLockCubit? appLockCubit;
   final AuthSessionCubit? authSessionCubit;
+  final BackupCubit? backupCubit;
 
   @override
   State<DaftariApp> createState() => _DaftariAppState();
 }
 
-class _DaftariAppState extends State<DaftariApp> {
+class _DaftariAppState extends State<DaftariApp> with WidgetsBindingObserver {
   GoRouter? _ownedRouter;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.router == null) {
       _ownedRouter = AppRouter.create(
         appLock: widget.appLockCubit,
@@ -51,7 +57,15 @@ class _DaftariAppState extends State<DaftariApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(widget.backupCubit?.onAppResumed());
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // An injected router is owned by its caller (the service locator in main).
     _ownedRouter?.dispose();
     super.dispose();
@@ -60,6 +74,10 @@ class _DaftariAppState extends State<DaftariApp> {
   @override
   Widget build(BuildContext context) {
     Widget child = _buildSettingsApp();
+    final backup = widget.backupCubit;
+    if (backup != null) {
+      child = BlocProvider.value(value: backup, child: child);
+    }
     final auth = widget.authSessionCubit;
     if (auth != null) {
       child = BlocProvider.value(value: auth, child: child);

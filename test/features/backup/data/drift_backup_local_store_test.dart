@@ -10,6 +10,7 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/session_commit_gate.dart';
 import 'package:daftariapp/features/auth/session/data/services/ledger_owner_storage.dart';
+import 'package:daftariapp/features/auth/session/data/services/secure_gotrue_storage.dart';
 import 'package:daftariapp/features/auth/session/data/services/supabase_auth_service.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_session_event.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_user.dart';
@@ -1089,4 +1090,189 @@ void main() {
       await process2.db.close();
     }
   });
+
+  test('P12-16: foreground sign-out and replacement account sign-in after server publication blocks stale worker acknowledgment and preserves in-flight batch and revisions', () async {
+    const secureStorage = FlutterSecureStorage();
+    const persistedStorage = SecureSupabaseLocalStorage(secureStorage);
+    await persistedStorage.persistSession(
+      '{"user":{"id":"$ownerUserId","email":"shop@example.com"}}',
+    );
+
+    final fgGate = SessionCommitGate(coordinator: null);
+    // Shared cross-isolate coordinator simulation between foreground and worker.
+    var sharedEpoch = 0;
+    var sharedInvalidations = 0;
+    var sharedActiveCommits = 0;
+    final sharedCoordinator = _InMemoryCrossIsolateCoordinator(
+      readEpochFn: () async => sharedEpoch,
+      tryEnterCommitFn: (expectedEpoch) async {
+        if (sharedInvalidations > 0 || sharedEpoch != expectedEpoch) {
+          return false;
+        }
+        sharedActiveCommits++;
+        return true;
+      },
+      exitCommitFn: () async {
+        if (sharedActiveCommits > 0) sharedActiveCommits--;
+      },
+      beginInvalidationFn: () async {
+        sharedInvalidations++;
+      },
+      endInvalidationFn: () async {
+        sharedEpoch++;
+        if (sharedInvalidations > 0) sharedInvalidations--;
+      },
+    );
+
+    final foregroundGate = SessionCommitGate(coordinator: sharedCoordinator);
+    final workerGate = SessionCommitGate(coordinator: sharedCoordinator);
+
+    // Worker isolate has its own cached AuthService that still thinks ownerUserId
+    // is logged in even after foreground signs out and another account signs in.
+    final workerCachedAuth = _FakeAuthService(
+      user: const AuthUser(
+        id: ownerUserId,
+        email: 'shop@example.com',
+        shopName: 'Daftari Shop',
+        emailVerified: true,
+      ),
+      commitGate: workerGate,
+    );
+    addTearDown(workerCachedAuth.dispose);
+
+    final workerDb = AppDatabase(NativeDatabase(databaseFile));
+    late String customerId;
+    late String txId;
+    try {
+      final customer = await workerDb.customerDao.createCustomer(
+        name: 'P12-16 Customer',
+      );
+      customerId = customer.id;
+      final tx = await workerDb.transactionDao.createTransaction(
+        customerId: customer.id,
+        type: TransactionTypes.credit,
+        amountPiasters: 9000,
+      );
+      txId = tx.id;
+
+      final workerStore = DriftBackupLocalStore(
+        backupDao: workerDb.backupDao,
+        authService: workerCachedAuth,
+        ownerStorage: LedgerOwnerStorage(secureStorage),
+        deviceStorage: BackupDeviceStorage(
+          secureStorage,
+          workerDb.backupDao,
+          generateDeviceId: () => deviceId,
+          generateDeviceSecret: () => deviceSecret,
+        ),
+        connectivityService: connectivityService,
+        errorHandler: errorHandler,
+        commitGate: workerGate,
+        hasPersistedSession: persistedStorage.hasAccessToken,
+        readPersistedSession: persistedStorage.readSessionSnapshot,
+      );
+      final workerRunBackup = RunBackupUseCase(
+        localStore: workerStore,
+        cloudPublisher: cloudPublisher,
+        runLock: InMemoryBackupRunLock(),
+        dateService: clock,
+        generateBatchId: () => 'batch-p12-16',
+      );
+
+      final publishedPause = Completer<void>();
+      final releaseWorker = Completer<void>();
+      cloudPublisher.onPublishStarted = (_) async {
+        publishedPause.complete();
+        await releaseWorker.future;
+      };
+
+      await workerDb.backupDao.updateScheduleMetadata(
+        (latest, _) => BackupMetadataSnapshot(
+          schedule: BackupSchedule.daily.name,
+          lastConfirmedAtIso: null,
+          nextDueAtIso: clock
+              .now()
+              .subtract(const Duration(minutes: 5))
+              .toIso8601String(),
+          isDeviceActive: true,
+        ),
+      );
+
+      final workerFuture = workerRunBackup(trigger: BackupTrigger.scheduled);
+      await publishedPause.future;
+
+      // Foreground signs out ownerUserId AND signs in a different account
+      // (while LedgerOwnerStorage remains linked to ownerUserId and workerCachedAuth
+      // still caches ownerUserId).
+      await foregroundGate.runSessionInvalidation(() async {
+        await persistedStorage.removePersistedSession();
+      });
+      await persistedStorage.persistSession(
+        '{"user":{"id":"22222222-2222-4222-8222-222222222222","email":"other@example.com"}}',
+      );
+      expect(await persistedStorage.hasAccessToken(), isTrue);
+      expect(fgGate.isInvalidating, isFalse);
+
+      releaseWorker.complete();
+      final result = await workerFuture;
+      expect(result.isRight(), isTrue);
+      expect(
+        result.getOrElse((_) => throw StateError('failed')),
+        isA<BackupRunSkipped>(),
+      );
+    } finally {
+      await workerDb.close();
+    }
+
+    // Reopen SQLite and assert confirmed time and acknowledged revisions did NOT advance.
+    final reopened = openSession();
+    try {
+      expect(await reopened.db.backupDao.countPendingChanges(), 2);
+      final cust = await reopened.db.customerDao.getCustomerById(customerId);
+      expect(cust!.acknowledgedRevision, 0);
+      final tx = await reopened.db.transactionDao.getTransactionById(txId);
+      expect(tx!.acknowledgedRevision, 0);
+      final inFlight = await reopened.db.backupDao.readInFlightBatch();
+      expect(inFlight, isNotNull);
+      expect(inFlight!.batchId, 'batch-p12-16');
+      final schedule = (await reopened.store.readScheduleState()).getOrElse(
+        (_) => throw StateError('failed'),
+      );
+      expect(schedule.lastConfirmedAt, isNull);
+    } finally {
+      await reopened.db.close();
+    }
+  });
+}
+
+class _InMemoryCrossIsolateCoordinator implements SessionCommitCoordinator {
+  _InMemoryCrossIsolateCoordinator({
+    required this.readEpochFn,
+    required this.tryEnterCommitFn,
+    required this.exitCommitFn,
+    required this.beginInvalidationFn,
+    required this.endInvalidationFn,
+  });
+
+  final Future<int> Function() readEpochFn;
+  final Future<bool> Function(int expectedEpoch) tryEnterCommitFn;
+  final Future<void> Function() exitCommitFn;
+  final Future<void> Function() beginInvalidationFn;
+  final Future<void> Function() endInvalidationFn;
+
+  @override
+  Future<int> readEpoch() => readEpochFn();
+
+  @override
+  Future<bool> tryEnterCommit({required int expectedEpoch}) =>
+      tryEnterCommitFn(expectedEpoch);
+
+  @override
+  Future<void> exitCommit() => exitCommitFn();
+
+  @override
+  Future<void> beginSessionInvalidation() => beginInvalidationFn();
+
+  @override
+  Future<void> endSessionInvalidation() => endInvalidationFn();
 }

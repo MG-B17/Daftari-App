@@ -29,7 +29,10 @@ class BackupScreen extends StatelessWidget {
           SizedBox(height: AppSpacing.settingsSectionGap),
           BackupNowButton(state: view, fullWidth: true),
           SizedBox(height: AppSpacing.settingsSectionGap),
-          BackupScheduleSection(initialSchedule: view.schedule),
+          BackupScheduleSection(
+            initialSchedule: view.schedule,
+            isPreview: view.isPreview,
+          ),
         ],
       ),
     ),
