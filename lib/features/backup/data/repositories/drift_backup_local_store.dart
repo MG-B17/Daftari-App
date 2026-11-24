@@ -7,6 +7,7 @@ import '../../../../core/errors/error_handler.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../../core/services/session_commit_gate.dart';
 import '../../../auth/session/data/services/ledger_owner_storage.dart';
+import '../../../auth/session/data/services/secure_gotrue_storage.dart';
 import '../../../auth/session/data/services/supabase_auth_service.dart';
 import '../../../auth/session/domain/entities/auth_session_event.dart';
 import '../../domain/entities/backup_batch.dart';
@@ -17,11 +18,29 @@ import '../../domain/repositories/backup_local_store.dart';
 import '../models/backup_batch_codec.dart';
 import '../services/backup_device_storage.dart';
 
+final class _ResolvedLiveSession {
+  const _ResolvedLiveSession({
+    required this.authenticatedUserId,
+    required this.isEmailVerified,
+    required this.sessionInstanceId,
+    required this.epoch,
+    required this.persistedPresent,
+  });
+
+  final String? authenticatedUserId;
+  final bool isEmailVerified;
+  final String? sessionInstanceId;
+  final int epoch;
+  final bool persistedPresent;
+}
+
 /// Drift + local-storage implementation of [BackupLocalStore].
 ///
 /// Guarantees SQLite-transactional batch cutoff capture, durable in-flight
 /// batch recovery, atomic schedule transitions, and commit-time session/device
-/// verification (including pre-commit rollback on mid-transaction sign-out).
+/// verification (including pre-commit rollback on mid-transaction sign-out,
+/// session-replacement rejection across isolates, and cross-isolate commit-gate
+/// serialization against foreground sign-out).
 class DriftBackupLocalStore implements BackupLocalStore {
   DriftBackupLocalStore({
     required this._backupDao,
@@ -32,6 +51,9 @@ class DriftBackupLocalStore implements BackupLocalStore {
     required this._errorHandler,
     SessionCommitGate? commitGate,
     this._isBackupRunning,
+    this._hasPersistedSession,
+    this._readPersistedSession,
+    this._beforeEnterCommitHook,
   }) : _commitGate = commitGate ?? SessionCommitGate();
 
   final BackupDao _backupDao;
@@ -42,24 +64,100 @@ class DriftBackupLocalStore implements BackupLocalStore {
   final ErrorHandler _errorHandler;
   final SessionCommitGate _commitGate;
   final bool Function()? _isBackupRunning;
+  final Future<bool> Function()? _hasPersistedSession;
+  final Future<PersistedSessionSnapshot?> Function()? _readPersistedSession;
+  final Future<void> Function()? _beforeEnterCommitHook;
+
+  Future<_ResolvedLiveSession> _resolveLiveSession() async {
+    final epoch = await _commitGate.readEpoch();
+    final user = await _authService.getCurrentUser();
+    final readPersisted = _readPersistedSession;
+    if (readPersisted != null) {
+      final persisted = await readPersisted();
+      if (persisted == null || user == null) {
+        return _ResolvedLiveSession(
+          authenticatedUserId: null,
+          isEmailVerified: false,
+          sessionInstanceId: null,
+          epoch: epoch,
+          persistedPresent: persisted != null,
+        );
+      }
+      final persistedUserId = persisted.userId;
+      if (persistedUserId != null && persistedUserId != user.id) {
+        return _ResolvedLiveSession(
+          authenticatedUserId: persistedUserId,
+          isEmailVerified: persisted.isEmailVerified,
+          sessionInstanceId: '$epoch:$persistedUserId',
+          epoch: epoch,
+          persistedPresent: true,
+        );
+      }
+      final verified = user.emailVerified && persisted.isEmailVerified;
+      return _ResolvedLiveSession(
+        authenticatedUserId: user.id,
+        isEmailVerified: verified,
+        sessionInstanceId: '$epoch:${user.id}',
+        epoch: epoch,
+        persistedPresent: true,
+      );
+    }
+
+    final checkPersisted = _hasPersistedSession;
+    if (checkPersisted != null && !await checkPersisted()) {
+      return _ResolvedLiveSession(
+        authenticatedUserId: null,
+        isEmailVerified: false,
+        sessionInstanceId: null,
+        epoch: epoch,
+        persistedPresent: false,
+      );
+    }
+    if (user == null) {
+      return _ResolvedLiveSession(
+        authenticatedUserId: null,
+        isEmailVerified: false,
+        sessionInstanceId: null,
+        epoch: epoch,
+        persistedPresent: true,
+      );
+    }
+    return _ResolvedLiveSession(
+      authenticatedUserId: user.id,
+      isEmailVerified: user.emailVerified,
+      sessionInstanceId: '$epoch:${user.id}',
+      epoch: epoch,
+      persistedPresent: true,
+    );
+  }
+
+  static int? _tryExtractAuthorizedEpoch(String? authorizedSessionId) {
+    if (authorizedSessionId == null || authorizedSessionId.isEmpty) {
+      return null;
+    }
+    final colonIndex = authorizedSessionId.indexOf(':');
+    if (colonIndex <= 0) return null;
+    return int.tryParse(authorizedSessionId.substring(0, colonIndex));
+  }
 
   @override
   Future<Either<AppFailure, BackupEligibilityContext>>
   readEligibilityContext() => _guard(() async {
-    final user = await _authService.getCurrentUser();
+    final liveSession = await _resolveLiveSession();
     final linkedOwnerUserId = await _ownerStorage.readOwnerId();
     final deviceId = await _deviceStorage.getOrCreateDeviceId();
     final localStatus = await _backupDao.readLocalStatus();
     final hasConnectivity = await _connectivityService.isConnected;
     return BackupEligibilityContext(
-      authenticatedUserId: user?.id,
-      isEmailVerified: user?.emailVerified ?? false,
+      authenticatedUserId: liveSession.authenticatedUserId,
+      isEmailVerified: liveSession.isEmailVerified,
       linkedOwnerUserId: linkedOwnerUserId,
       deviceId: deviceId,
       isActiveDevice: localStatus.isDeviceActive,
       pendingChangesCount: localStatus.pendingChangesCount,
       hasConnectivity: hasConnectivity,
       isBackupRunning: _isBackupRunning?.call() ?? false,
+      sessionInstanceId: liveSession.sessionInstanceId,
     );
   });
 
@@ -181,6 +279,10 @@ class DriftBackupLocalStore implements BackupLocalStore {
     String? verifiedDeviceId;
     var verifiedIsDeviceActive = false;
     var sessionInvalidatedDuringCommit = false;
+    final authorizedSessionId = acknowledgment.authorizedSessionId;
+    final authorizedEpoch = _tryExtractAuthorizedEpoch(authorizedSessionId);
+    var capturedEpoch = authorizedEpoch ?? 0;
+    String? verifiedSessionInstanceId;
 
     final authSubscription = _authService.watchAuthChanges().listen((event) {
       switch (event) {
@@ -200,22 +302,42 @@ class DriftBackupLocalStore implements BackupLocalStore {
       required String? linkedOwnerUserId,
       required String? deviceId,
       required bool isDeviceActive,
+      _ResolvedLiveSession? resolvedSession,
     }) {
+      if (resolvedSession != null && !resolvedSession.persistedPresent) {
+        return BackupIneligibilityReason.signedOut;
+      }
       final currentUser = _authService.currentUser;
+      final authenticatedUserId = resolvedSession != null
+          ? (currentUser == null ? null : resolvedSession.authenticatedUserId)
+          : currentUser?.id;
+      final isEmailVerified = resolvedSession != null
+          ? ((currentUser?.emailVerified ?? false) &&
+                resolvedSession.isEmailVerified)
+          : (currentUser?.emailVerified ?? false);
+      final currentSessionInstanceId = resolvedSession != null
+          ? (currentUser == null ? null : resolvedSession.sessionInstanceId)
+          : verifiedSessionInstanceId;
+
       final liveReason = BackupCutoffPolicy.acknowledgmentBlockReason(
         batchOwnerUserId: acknowledgment.ownerUserId,
         batchDeviceId: acknowledgment.deviceId,
+        authorizedSessionId: authorizedSessionId,
         currentContext: BackupEligibilityContext(
-          authenticatedUserId: currentUser?.id,
-          isEmailVerified: currentUser?.emailVerified ?? false,
+          authenticatedUserId: authenticatedUserId,
+          isEmailVerified: isEmailVerified,
           linkedOwnerUserId: linkedOwnerUserId,
           deviceId: deviceId,
           isActiveDevice: isDeviceActive,
           pendingChangesCount: 0,
           hasConnectivity: true,
+          sessionInstanceId: currentSessionInstanceId,
         ),
       );
       if (liveReason != null) return liveReason;
+      if (resolvedSession != null && resolvedSession.epoch != capturedEpoch) {
+        return BackupIneligibilityReason.signedOut;
+      }
       if (sessionInvalidatedDuringCommit || _commitGate.isInvalidating) {
         return BackupIneligibilityReason.signedOut;
       }
@@ -232,6 +354,9 @@ class DriftBackupLocalStore implements BackupLocalStore {
         verifyCommitAllowed: (latest) async {
           final linkedOwnerUserId = await _ownerStorage.readOwnerId();
           final deviceId = await _deviceStorage.readDeviceId();
+          final liveSession = await _resolveLiveSession();
+          capturedEpoch = authorizedEpoch ?? liveSession.epoch;
+          verifiedSessionInstanceId = liveSession.sessionInstanceId;
           verifiedLinkedOwnerId = linkedOwnerUserId;
           verifiedDeviceId = deviceId;
           verifiedIsDeviceActive = latest.isDeviceActive;
@@ -241,6 +366,7 @@ class DriftBackupLocalStore implements BackupLocalStore {
             linkedOwnerUserId: linkedOwnerUserId,
             deviceId: deviceId,
             isDeviceActive: latest.isDeviceActive,
+            resolvedSession: liveSession,
           );
           if (reason != null) {
             blockedReason = reason;
@@ -260,8 +386,32 @@ class DriftBackupLocalStore implements BackupLocalStore {
           }
           return true;
         },
-        onEnterCommit: _commitGate.beginCommit,
-        onExitCommit: _commitGate.endCommit,
+        tryEnterCommit: () async {
+          final hook = _beforeEnterCommitHook;
+          if (hook != null) {
+            await hook();
+          }
+          final liveSession = await _resolveLiveSession();
+          final reason = evaluateCurrentAuthority(
+            linkedOwnerUserId: verifiedLinkedOwnerId,
+            deviceId: verifiedDeviceId,
+            isDeviceActive: verifiedIsDeviceActive,
+            resolvedSession: liveSession,
+          );
+          if (reason != null) {
+            blockedReason = reason;
+            return false;
+          }
+          final entered = await _commitGate.tryEnterCommit(
+            expectedEpoch: capturedEpoch,
+          );
+          if (!entered) {
+            blockedReason ??= BackupIneligibilityReason.signedOut;
+            return false;
+          }
+          return true;
+        },
+        onExitCommitAsync: _commitGate.exitCommit,
         updateSchedule: (latest) {
           final currentSchedule = BackupBatchCodec.scheduleStateFromMetadata(
             latest,

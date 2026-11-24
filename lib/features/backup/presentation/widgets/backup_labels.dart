@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../auth/session/presentation/cubit/auth_session_cubit.dart';
 import '../../../auth/session/presentation/cubit/auth_session_state.dart';
+import '../cubit/backup_cubit.dart';
 import '../models/backup_view_state.dart';
 
 extension BackupStatusLabels on BackupStatus {
@@ -84,6 +85,10 @@ class BackupViewStateBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state case final fixed?) return builder(context, fixed);
+    final backupCubit = context.read<BackupCubit?>();
+    if (backupCubit != null) {
+      return BlocBuilder<BackupCubit, BackupViewState>(builder: builder);
+    }
     final authCubit = context.read<AuthSessionCubit?>();
     if (authCubit == null) {
       return builder(context, BackupViewState.preview());

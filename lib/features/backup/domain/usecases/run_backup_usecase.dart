@@ -93,6 +93,7 @@ class RunBackupUseCase {
 
     final ownerUserId = context.linkedOwnerUserId!;
     final deviceId = context.deviceId!;
+    final authorizedSessionId = context.sessionInstanceId;
 
     final BackupBatch? inFlightBatch;
     switch (await _localStore.readInFlightBatch()) {
@@ -202,6 +203,7 @@ class RunBackupUseCase {
           batchOwnerUserId: batch.ownerUserId,
           batchDeviceId: batch.deviceId,
           currentContext: postUploadContext,
+          authorizedSessionId: authorizedSessionId,
         );
         if (blockReason != null) {
           return Right(
@@ -209,7 +211,10 @@ class RunBackupUseCase {
           );
         }
 
-        final acknowledgment = batch.toAcknowledgment(confirmedAt: confirmedAt);
+        final acknowledgment = batch.toAcknowledgment(
+          confirmedAt: confirmedAt,
+          authorizedSessionId: authorizedSessionId,
+        );
         final ackResult = await _localStore.acknowledgeBatch(
           acknowledgment,
           updateSchedule: (latest) => BackupSchedulePolicy.recordConfirmation(

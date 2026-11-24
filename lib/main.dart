@@ -10,9 +10,15 @@ import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/app_logger.dart';
 import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
+import 'features/backup/data/services/backup_background_worker.dart';
+import 'features/backup/presentation/cubit/backup_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
 import 'features/security/presentation/cubit/app_lock_cubit.dart';
 import 'firebase_options.dart';
+
+@pragma('vm:entry-point')
+Future<void> backupWorkerMain(List<String> args) =>
+    runBackupBackgroundWorker(args);
 
 Future<void> main() async {
   if (kDebugMode) {
@@ -23,6 +29,7 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await configureDependencies();
+  await sl<BackupCubit>().initialize();
   final logger = sl<AppLogger>();
   FlutterError.onError = (details) {
     unawaited(logger.recordError(details.exception, fatal: true));
@@ -38,6 +45,7 @@ Future<void> main() async {
       settingsCubit: sl<SettingsCubit>(),
       appLockCubit: sl<AppLockCubit>(),
       authSessionCubit: sl<AuthSessionCubit>(),
+      backupCubit: sl<BackupCubit>(),
     ),
   );
 }

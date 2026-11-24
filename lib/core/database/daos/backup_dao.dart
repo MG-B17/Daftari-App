@@ -159,6 +159,29 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
   Future<BackupMetadataSnapshot> readMetadata() =>
       runDatabaseOperation(_readMetadata);
 
+  Stream<BackupMetadataSnapshot> watchMetadata() =>
+      (select(
+        backupMetadata,
+      )..where((r) => r.id.equals(_singletonRowId))).watchSingleOrNull().map(
+        (row) => row == null
+            ? const BackupMetadataSnapshot.initial()
+            : BackupMetadataSnapshot(
+                schedule: row.schedule,
+                lastConfirmedAtIso: row.lastConfirmedAtIso,
+                nextDueAtIso: row.nextDueAtIso,
+                isDeviceActive: row.isDeviceActive,
+              ),
+      );
+
+  Stream<int> watchPendingChangesCount() => customSelect(
+    'SELECT '
+    '(SELECT COUNT(*) FROM customers WHERE local_revision > acknowledged_revision) + '
+    '(SELECT COUNT(*) FROM transactions WHERE local_revision > acknowledged_revision) + '
+    '(SELECT COUNT(*) FROM transaction_audit_logs WHERE local_revision > acknowledged_revision) '
+    'AS pending_count',
+    readsFrom: {customers, transactions, transactionAuditLogs},
+  ).watchSingle().map((row) => row.read<int>('pending_count'));
+
   Future<BackupLocalStatusSnapshot> readLocalStatus() => runDatabaseOperation(
     () => transaction(() async {
       final metadata = await _readMetadata();
@@ -286,6 +309,8 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
     required bool Function() verifyBeforeCommit,
     void Function()? onEnterCommit,
     void Function()? onExitCommit,
+    Future<bool> Function()? tryEnterCommit,
+    Future<void> Function()? onExitCommitAsync,
     required BackupMetadataSnapshot Function(BackupMetadataSnapshot latest)
     updateSchedule,
     required int Function({
@@ -399,8 +424,16 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
         if (!verifyBeforeCommit()) {
           throw const _AcknowledgmentRollbackSignal();
         }
-        onEnterCommit?.call();
-        commitEntered = true;
+        if (tryEnterCommit != null) {
+          final entered = await tryEnterCommit();
+          if (!entered) {
+            throw const _AcknowledgmentRollbackSignal();
+          }
+          commitEntered = true;
+        } else {
+          onEnterCommit?.call();
+          commitEntered = true;
+        }
 
         return BackupAcknowledgmentCommitOutcome(
           acknowledgedRecordCount: fullyAcknowledged,
@@ -413,6 +446,9 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
     } finally {
       if (commitEntered) {
         onExitCommit?.call();
+        if (onExitCommitAsync != null) {
+          await onExitCommitAsync();
+        }
       }
     }
   });

@@ -6,10 +6,15 @@ import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_local_store.dart';
+import 'package:daftariapp/features/backup/domain/repositories/backup_run_lock.dart';
+import 'package:daftariapp/features/backup/domain/repositories/backup_scheduler.dart';
+import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.dart';
 import 'package:daftariapp/features/backup/domain/usecases/update_backup_schedule_usecase.dart';
+import 'package:daftariapp/features/backup/presentation/cubit/backup_cubit.dart';
 import 'package:daftariapp/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:daftariapp/features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import 'package:daftariapp/features/dashboard/presentation/cubit/dashboard_cubit.dart';
@@ -87,10 +92,15 @@ void main() {
         sl<SecurityRepository>(),
         sl<BackupDao>(),
         sl<BackupDeviceStorage>(),
+        sl<AndroidBackupPlatformBridge>(),
+        sl<BackupRunLock>(),
+        sl<BackupScheduler>(),
         sl<SessionCommitGate>(),
         sl<BackupLocalStore>(),
         sl<BackupCloudPublisher>(),
+        sl<RunBackupUseCase>(),
         sl<UpdateBackupScheduleUseCase>(),
+        sl<BackupCubit>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -124,10 +134,15 @@ void main() {
         sl<SecurityRepository>(),
         sl<BackupDao>(),
         sl<BackupDeviceStorage>(),
+        sl<AndroidBackupPlatformBridge>(),
+        sl<BackupRunLock>(),
+        sl<BackupScheduler>(),
         sl<SessionCommitGate>(),
         sl<BackupLocalStore>(),
         sl<BackupCloudPublisher>(),
+        sl<RunBackupUseCase>(),
         sl<UpdateBackupScheduleUseCase>(),
+        sl<BackupCubit>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
