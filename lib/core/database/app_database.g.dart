@@ -92,6 +92,17 @@ class $CustomersTable extends Customers
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _acknowledgedRevisionMeta =
+      const VerificationMeta('acknowledgedRevision');
+  @override
+  late final GeneratedColumn<int> acknowledgedRevision = GeneratedColumn<int>(
+    'acknowledged_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _syncedAtMeta = const VerificationMeta(
     'syncedAt',
   );
@@ -113,6 +124,7 @@ class $CustomersTable extends Customers
     updatedAt,
     deletedAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   ];
   @override
@@ -179,6 +191,15 @@ class $CustomersTable extends Customers
         ),
       );
     }
+    if (data.containsKey('acknowledged_revision')) {
+      context.handle(
+        _acknowledgedRevisionMeta,
+        acknowledgedRevision.isAcceptableOrUnknown(
+          data['acknowledged_revision']!,
+          _acknowledgedRevisionMeta,
+        ),
+      );
+    }
     if (data.containsKey('synced_at')) {
       context.handle(
         _syncedAtMeta,
@@ -226,6 +247,10 @@ class $CustomersTable extends Customers
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
       )!,
+      acknowledgedRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}acknowledged_revision'],
+      )!,
       syncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}synced_at'],
@@ -249,8 +274,11 @@ class Customer extends DataClass implements Insertable<Customer> {
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  /// Monotonic local version used by the future backup sync.
+  /// Monotonic local version used by backup sync.
   final int localRevision;
+
+  /// Highest [localRevision] confirmed by cloud backup (`0` means never backed up).
+  final int acknowledgedRevision;
   final DateTime? syncedAt;
   const Customer({
     required this.id,
@@ -261,6 +289,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.updatedAt,
     this.deletedAt,
     required this.localRevision,
+    required this.acknowledgedRevision,
     this.syncedAt,
   });
   @override
@@ -280,6 +309,7 @@ class Customer extends DataClass implements Insertable<Customer> {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['local_revision'] = Variable<int>(localRevision);
+    map['acknowledged_revision'] = Variable<int>(acknowledgedRevision);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
     }
@@ -302,6 +332,7 @@ class Customer extends DataClass implements Insertable<Customer> {
           ? const Value.absent()
           : Value(deletedAt),
       localRevision: Value(localRevision),
+      acknowledgedRevision: Value(acknowledgedRevision),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(syncedAt),
@@ -322,6 +353,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       localRevision: serializer.fromJson<int>(json['localRevision']),
+      acknowledgedRevision: serializer.fromJson<int>(
+        json['acknowledgedRevision'],
+      ),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
   }
@@ -337,6 +371,7 @@ class Customer extends DataClass implements Insertable<Customer> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'localRevision': serializer.toJson<int>(localRevision),
+      'acknowledgedRevision': serializer.toJson<int>(acknowledgedRevision),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
   }
@@ -350,6 +385,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
     int? localRevision,
+    int? acknowledgedRevision,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => Customer(
     id: id ?? this.id,
@@ -360,6 +396,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     localRevision: localRevision ?? this.localRevision,
+    acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
   Customer copyWithCompanion(CustomersCompanion data) {
@@ -374,6 +411,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
+      acknowledgedRevision: data.acknowledgedRevision.present
+          ? data.acknowledgedRevision.value
+          : this.acknowledgedRevision,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
   }
@@ -389,6 +429,7 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
         .toString();
@@ -404,6 +445,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     updatedAt,
     deletedAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   );
   @override
@@ -418,6 +460,7 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.localRevision == this.localRevision &&
+          other.acknowledgedRevision == this.acknowledgedRevision &&
           other.syncedAt == this.syncedAt);
 }
 
@@ -430,6 +473,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<int> localRevision;
+  final Value<int> acknowledgedRevision;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
   const CustomersCompanion({
@@ -441,6 +485,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -453,6 +498,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -466,6 +512,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<int>? localRevision,
+    Expression<int>? acknowledgedRevision,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
   }) {
@@ -478,6 +525,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (localRevision != null) 'local_revision': localRevision,
+      if (acknowledgedRevision != null)
+        'acknowledged_revision': acknowledgedRevision,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -492,6 +541,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<int>? localRevision,
+    Value<int>? acknowledgedRevision,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
   }) {
@@ -504,6 +554,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       localRevision: localRevision ?? this.localRevision,
+      acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -536,6 +587,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
+    if (acknowledgedRevision.present) {
+      map['acknowledged_revision'] = Variable<int>(acknowledgedRevision.value);
+    }
     if (syncedAt.present) {
       map['synced_at'] = Variable<DateTime>(syncedAt.value);
     }
@@ -556,6 +610,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -680,6 +735,17 @@ class $TransactionsTable extends Transactions
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _acknowledgedRevisionMeta =
+      const VerificationMeta('acknowledgedRevision');
+  @override
+  late final GeneratedColumn<int> acknowledgedRevision = GeneratedColumn<int>(
+    'acknowledged_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _syncedAtMeta = const VerificationMeta(
     'syncedAt',
   );
@@ -703,6 +769,7 @@ class $TransactionsTable extends Transactions
     updatedAt,
     deletedAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   ];
   @override
@@ -793,6 +860,15 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('acknowledged_revision')) {
+      context.handle(
+        _acknowledgedRevisionMeta,
+        acknowledgedRevision.isAcceptableOrUnknown(
+          data['acknowledged_revision']!,
+          _acknowledgedRevisionMeta,
+        ),
+      );
+    }
     if (data.containsKey('synced_at')) {
       context.handle(
         _syncedAtMeta,
@@ -848,6 +924,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
       )!,
+      acknowledgedRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}acknowledged_revision'],
+      )!,
       syncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}synced_at'],
@@ -874,8 +954,11 @@ class TransactionRecord extends DataClass
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  /// Monotonic local version used by the future backup sync.
+  /// Monotonic local version used by backup sync.
   final int localRevision;
+
+  /// Highest [localRevision] confirmed by cloud backup (`0` means never backed up).
+  final int acknowledgedRevision;
   final DateTime? syncedAt;
   const TransactionRecord({
     required this.id,
@@ -888,6 +971,7 @@ class TransactionRecord extends DataClass
     required this.updatedAt,
     this.deletedAt,
     required this.localRevision,
+    required this.acknowledgedRevision,
     this.syncedAt,
   });
   @override
@@ -907,6 +991,7 @@ class TransactionRecord extends DataClass
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['local_revision'] = Variable<int>(localRevision);
+    map['acknowledged_revision'] = Variable<int>(acknowledgedRevision);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
     }
@@ -927,6 +1012,7 @@ class TransactionRecord extends DataClass
           ? const Value.absent()
           : Value(deletedAt),
       localRevision: Value(localRevision),
+      acknowledgedRevision: Value(acknowledgedRevision),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(syncedAt),
@@ -949,6 +1035,9 @@ class TransactionRecord extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       localRevision: serializer.fromJson<int>(json['localRevision']),
+      acknowledgedRevision: serializer.fromJson<int>(
+        json['acknowledgedRevision'],
+      ),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
   }
@@ -966,6 +1055,7 @@ class TransactionRecord extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'localRevision': serializer.toJson<int>(localRevision),
+      'acknowledgedRevision': serializer.toJson<int>(acknowledgedRevision),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
   }
@@ -981,6 +1071,7 @@ class TransactionRecord extends DataClass
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
     int? localRevision,
+    int? acknowledgedRevision,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => TransactionRecord(
     id: id ?? this.id,
@@ -993,6 +1084,7 @@ class TransactionRecord extends DataClass
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     localRevision: localRevision ?? this.localRevision,
+    acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
   TransactionRecord copyWithCompanion(TransactionsCompanion data) {
@@ -1015,6 +1107,9 @@ class TransactionRecord extends DataClass
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
+      acknowledgedRevision: data.acknowledgedRevision.present
+          ? data.acknowledgedRevision.value
+          : this.acknowledgedRevision,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
   }
@@ -1032,6 +1127,7 @@ class TransactionRecord extends DataClass
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
         .toString();
@@ -1049,6 +1145,7 @@ class TransactionRecord extends DataClass
     updatedAt,
     deletedAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   );
   @override
@@ -1065,6 +1162,7 @@ class TransactionRecord extends DataClass
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.localRevision == this.localRevision &&
+          other.acknowledgedRevision == this.acknowledgedRevision &&
           other.syncedAt == this.syncedAt);
 }
 
@@ -1079,6 +1177,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<int> localRevision;
+  final Value<int> acknowledgedRevision;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
   const TransactionsCompanion({
@@ -1092,6 +1191,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1106,6 +1206,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1124,6 +1225,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<int>? localRevision,
+    Expression<int>? acknowledgedRevision,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
   }) {
@@ -1138,6 +1240,8 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (localRevision != null) 'local_revision': localRevision,
+      if (acknowledgedRevision != null)
+        'acknowledged_revision': acknowledgedRevision,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1154,6 +1258,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<int>? localRevision,
+    Value<int>? acknowledgedRevision,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
   }) {
@@ -1168,6 +1273,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       localRevision: localRevision ?? this.localRevision,
+      acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1206,6 +1312,9 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
+    if (acknowledgedRevision.present) {
+      map['acknowledged_revision'] = Variable<int>(acknowledgedRevision.value);
+    }
     if (syncedAt.present) {
       map['synced_at'] = Variable<DateTime>(syncedAt.value);
     }
@@ -1228,6 +1337,7 @@ class TransactionsCompanion extends UpdateCompanion<TransactionRecord> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1340,6 +1450,17 @@ class $TransactionAuditLogsTable extends TransactionAuditLogs
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _acknowledgedRevisionMeta =
+      const VerificationMeta('acknowledgedRevision');
+  @override
+  late final GeneratedColumn<int> acknowledgedRevision = GeneratedColumn<int>(
+    'acknowledged_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _syncedAtMeta = const VerificationMeta(
     'syncedAt',
   );
@@ -1362,6 +1483,7 @@ class $TransactionAuditLogsTable extends TransactionAuditLogs
     previousTransactionDate,
     createdAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   ];
   @override
@@ -1457,6 +1579,15 @@ class $TransactionAuditLogsTable extends TransactionAuditLogs
         ),
       );
     }
+    if (data.containsKey('acknowledged_revision')) {
+      context.handle(
+        _acknowledgedRevisionMeta,
+        acknowledgedRevision.isAcceptableOrUnknown(
+          data['acknowledged_revision']!,
+          _acknowledgedRevisionMeta,
+        ),
+      );
+    }
     if (data.containsKey('synced_at')) {
       context.handle(
         _syncedAtMeta,
@@ -1508,6 +1639,10 @@ class $TransactionAuditLogsTable extends TransactionAuditLogs
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
       )!,
+      acknowledgedRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}acknowledged_revision'],
+      )!,
       syncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}synced_at'],
@@ -1533,8 +1668,11 @@ class TransactionAuditLog extends DataClass
   final DateTime previousTransactionDate;
   final DateTime createdAt;
 
-  /// Monotonic local version used by the future backup sync.
+  /// Monotonic local version used by backup sync.
   final int localRevision;
+
+  /// Highest [localRevision] confirmed by cloud backup (`0` means never backed up).
+  final int acknowledgedRevision;
   final DateTime? syncedAt;
   const TransactionAuditLog({
     required this.id,
@@ -1546,6 +1684,7 @@ class TransactionAuditLog extends DataClass
     required this.previousTransactionDate,
     required this.createdAt,
     required this.localRevision,
+    required this.acknowledgedRevision,
     this.syncedAt,
   });
   @override
@@ -1564,6 +1703,7 @@ class TransactionAuditLog extends DataClass
     );
     map['created_at'] = Variable<DateTime>(createdAt);
     map['local_revision'] = Variable<int>(localRevision);
+    map['acknowledged_revision'] = Variable<int>(acknowledgedRevision);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
     }
@@ -1583,6 +1723,7 @@ class TransactionAuditLog extends DataClass
       previousTransactionDate: Value(previousTransactionDate),
       createdAt: Value(createdAt),
       localRevision: Value(localRevision),
+      acknowledgedRevision: Value(acknowledgedRevision),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(syncedAt),
@@ -1608,6 +1749,9 @@ class TransactionAuditLog extends DataClass
       ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       localRevision: serializer.fromJson<int>(json['localRevision']),
+      acknowledgedRevision: serializer.fromJson<int>(
+        json['acknowledgedRevision'],
+      ),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
   }
@@ -1626,6 +1770,7 @@ class TransactionAuditLog extends DataClass
       ),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'localRevision': serializer.toJson<int>(localRevision),
+      'acknowledgedRevision': serializer.toJson<int>(acknowledgedRevision),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
   }
@@ -1640,6 +1785,7 @@ class TransactionAuditLog extends DataClass
     DateTime? previousTransactionDate,
     DateTime? createdAt,
     int? localRevision,
+    int? acknowledgedRevision,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => TransactionAuditLog(
     id: id ?? this.id,
@@ -1653,6 +1799,7 @@ class TransactionAuditLog extends DataClass
         previousTransactionDate ?? this.previousTransactionDate,
     createdAt: createdAt ?? this.createdAt,
     localRevision: localRevision ?? this.localRevision,
+    acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
   TransactionAuditLog copyWithCompanion(TransactionAuditLogsCompanion data) {
@@ -1678,6 +1825,9 @@ class TransactionAuditLog extends DataClass
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
+      acknowledgedRevision: data.acknowledgedRevision.present
+          ? data.acknowledgedRevision.value
+          : this.acknowledgedRevision,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
   }
@@ -1694,6 +1844,7 @@ class TransactionAuditLog extends DataClass
           ..write('previousTransactionDate: $previousTransactionDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
         .toString();
@@ -1710,6 +1861,7 @@ class TransactionAuditLog extends DataClass
     previousTransactionDate,
     createdAt,
     localRevision,
+    acknowledgedRevision,
     syncedAt,
   );
   @override
@@ -1725,6 +1877,7 @@ class TransactionAuditLog extends DataClass
           other.previousTransactionDate == this.previousTransactionDate &&
           other.createdAt == this.createdAt &&
           other.localRevision == this.localRevision &&
+          other.acknowledgedRevision == this.acknowledgedRevision &&
           other.syncedAt == this.syncedAt);
 }
 
@@ -1739,6 +1892,7 @@ class TransactionAuditLogsCompanion
   final Value<DateTime> previousTransactionDate;
   final Value<DateTime> createdAt;
   final Value<int> localRevision;
+  final Value<int> acknowledgedRevision;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
   const TransactionAuditLogsCompanion({
@@ -1751,6 +1905,7 @@ class TransactionAuditLogsCompanion
     this.previousTransactionDate = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1764,6 +1919,7 @@ class TransactionAuditLogsCompanion
     required DateTime previousTransactionDate,
     this.createdAt = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.acknowledgedRevision = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1782,6 +1938,7 @@ class TransactionAuditLogsCompanion
     Expression<DateTime>? previousTransactionDate,
     Expression<DateTime>? createdAt,
     Expression<int>? localRevision,
+    Expression<int>? acknowledgedRevision,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
   }) {
@@ -1797,6 +1954,8 @@ class TransactionAuditLogsCompanion
         'previous_transaction_date': previousTransactionDate,
       if (createdAt != null) 'created_at': createdAt,
       if (localRevision != null) 'local_revision': localRevision,
+      if (acknowledgedRevision != null)
+        'acknowledged_revision': acknowledgedRevision,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1812,6 +1971,7 @@ class TransactionAuditLogsCompanion
     Value<DateTime>? previousTransactionDate,
     Value<DateTime>? createdAt,
     Value<int>? localRevision,
+    Value<int>? acknowledgedRevision,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
   }) {
@@ -1827,6 +1987,7 @@ class TransactionAuditLogsCompanion
           previousTransactionDate ?? this.previousTransactionDate,
       createdAt: createdAt ?? this.createdAt,
       localRevision: localRevision ?? this.localRevision,
+      acknowledgedRevision: acknowledgedRevision ?? this.acknowledgedRevision,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1866,6 +2027,9 @@ class TransactionAuditLogsCompanion
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
+    if (acknowledgedRevision.present) {
+      map['acknowledged_revision'] = Variable<int>(acknowledgedRevision.value);
+    }
     if (syncedAt.present) {
       map['synced_at'] = Variable<DateTime>(syncedAt.value);
     }
@@ -1887,8 +2051,1019 @@ class TransactionAuditLogsCompanion
           ..write('previousTransactionDate: $previousTransactionDate, ')
           ..write('createdAt: $createdAt, ')
           ..write('localRevision: $localRevision, ')
+          ..write('acknowledgedRevision: $acknowledgedRevision, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BackupMetadataTable extends BackupMetadata
+    with TableInfo<$BackupMetadataTable, BackupMetadataRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BackupMetadataTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _scheduleMeta = const VerificationMeta(
+    'schedule',
+  );
+  @override
+  late final GeneratedColumn<String> schedule = GeneratedColumn<String>(
+    'schedule',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastConfirmedAtIsoMeta =
+      const VerificationMeta('lastConfirmedAtIso');
+  @override
+  late final GeneratedColumn<String> lastConfirmedAtIso =
+      GeneratedColumn<String>(
+        'last_confirmed_at_iso',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _nextDueAtIsoMeta = const VerificationMeta(
+    'nextDueAtIso',
+  );
+  @override
+  late final GeneratedColumn<String> nextDueAtIso = GeneratedColumn<String>(
+    'next_due_at_iso',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeviceActiveMeta = const VerificationMeta(
+    'isDeviceActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeviceActive = GeneratedColumn<bool>(
+    'is_device_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_device_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    schedule,
+    lastConfirmedAtIso,
+    nextDueAtIso,
+    isDeviceActive,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'backup_metadata';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BackupMetadataRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('schedule')) {
+      context.handle(
+        _scheduleMeta,
+        schedule.isAcceptableOrUnknown(data['schedule']!, _scheduleMeta),
+      );
+    }
+    if (data.containsKey('last_confirmed_at_iso')) {
+      context.handle(
+        _lastConfirmedAtIsoMeta,
+        lastConfirmedAtIso.isAcceptableOrUnknown(
+          data['last_confirmed_at_iso']!,
+          _lastConfirmedAtIsoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_due_at_iso')) {
+      context.handle(
+        _nextDueAtIsoMeta,
+        nextDueAtIso.isAcceptableOrUnknown(
+          data['next_due_at_iso']!,
+          _nextDueAtIsoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_device_active')) {
+      context.handle(
+        _isDeviceActiveMeta,
+        isDeviceActive.isAcceptableOrUnknown(
+          data['is_device_active']!,
+          _isDeviceActiveMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BackupMetadataRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BackupMetadataRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      schedule: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}schedule'],
+      ),
+      lastConfirmedAtIso: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_confirmed_at_iso'],
+      ),
+      nextDueAtIso: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}next_due_at_iso'],
+      ),
+      isDeviceActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_device_active'],
+      )!,
+    );
+  }
+
+  @override
+  $BackupMetadataTable createAlias(String alias) {
+    return $BackupMetadataTable(attachedDatabase, alias);
+  }
+}
+
+class BackupMetadataRow extends DataClass
+    implements Insertable<BackupMetadataRow> {
+  final int id;
+  final String? schedule;
+  final String? lastConfirmedAtIso;
+  final String? nextDueAtIso;
+  final bool isDeviceActive;
+  const BackupMetadataRow({
+    required this.id,
+    this.schedule,
+    this.lastConfirmedAtIso,
+    this.nextDueAtIso,
+    required this.isDeviceActive,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || schedule != null) {
+      map['schedule'] = Variable<String>(schedule);
+    }
+    if (!nullToAbsent || lastConfirmedAtIso != null) {
+      map['last_confirmed_at_iso'] = Variable<String>(lastConfirmedAtIso);
+    }
+    if (!nullToAbsent || nextDueAtIso != null) {
+      map['next_due_at_iso'] = Variable<String>(nextDueAtIso);
+    }
+    map['is_device_active'] = Variable<bool>(isDeviceActive);
+    return map;
+  }
+
+  BackupMetadataCompanion toCompanion(bool nullToAbsent) {
+    return BackupMetadataCompanion(
+      id: Value(id),
+      schedule: schedule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(schedule),
+      lastConfirmedAtIso: lastConfirmedAtIso == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastConfirmedAtIso),
+      nextDueAtIso: nextDueAtIso == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextDueAtIso),
+      isDeviceActive: Value(isDeviceActive),
+    );
+  }
+
+  factory BackupMetadataRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BackupMetadataRow(
+      id: serializer.fromJson<int>(json['id']),
+      schedule: serializer.fromJson<String?>(json['schedule']),
+      lastConfirmedAtIso: serializer.fromJson<String?>(
+        json['lastConfirmedAtIso'],
+      ),
+      nextDueAtIso: serializer.fromJson<String?>(json['nextDueAtIso']),
+      isDeviceActive: serializer.fromJson<bool>(json['isDeviceActive']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'schedule': serializer.toJson<String?>(schedule),
+      'lastConfirmedAtIso': serializer.toJson<String?>(lastConfirmedAtIso),
+      'nextDueAtIso': serializer.toJson<String?>(nextDueAtIso),
+      'isDeviceActive': serializer.toJson<bool>(isDeviceActive),
+    };
+  }
+
+  BackupMetadataRow copyWith({
+    int? id,
+    Value<String?> schedule = const Value.absent(),
+    Value<String?> lastConfirmedAtIso = const Value.absent(),
+    Value<String?> nextDueAtIso = const Value.absent(),
+    bool? isDeviceActive,
+  }) => BackupMetadataRow(
+    id: id ?? this.id,
+    schedule: schedule.present ? schedule.value : this.schedule,
+    lastConfirmedAtIso: lastConfirmedAtIso.present
+        ? lastConfirmedAtIso.value
+        : this.lastConfirmedAtIso,
+    nextDueAtIso: nextDueAtIso.present ? nextDueAtIso.value : this.nextDueAtIso,
+    isDeviceActive: isDeviceActive ?? this.isDeviceActive,
+  );
+  BackupMetadataRow copyWithCompanion(BackupMetadataCompanion data) {
+    return BackupMetadataRow(
+      id: data.id.present ? data.id.value : this.id,
+      schedule: data.schedule.present ? data.schedule.value : this.schedule,
+      lastConfirmedAtIso: data.lastConfirmedAtIso.present
+          ? data.lastConfirmedAtIso.value
+          : this.lastConfirmedAtIso,
+      nextDueAtIso: data.nextDueAtIso.present
+          ? data.nextDueAtIso.value
+          : this.nextDueAtIso,
+      isDeviceActive: data.isDeviceActive.present
+          ? data.isDeviceActive.value
+          : this.isDeviceActive,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupMetadataRow(')
+          ..write('id: $id, ')
+          ..write('schedule: $schedule, ')
+          ..write('lastConfirmedAtIso: $lastConfirmedAtIso, ')
+          ..write('nextDueAtIso: $nextDueAtIso, ')
+          ..write('isDeviceActive: $isDeviceActive')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    schedule,
+    lastConfirmedAtIso,
+    nextDueAtIso,
+    isDeviceActive,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BackupMetadataRow &&
+          other.id == this.id &&
+          other.schedule == this.schedule &&
+          other.lastConfirmedAtIso == this.lastConfirmedAtIso &&
+          other.nextDueAtIso == this.nextDueAtIso &&
+          other.isDeviceActive == this.isDeviceActive);
+}
+
+class BackupMetadataCompanion extends UpdateCompanion<BackupMetadataRow> {
+  final Value<int> id;
+  final Value<String?> schedule;
+  final Value<String?> lastConfirmedAtIso;
+  final Value<String?> nextDueAtIso;
+  final Value<bool> isDeviceActive;
+  const BackupMetadataCompanion({
+    this.id = const Value.absent(),
+    this.schedule = const Value.absent(),
+    this.lastConfirmedAtIso = const Value.absent(),
+    this.nextDueAtIso = const Value.absent(),
+    this.isDeviceActive = const Value.absent(),
+  });
+  BackupMetadataCompanion.insert({
+    this.id = const Value.absent(),
+    this.schedule = const Value.absent(),
+    this.lastConfirmedAtIso = const Value.absent(),
+    this.nextDueAtIso = const Value.absent(),
+    this.isDeviceActive = const Value.absent(),
+  });
+  static Insertable<BackupMetadataRow> custom({
+    Expression<int>? id,
+    Expression<String>? schedule,
+    Expression<String>? lastConfirmedAtIso,
+    Expression<String>? nextDueAtIso,
+    Expression<bool>? isDeviceActive,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (schedule != null) 'schedule': schedule,
+      if (lastConfirmedAtIso != null)
+        'last_confirmed_at_iso': lastConfirmedAtIso,
+      if (nextDueAtIso != null) 'next_due_at_iso': nextDueAtIso,
+      if (isDeviceActive != null) 'is_device_active': isDeviceActive,
+    });
+  }
+
+  BackupMetadataCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? schedule,
+    Value<String?>? lastConfirmedAtIso,
+    Value<String?>? nextDueAtIso,
+    Value<bool>? isDeviceActive,
+  }) {
+    return BackupMetadataCompanion(
+      id: id ?? this.id,
+      schedule: schedule ?? this.schedule,
+      lastConfirmedAtIso: lastConfirmedAtIso ?? this.lastConfirmedAtIso,
+      nextDueAtIso: nextDueAtIso ?? this.nextDueAtIso,
+      isDeviceActive: isDeviceActive ?? this.isDeviceActive,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (schedule.present) {
+      map['schedule'] = Variable<String>(schedule.value);
+    }
+    if (lastConfirmedAtIso.present) {
+      map['last_confirmed_at_iso'] = Variable<String>(lastConfirmedAtIso.value);
+    }
+    if (nextDueAtIso.present) {
+      map['next_due_at_iso'] = Variable<String>(nextDueAtIso.value);
+    }
+    if (isDeviceActive.present) {
+      map['is_device_active'] = Variable<bool>(isDeviceActive.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupMetadataCompanion(')
+          ..write('id: $id, ')
+          ..write('schedule: $schedule, ')
+          ..write('lastConfirmedAtIso: $lastConfirmedAtIso, ')
+          ..write('nextDueAtIso: $nextDueAtIso, ')
+          ..write('isDeviceActive: $isDeviceActive')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BackupInFlightBatchesTable extends BackupInFlightBatches
+    with TableInfo<$BackupInFlightBatchesTable, BackupInFlightBatchRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BackupInFlightBatchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<String> batchId = GeneratedColumn<String>(
+    'batch_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerUserIdMeta = const VerificationMeta(
+    'ownerUserId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerUserId = GeneratedColumn<String>(
+    'owner_user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtIsoMeta = const VerificationMeta(
+    'capturedAtIso',
+  );
+  @override
+  late final GeneratedColumn<String> capturedAtIso = GeneratedColumn<String>(
+    'captured_at_iso',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    batchId,
+    ownerUserId,
+    deviceId,
+    capturedAtIso,
+    payloadJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'backup_in_flight_batches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BackupInFlightBatchRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_batchIdMeta);
+    }
+    if (data.containsKey('owner_user_id')) {
+      context.handle(
+        _ownerUserIdMeta,
+        ownerUserId.isAcceptableOrUnknown(
+          data['owner_user_id']!,
+          _ownerUserIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerUserIdMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('captured_at_iso')) {
+      context.handle(
+        _capturedAtIsoMeta,
+        capturedAtIso.isAcceptableOrUnknown(
+          data['captured_at_iso']!,
+          _capturedAtIsoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtIsoMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BackupInFlightBatchRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BackupInFlightBatchRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}batch_id'],
+      )!,
+      ownerUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_user_id'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      capturedAtIso: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}captured_at_iso'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $BackupInFlightBatchesTable createAlias(String alias) {
+    return $BackupInFlightBatchesTable(attachedDatabase, alias);
+  }
+}
+
+class BackupInFlightBatchRow extends DataClass
+    implements Insertable<BackupInFlightBatchRow> {
+  final int id;
+  final String batchId;
+  final String ownerUserId;
+  final String deviceId;
+  final String capturedAtIso;
+  final String payloadJson;
+  const BackupInFlightBatchRow({
+    required this.id,
+    required this.batchId,
+    required this.ownerUserId,
+    required this.deviceId,
+    required this.capturedAtIso,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['batch_id'] = Variable<String>(batchId);
+    map['owner_user_id'] = Variable<String>(ownerUserId);
+    map['device_id'] = Variable<String>(deviceId);
+    map['captured_at_iso'] = Variable<String>(capturedAtIso);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  BackupInFlightBatchesCompanion toCompanion(bool nullToAbsent) {
+    return BackupInFlightBatchesCompanion(
+      id: Value(id),
+      batchId: Value(batchId),
+      ownerUserId: Value(ownerUserId),
+      deviceId: Value(deviceId),
+      capturedAtIso: Value(capturedAtIso),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory BackupInFlightBatchRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BackupInFlightBatchRow(
+      id: serializer.fromJson<int>(json['id']),
+      batchId: serializer.fromJson<String>(json['batchId']),
+      ownerUserId: serializer.fromJson<String>(json['ownerUserId']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      capturedAtIso: serializer.fromJson<String>(json['capturedAtIso']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'batchId': serializer.toJson<String>(batchId),
+      'ownerUserId': serializer.toJson<String>(ownerUserId),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'capturedAtIso': serializer.toJson<String>(capturedAtIso),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  BackupInFlightBatchRow copyWith({
+    int? id,
+    String? batchId,
+    String? ownerUserId,
+    String? deviceId,
+    String? capturedAtIso,
+    String? payloadJson,
+  }) => BackupInFlightBatchRow(
+    id: id ?? this.id,
+    batchId: batchId ?? this.batchId,
+    ownerUserId: ownerUserId ?? this.ownerUserId,
+    deviceId: deviceId ?? this.deviceId,
+    capturedAtIso: capturedAtIso ?? this.capturedAtIso,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  BackupInFlightBatchRow copyWithCompanion(
+    BackupInFlightBatchesCompanion data,
+  ) {
+    return BackupInFlightBatchRow(
+      id: data.id.present ? data.id.value : this.id,
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      ownerUserId: data.ownerUserId.present
+          ? data.ownerUserId.value
+          : this.ownerUserId,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      capturedAtIso: data.capturedAtIso.present
+          ? data.capturedAtIso.value
+          : this.capturedAtIso,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupInFlightBatchRow(')
+          ..write('id: $id, ')
+          ..write('batchId: $batchId, ')
+          ..write('ownerUserId: $ownerUserId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('capturedAtIso: $capturedAtIso, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    batchId,
+    ownerUserId,
+    deviceId,
+    capturedAtIso,
+    payloadJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BackupInFlightBatchRow &&
+          other.id == this.id &&
+          other.batchId == this.batchId &&
+          other.ownerUserId == this.ownerUserId &&
+          other.deviceId == this.deviceId &&
+          other.capturedAtIso == this.capturedAtIso &&
+          other.payloadJson == this.payloadJson);
+}
+
+class BackupInFlightBatchesCompanion
+    extends UpdateCompanion<BackupInFlightBatchRow> {
+  final Value<int> id;
+  final Value<String> batchId;
+  final Value<String> ownerUserId;
+  final Value<String> deviceId;
+  final Value<String> capturedAtIso;
+  final Value<String> payloadJson;
+  const BackupInFlightBatchesCompanion({
+    this.id = const Value.absent(),
+    this.batchId = const Value.absent(),
+    this.ownerUserId = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.capturedAtIso = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+  });
+  BackupInFlightBatchesCompanion.insert({
+    this.id = const Value.absent(),
+    required String batchId,
+    required String ownerUserId,
+    required String deviceId,
+    required String capturedAtIso,
+    required String payloadJson,
+  }) : batchId = Value(batchId),
+       ownerUserId = Value(ownerUserId),
+       deviceId = Value(deviceId),
+       capturedAtIso = Value(capturedAtIso),
+       payloadJson = Value(payloadJson);
+  static Insertable<BackupInFlightBatchRow> custom({
+    Expression<int>? id,
+    Expression<String>? batchId,
+    Expression<String>? ownerUserId,
+    Expression<String>? deviceId,
+    Expression<String>? capturedAtIso,
+    Expression<String>? payloadJson,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (batchId != null) 'batch_id': batchId,
+      if (ownerUserId != null) 'owner_user_id': ownerUserId,
+      if (deviceId != null) 'device_id': deviceId,
+      if (capturedAtIso != null) 'captured_at_iso': capturedAtIso,
+      if (payloadJson != null) 'payload_json': payloadJson,
+    });
+  }
+
+  BackupInFlightBatchesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? batchId,
+    Value<String>? ownerUserId,
+    Value<String>? deviceId,
+    Value<String>? capturedAtIso,
+    Value<String>? payloadJson,
+  }) {
+    return BackupInFlightBatchesCompanion(
+      id: id ?? this.id,
+      batchId: batchId ?? this.batchId,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      deviceId: deviceId ?? this.deviceId,
+      capturedAtIso: capturedAtIso ?? this.capturedAtIso,
+      payloadJson: payloadJson ?? this.payloadJson,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (batchId.present) {
+      map['batch_id'] = Variable<String>(batchId.value);
+    }
+    if (ownerUserId.present) {
+      map['owner_user_id'] = Variable<String>(ownerUserId.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (capturedAtIso.present) {
+      map['captured_at_iso'] = Variable<String>(capturedAtIso.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupInFlightBatchesCompanion(')
+          ..write('id: $id, ')
+          ..write('batchId: $batchId, ')
+          ..write('ownerUserId: $ownerUserId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('capturedAtIso: $capturedAtIso, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BackupDeviceIdentitiesTable extends BackupDeviceIdentities
+    with TableInfo<$BackupDeviceIdentitiesTable, BackupDeviceIdentityRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BackupDeviceIdentitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, deviceId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'backup_device_identities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BackupDeviceIdentityRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BackupDeviceIdentityRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BackupDeviceIdentityRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+    );
+  }
+
+  @override
+  $BackupDeviceIdentitiesTable createAlias(String alias) {
+    return $BackupDeviceIdentitiesTable(attachedDatabase, alias);
+  }
+}
+
+class BackupDeviceIdentityRow extends DataClass
+    implements Insertable<BackupDeviceIdentityRow> {
+  final int id;
+  final String deviceId;
+  const BackupDeviceIdentityRow({required this.id, required this.deviceId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    return map;
+  }
+
+  BackupDeviceIdentitiesCompanion toCompanion(bool nullToAbsent) {
+    return BackupDeviceIdentitiesCompanion(
+      id: Value(id),
+      deviceId: Value(deviceId),
+    );
+  }
+
+  factory BackupDeviceIdentityRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BackupDeviceIdentityRow(
+      id: serializer.fromJson<int>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+    };
+  }
+
+  BackupDeviceIdentityRow copyWith({int? id, String? deviceId}) =>
+      BackupDeviceIdentityRow(
+        id: id ?? this.id,
+        deviceId: deviceId ?? this.deviceId,
+      );
+  BackupDeviceIdentityRow copyWithCompanion(
+    BackupDeviceIdentitiesCompanion data,
+  ) {
+    return BackupDeviceIdentityRow(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupDeviceIdentityRow(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, deviceId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BackupDeviceIdentityRow &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId);
+}
+
+class BackupDeviceIdentitiesCompanion
+    extends UpdateCompanion<BackupDeviceIdentityRow> {
+  final Value<int> id;
+  final Value<String> deviceId;
+  const BackupDeviceIdentitiesCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+  });
+  BackupDeviceIdentitiesCompanion.insert({
+    this.id = const Value.absent(),
+    required String deviceId,
+  }) : deviceId = Value(deviceId);
+  static Insertable<BackupDeviceIdentityRow> custom({
+    Expression<int>? id,
+    Expression<String>? deviceId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+    });
+  }
+
+  BackupDeviceIdentitiesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? deviceId,
+  }) {
+    return BackupDeviceIdentitiesCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BackupDeviceIdentitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -1901,6 +3076,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $TransactionAuditLogsTable transactionAuditLogs =
       $TransactionAuditLogsTable(this);
+  late final $BackupMetadataTable backupMetadata = $BackupMetadataTable(this);
+  late final $BackupInFlightBatchesTable backupInFlightBatches =
+      $BackupInFlightBatchesTable(this);
+  late final $BackupDeviceIdentitiesTable backupDeviceIdentities =
+      $BackupDeviceIdentitiesTable(this);
   late final Index idxCustomersDeletedAt = Index(
     'idx_customers_deleted_at',
     'CREATE INDEX idx_customers_deleted_at ON customers (deleted_at)',
@@ -1933,6 +3113,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final TransactionDao transactionDao = TransactionDao(
     this as AppDatabase,
   );
+  late final BackupDao backupDao = BackupDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1941,6 +3122,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customers,
     transactions,
     transactionAuditLogs,
+    backupMetadata,
+    backupInFlightBatches,
+    backupDeviceIdentities,
     idxCustomersDeletedAt,
     idxCustomersName,
     idxTransactionsCustomerId,
@@ -1960,6 +3144,7 @@ typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   Value<DateTime> updatedAt,
   Value<DateTime?> deletedAt,
   Value<int> localRevision,
+  Value<int> acknowledgedRevision,
   Value<DateTime?> syncedAt,
   Value<int> rowid,
 });
@@ -1972,6 +3157,7 @@ typedef $$CustomersTableUpdateCompanionBuilder = CustomersCompanion Function({
   Value<DateTime> updatedAt,
   Value<DateTime?> deletedAt,
   Value<int> localRevision,
+  Value<int> acknowledgedRevision,
   Value<DateTime?> syncedAt,
   Value<int> rowid,
 });
@@ -2045,6 +3231,11 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2128,6 +3319,11 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get syncedAt => $composableBuilder(
     column: $table.syncedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2166,6 +3362,11 @@ class $$CustomersTableAnnotationComposer
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
     builder: (column) => column,
   );
 
@@ -2234,6 +3435,7 @@ class $$CustomersTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomersCompanion(
@@ -2245,6 +3447,7 @@ class $$CustomersTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -2258,6 +3461,7 @@ class $$CustomersTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CustomersCompanion.insert(
@@ -2269,6 +3473,7 @@ class $$CustomersTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -2341,6 +3546,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
       Value<int> localRevision,
+      Value<int> acknowledgedRevision,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
     });
@@ -2356,6 +3562,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
       Value<int> localRevision,
+      Value<int> acknowledgedRevision,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
     });
@@ -2459,6 +3666,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2570,6 +3782,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get syncedAt => $composableBuilder(
     column: $table.syncedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2638,6 +3855,11 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
     builder: (column) => column,
   );
 
@@ -2735,6 +3957,7 @@ class $$TransactionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionsCompanion(
@@ -2748,6 +3971,7 @@ class $$TransactionsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -2763,6 +3987,7 @@ class $$TransactionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionsCompanion.insert(
@@ -2776,6 +4001,7 @@ class $$TransactionsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -2879,6 +4105,7 @@ typedef $$TransactionAuditLogsTableCreateCompanionBuilder =
       required DateTime previousTransactionDate,
       Value<DateTime> createdAt,
       Value<int> localRevision,
+      Value<int> acknowledgedRevision,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
     });
@@ -2893,6 +4120,7 @@ typedef $$TransactionAuditLogsTableUpdateCompanionBuilder =
       Value<DateTime> previousTransactionDate,
       Value<DateTime> createdAt,
       Value<int> localRevision,
+      Value<int> acknowledgedRevision,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
     });
@@ -2978,6 +4206,11 @@ class $$TransactionAuditLogsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get syncedAt => $composableBuilder(
     column: $table.syncedAt,
     builder: (column) => ColumnFilters(column),
@@ -3056,6 +4289,11 @@ class $$TransactionAuditLogsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get syncedAt => $composableBuilder(
     column: $table.syncedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3125,6 +4363,11 @@ class $$TransactionAuditLogsTableAnnotationComposer
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get acknowledgedRevision => $composableBuilder(
+    column: $table.acknowledgedRevision,
     builder: (column) => column,
   );
 
@@ -3200,6 +4443,7 @@ class $$TransactionAuditLogsTableTableManager
                 Value<DateTime> previousTransactionDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionAuditLogsCompanion(
@@ -3212,6 +4456,7 @@ class $$TransactionAuditLogsTableTableManager
                 previousTransactionDate: previousTransactionDate,
                 createdAt: createdAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -3226,6 +4471,7 @@ class $$TransactionAuditLogsTableTableManager
                 required DateTime previousTransactionDate,
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> acknowledgedRevision = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionAuditLogsCompanion.insert(
@@ -3238,6 +4484,7 @@ class $$TransactionAuditLogsTableTableManager
                 previousTransactionDate: previousTransactionDate,
                 createdAt: createdAt,
                 localRevision: localRevision,
+                acknowledgedRevision: acknowledgedRevision,
                 syncedAt: syncedAt,
                 rowid: rowid,
               ),
@@ -3308,6 +4555,635 @@ typedef $$TransactionAuditLogsTableProcessedTableManager =
       TransactionAuditLog,
       PrefetchHooks Function({bool transactionId})
     >;
+typedef $$BackupMetadataTableCreateCompanionBuilder =
+    BackupMetadataCompanion Function({
+      Value<int> id,
+      Value<String?> schedule,
+      Value<String?> lastConfirmedAtIso,
+      Value<String?> nextDueAtIso,
+      Value<bool> isDeviceActive,
+    });
+typedef $$BackupMetadataTableUpdateCompanionBuilder =
+    BackupMetadataCompanion Function({
+      Value<int> id,
+      Value<String?> schedule,
+      Value<String?> lastConfirmedAtIso,
+      Value<String?> nextDueAtIso,
+      Value<bool> isDeviceActive,
+    });
+
+class $$BackupMetadataTableFilterComposer
+    extends Composer<_$AppDatabase, $BackupMetadataTable> {
+  $$BackupMetadataTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get schedule => $composableBuilder(
+    column: $table.schedule,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastConfirmedAtIso => $composableBuilder(
+    column: $table.lastConfirmedAtIso,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nextDueAtIso => $composableBuilder(
+    column: $table.nextDueAtIso,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeviceActive => $composableBuilder(
+    column: $table.isDeviceActive,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BackupMetadataTableOrderingComposer
+    extends Composer<_$AppDatabase, $BackupMetadataTable> {
+  $$BackupMetadataTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get schedule => $composableBuilder(
+    column: $table.schedule,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastConfirmedAtIso => $composableBuilder(
+    column: $table.lastConfirmedAtIso,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nextDueAtIso => $composableBuilder(
+    column: $table.nextDueAtIso,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeviceActive => $composableBuilder(
+    column: $table.isDeviceActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BackupMetadataTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BackupMetadataTable> {
+  $$BackupMetadataTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get schedule =>
+      $composableBuilder(column: $table.schedule, builder: (column) => column);
+
+  GeneratedColumn<String> get lastConfirmedAtIso => $composableBuilder(
+    column: $table.lastConfirmedAtIso,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nextDueAtIso => $composableBuilder(
+    column: $table.nextDueAtIso,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeviceActive => $composableBuilder(
+    column: $table.isDeviceActive,
+    builder: (column) => column,
+  );
+}
+
+class $$BackupMetadataTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BackupMetadataTable,
+          BackupMetadataRow,
+          $$BackupMetadataTableFilterComposer,
+          $$BackupMetadataTableOrderingComposer,
+          $$BackupMetadataTableAnnotationComposer,
+          $$BackupMetadataTableCreateCompanionBuilder,
+          $$BackupMetadataTableUpdateCompanionBuilder,
+          (
+            BackupMetadataRow,
+            BaseReferences<
+              _$AppDatabase,
+              $BackupMetadataTable,
+              BackupMetadataRow
+            >,
+          ),
+          BackupMetadataRow,
+          PrefetchHooks Function()
+        > {
+  $$BackupMetadataTableTableManager(
+    _$AppDatabase db,
+    $BackupMetadataTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BackupMetadataTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BackupMetadataTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BackupMetadataTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> schedule = const Value.absent(),
+                Value<String?> lastConfirmedAtIso = const Value.absent(),
+                Value<String?> nextDueAtIso = const Value.absent(),
+                Value<bool> isDeviceActive = const Value.absent(),
+              }) => BackupMetadataCompanion(
+                id: id,
+                schedule: schedule,
+                lastConfirmedAtIso: lastConfirmedAtIso,
+                nextDueAtIso: nextDueAtIso,
+                isDeviceActive: isDeviceActive,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> schedule = const Value.absent(),
+                Value<String?> lastConfirmedAtIso = const Value.absent(),
+                Value<String?> nextDueAtIso = const Value.absent(),
+                Value<bool> isDeviceActive = const Value.absent(),
+              }) => BackupMetadataCompanion.insert(
+                id: id,
+                schedule: schedule,
+                lastConfirmedAtIso: lastConfirmedAtIso,
+                nextDueAtIso: nextDueAtIso,
+                isDeviceActive: isDeviceActive,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BackupMetadataTable, BackupMetadataRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BackupMetadataTable,
+                    BackupMetadataRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BackupMetadataTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BackupMetadataTable,
+      BackupMetadataRow,
+      $$BackupMetadataTableFilterComposer,
+      $$BackupMetadataTableOrderingComposer,
+      $$BackupMetadataTableAnnotationComposer,
+      $$BackupMetadataTableCreateCompanionBuilder,
+      $$BackupMetadataTableUpdateCompanionBuilder,
+      (
+        BackupMetadataRow,
+        BaseReferences<_$AppDatabase, $BackupMetadataTable, BackupMetadataRow>,
+      ),
+      BackupMetadataRow,
+      PrefetchHooks Function()
+    >;
+typedef $$BackupInFlightBatchesTableCreateCompanionBuilder =
+    BackupInFlightBatchesCompanion Function({
+      Value<int> id,
+      required String batchId,
+      required String ownerUserId,
+      required String deviceId,
+      required String capturedAtIso,
+      required String payloadJson,
+    });
+typedef $$BackupInFlightBatchesTableUpdateCompanionBuilder =
+    BackupInFlightBatchesCompanion Function({
+      Value<int> id,
+      Value<String> batchId,
+      Value<String> ownerUserId,
+      Value<String> deviceId,
+      Value<String> capturedAtIso,
+      Value<String> payloadJson,
+    });
+
+class $$BackupInFlightBatchesTableFilterComposer
+    extends Composer<_$AppDatabase, $BackupInFlightBatchesTable> {
+  $$BackupInFlightBatchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get capturedAtIso => $composableBuilder(
+    column: $table.capturedAtIso,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BackupInFlightBatchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BackupInFlightBatchesTable> {
+  $$BackupInFlightBatchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get batchId => $composableBuilder(
+    column: $table.batchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get capturedAtIso => $composableBuilder(
+    column: $table.capturedAtIso,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BackupInFlightBatchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BackupInFlightBatchesTable> {
+  $$BackupInFlightBatchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get batchId =>
+      $composableBuilder(column: $table.batchId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerUserId => $composableBuilder(
+    column: $table.ownerUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get capturedAtIso => $composableBuilder(
+    column: $table.capturedAtIso,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+}
+
+class $$BackupInFlightBatchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BackupInFlightBatchesTable,
+          BackupInFlightBatchRow,
+          $$BackupInFlightBatchesTableFilterComposer,
+          $$BackupInFlightBatchesTableOrderingComposer,
+          $$BackupInFlightBatchesTableAnnotationComposer,
+          $$BackupInFlightBatchesTableCreateCompanionBuilder,
+          $$BackupInFlightBatchesTableUpdateCompanionBuilder,
+          (
+            BackupInFlightBatchRow,
+            BaseReferences<
+              _$AppDatabase,
+              $BackupInFlightBatchesTable,
+              BackupInFlightBatchRow
+            >,
+          ),
+          BackupInFlightBatchRow,
+          PrefetchHooks Function()
+        > {
+  $$BackupInFlightBatchesTableTableManager(
+    _$AppDatabase db,
+    $BackupInFlightBatchesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BackupInFlightBatchesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$BackupInFlightBatchesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$BackupInFlightBatchesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> batchId = const Value.absent(),
+                Value<String> ownerUserId = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> capturedAtIso = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+              }) => BackupInFlightBatchesCompanion(
+                id: id,
+                batchId: batchId,
+                ownerUserId: ownerUserId,
+                deviceId: deviceId,
+                capturedAtIso: capturedAtIso,
+                payloadJson: payloadJson,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String batchId,
+                required String ownerUserId,
+                required String deviceId,
+                required String capturedAtIso,
+                required String payloadJson,
+              }) => BackupInFlightBatchesCompanion.insert(
+                id: id,
+                batchId: batchId,
+                ownerUserId: ownerUserId,
+                deviceId: deviceId,
+                capturedAtIso: capturedAtIso,
+                payloadJson: payloadJson,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $BackupInFlightBatchesTable,
+                    BackupInFlightBatchRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BackupInFlightBatchesTable,
+                    BackupInFlightBatchRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BackupInFlightBatchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BackupInFlightBatchesTable,
+      BackupInFlightBatchRow,
+      $$BackupInFlightBatchesTableFilterComposer,
+      $$BackupInFlightBatchesTableOrderingComposer,
+      $$BackupInFlightBatchesTableAnnotationComposer,
+      $$BackupInFlightBatchesTableCreateCompanionBuilder,
+      $$BackupInFlightBatchesTableUpdateCompanionBuilder,
+      (
+        BackupInFlightBatchRow,
+        BaseReferences<
+          _$AppDatabase,
+          $BackupInFlightBatchesTable,
+          BackupInFlightBatchRow
+        >,
+      ),
+      BackupInFlightBatchRow,
+      PrefetchHooks Function()
+    >;
+typedef $$BackupDeviceIdentitiesTableCreateCompanionBuilder =
+    BackupDeviceIdentitiesCompanion Function({
+      Value<int> id,
+      required String deviceId,
+    });
+typedef $$BackupDeviceIdentitiesTableUpdateCompanionBuilder =
+    BackupDeviceIdentitiesCompanion Function({
+      Value<int> id,
+      Value<String> deviceId,
+    });
+
+class $$BackupDeviceIdentitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $BackupDeviceIdentitiesTable> {
+  $$BackupDeviceIdentitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BackupDeviceIdentitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BackupDeviceIdentitiesTable> {
+  $$BackupDeviceIdentitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BackupDeviceIdentitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BackupDeviceIdentitiesTable> {
+  $$BackupDeviceIdentitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+}
+
+class $$BackupDeviceIdentitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BackupDeviceIdentitiesTable,
+          BackupDeviceIdentityRow,
+          $$BackupDeviceIdentitiesTableFilterComposer,
+          $$BackupDeviceIdentitiesTableOrderingComposer,
+          $$BackupDeviceIdentitiesTableAnnotationComposer,
+          $$BackupDeviceIdentitiesTableCreateCompanionBuilder,
+          $$BackupDeviceIdentitiesTableUpdateCompanionBuilder,
+          (
+            BackupDeviceIdentityRow,
+            BaseReferences<
+              _$AppDatabase,
+              $BackupDeviceIdentitiesTable,
+              BackupDeviceIdentityRow
+            >,
+          ),
+          BackupDeviceIdentityRow,
+          PrefetchHooks Function()
+        > {
+  $$BackupDeviceIdentitiesTableTableManager(
+    _$AppDatabase db,
+    $BackupDeviceIdentitiesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BackupDeviceIdentitiesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$BackupDeviceIdentitiesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$BackupDeviceIdentitiesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
+          }) => BackupDeviceIdentitiesCompanion(id: id, deviceId: deviceId),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String deviceId,
+              }) => BackupDeviceIdentitiesCompanion.insert(
+                id: id,
+                deviceId: deviceId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $BackupDeviceIdentitiesTable,
+                    BackupDeviceIdentityRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BackupDeviceIdentitiesTable,
+                    BackupDeviceIdentityRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BackupDeviceIdentitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BackupDeviceIdentitiesTable,
+      BackupDeviceIdentityRow,
+      $$BackupDeviceIdentitiesTableFilterComposer,
+      $$BackupDeviceIdentitiesTableOrderingComposer,
+      $$BackupDeviceIdentitiesTableAnnotationComposer,
+      $$BackupDeviceIdentitiesTableCreateCompanionBuilder,
+      $$BackupDeviceIdentitiesTableUpdateCompanionBuilder,
+      (
+        BackupDeviceIdentityRow,
+        BaseReferences<
+          _$AppDatabase,
+          $BackupDeviceIdentitiesTable,
+          BackupDeviceIdentityRow
+        >,
+      ),
+      BackupDeviceIdentityRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3318,4 +5194,13 @@ class $AppDatabaseManager {
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$TransactionAuditLogsTableTableManager get transactionAuditLogs =>
       $$TransactionAuditLogsTableTableManager(_db, _db.transactionAuditLogs);
+  $$BackupMetadataTableTableManager get backupMetadata =>
+      $$BackupMetadataTableTableManager(_db, _db.backupMetadata);
+  $$BackupInFlightBatchesTableTableManager get backupInFlightBatches =>
+      $$BackupInFlightBatchesTableTableManager(_db, _db.backupInFlightBatches);
+  $$BackupDeviceIdentitiesTableTableManager get backupDeviceIdentities =>
+      $$BackupDeviceIdentitiesTableTableManager(
+        _db,
+        _db.backupDeviceIdentities,
+      );
 }

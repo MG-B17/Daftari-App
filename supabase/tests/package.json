@@ -1,0 +1,13 @@
+{
+  "name": "daftari-supabase-tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node cloud_backup_migration_test.mjs"
+  },
+  "devDependencies": {
+    "embedded-postgres": "^19.0.0-beta.20",
+    "pg": "^8.23.1"
+  }
+}
