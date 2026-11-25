@@ -110,33 +110,38 @@ class _DaftariAppState extends State<DaftariApp> with WidgetsBindingObserver {
     designSize: AppConstants.designSize,
     minTextAdapt: true,
     splitScreenMode: true,
-    builder: (context, child) => AppThemeTransitionProvider(
-      initialTheme:
+    builder: (context, child) {
+      final lightTheme = AppTheme.light;
+      final darkTheme = AppTheme.dark;
+      final initialTheme =
           themeMode == ThemeMode.dark ||
               (themeMode == ThemeMode.system &&
                   MediaQuery.platformBrightnessOf(context) == Brightness.dark)
-          ? AppTheme.dark
-          : AppTheme.light,
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppConstants.supportedLocales,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode,
-        builder: (context, child) {
-          final content = AppThemeTransitionArea(
-            child: child ?? const SizedBox.shrink(),
-          );
-          final lock = widget.appLockCubit;
-          return lock == null
-              ? content
-              : AppLockGuard(lock: lock, child: content);
-        },
-        routerConfig: widget.router ?? (_ownedRouter ??= AppRouter.create()),
-      ),
-    ),
+          ? darkTheme
+          : lightTheme;
+      return AppThemeTransitionProvider(
+        initialTheme: initialTheme,
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppConstants.supportedLocales,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+          builder: (context, child) {
+            final content = AppThemeTransitionArea(
+              child: child ?? const SizedBox.shrink(),
+            );
+            final lock = widget.appLockCubit;
+            return lock == null
+                ? content
+                : AppLockGuard(lock: lock, child: content);
+          },
+          routerConfig: widget.router ?? (_ownedRouter ??= AppRouter.create()),
+        ),
+      );
+    },
   );
 }

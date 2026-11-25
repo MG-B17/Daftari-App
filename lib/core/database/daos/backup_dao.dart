@@ -178,6 +178,25 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
     return row?.deviceId;
   });
 
+  /// Reads the durable ledger owner ID committed atomically inside SQLite
+  /// during cloud snapshot installation.
+  Future<String?> readDurableOwnerId() =>
+      runDatabaseOperation(_readDurableOwnerIdInternal);
+
+  /// Records [ownerUserId] in SQLite's singleton `backup_ledger_owner` table if
+  /// not already claimed by a different owner.
+  Future<String> claimOrReadDurableOwnerId(String ownerUserId) =>
+      runDatabaseOperation(
+        () => transaction(() async {
+          final trimmed = ownerUserId.trim();
+          if (trimmed.isEmpty) throw const ValidationException();
+          final existing = await _readDurableOwnerIdInternal();
+          if (existing != null) return existing;
+          await _writeDurableOwnerIdInternal(trimmed);
+          return trimmed;
+        }),
+      );
+
   /// Atomically claims [candidateDeviceId] if no device identity exists yet,
   /// returning the canonical persisted device ID.
   ///
@@ -537,6 +556,7 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
     required List<CustomersCompanion> restoredCustomers,
     required List<TransactionsCompanion> restoredTransactions,
     required List<TransactionAuditLogsCompanion> restoredAuditLogs,
+    String? ownerUserId,
     required Future<bool> Function(
       RestoreLedgerCountsSnapshot currentCounts,
       BackupMetadataSnapshot currentMetadata,
@@ -587,6 +607,9 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
 
         final nextMetadata = updateMetadata(currentMetadata);
         await _writeMetadata(nextMetadata);
+        if (ownerUserId != null && ownerUserId.trim().isNotEmpty) {
+          await _writeDurableOwnerIdInternal(ownerUserId.trim());
+        }
 
         final postCounts = await _readRestoreLedgerCountsInternal(
           isDeviceActive: nextMetadata.isDeviceActive,
@@ -851,6 +874,29 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
       ),
     );
   }
+
+  Future<String?> _readDurableOwnerIdInternal() async {
+    final row = await customSelect(
+      'SELECT o.owner_user_id AS owner_user_id '
+      'FROM backup_ledger_owner o '
+      'WHERE o.id = 1 AND ('
+      'EXISTS (SELECT 1 FROM customers) OR '
+      'EXISTS (SELECT 1 FROM transactions) OR '
+      'EXISTS (SELECT 1 FROM transaction_audit_logs) OR '
+      'EXISTS (SELECT 1 FROM backup_metadata WHERE last_confirmed_at_iso IS NOT NULL)'
+      ')',
+    ).getSingleOrNull();
+    final raw = row?.read<String?>('owner_user_id')?.trim();
+    return (raw == null || raw.isEmpty) ? null : raw;
+  }
+
+  Future<void> _writeDurableOwnerIdInternal(String ownerUserId) =>
+      customStatement(
+        'INSERT INTO backup_ledger_owner (id, owner_user_id) '
+        'VALUES (1, ?) '
+        'ON CONFLICT(id) DO UPDATE SET owner_user_id = excluded.owner_user_id',
+        [ownerUserId],
+      );
 
   Future<int> _countPendingChanges() async {
     final customerCount = customers.id.count();

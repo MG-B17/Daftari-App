@@ -259,6 +259,9 @@ void main() {
           await tester.tap(find.byKey(const ValueKey('backup-restore')));
           await tester.pumpAndSettle();
 
+          // P13-06: Single initial-load owner triggers exactly one inspection per route entry.
+          expect(repo.inspectCalls, 1);
+
           final context = tester.element(find.byType(RestoreScreen));
           final l10n = context.l10n;
           expect(find.byType(RestoreScreen), findsOneWidget);

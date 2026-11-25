@@ -244,6 +244,7 @@ final class PendingRestoreTransfer extends Equatable {
     required this.consentedLocalRevisionStamp,
     required this.stage,
     required this.cloudPreview,
+    this.isTakeoverOutcomeUnknown = false,
   }) : confirmedAt = confirmedAt.toUtc();
 
   final String requestId;
@@ -258,12 +259,21 @@ final class PendingRestoreTransfer extends Equatable {
   final RestoreTransferStage stage;
   final CloudBackupSnapshotPreview cloudPreview;
 
+  /// True once a takeover request has been dispatched to the server and its
+  /// outcome has not yet been reconciled (for example, after a lost network
+  /// response or while a lookup is unavailable).
+  final bool isTakeoverOutcomeUnknown;
+
   bool get canCancelBeforeServerTakeover =>
-      stage == RestoreTransferStage.takeoverPending;
+      stage == RestoreTransferStage.takeoverPending &&
+      !isTakeoverOutcomeUnknown;
 
   PendingRestoreTransfer copyWith({
+    bool? requiresReplacement,
+    String? consentedLocalRevisionStamp,
     RestoreTransferStage? stage,
     CloudBackupSnapshotPreview? cloudPreview,
+    bool? isTakeoverOutcomeUnknown,
   }) => PendingRestoreTransfer(
     requestId: requestId,
     ownerUserId: ownerUserId,
@@ -272,10 +282,13 @@ final class PendingRestoreTransfer extends Equatable {
     expectedActiveDeviceId: expectedActiveDeviceId,
     confirmedAt: confirmedAt,
     requiresTakeover: requiresTakeover,
-    requiresReplacement: requiresReplacement,
-    consentedLocalRevisionStamp: consentedLocalRevisionStamp,
+    requiresReplacement: requiresReplacement ?? this.requiresReplacement,
+    consentedLocalRevisionStamp:
+        consentedLocalRevisionStamp ?? this.consentedLocalRevisionStamp,
     stage: stage ?? this.stage,
     cloudPreview: cloudPreview ?? this.cloudPreview,
+    isTakeoverOutcomeUnknown:
+        isTakeoverOutcomeUnknown ?? this.isTakeoverOutcomeUnknown,
   );
 
   @override
@@ -291,6 +304,7 @@ final class PendingRestoreTransfer extends Equatable {
     consentedLocalRevisionStamp,
     stage,
     cloudPreview,
+    isTakeoverOutcomeUnknown,
   ];
 }
 

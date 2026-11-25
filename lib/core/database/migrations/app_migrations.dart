@@ -15,6 +15,12 @@ abstract final class AppMigrations {
         // default. Tests and production both go through this hook.
         await database.customStatement('PRAGMA foreign_keys = ON');
         await database.customStatement('PRAGMA busy_timeout = 5000');
+        await database.customStatement(
+          'CREATE TABLE IF NOT EXISTS backup_ledger_owner ('
+          'id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1), '
+          'owner_user_id TEXT NOT NULL'
+          ')',
+        );
       },
     );
   }

@@ -20,6 +20,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
 
   final RestoreRepository _repository;
   final FutureOr<void> Function()? _onRestoreCompleted;
+  bool _isCancellingInterrupted = false;
 
   /// Loads or refreshes the current restore eligibility, local ledger summary,
   /// interrupted transfer state, and server-confirmed cloud snapshot preview.
@@ -247,7 +248,11 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   /// Resumes a previously interrupted restore/device transfer using the same
   /// persisted request ID and expected version.
   Future<void> resumeInterruptedTransfer() async {
-    if (isClosed || state.phase != RestorePhase.interruptedRecovery) return;
+    if (isClosed ||
+        state.phase != RestorePhase.interruptedRecovery ||
+        _isCancellingInterrupted) {
+      return;
+    }
     final inFlight = state.pendingTransfer;
     if (inFlight == null) return;
 
@@ -263,13 +268,24 @@ class RestoreCubit extends Cubit<RestoreViewState> {
 
   /// Cancels a pre-takeover interrupted transfer and refreshes the preview.
   Future<void> cancelInterruptedTransfer() async {
-    if (isClosed || state.phase != RestorePhase.interruptedRecovery) return;
+    if (isClosed ||
+        state.phase != RestorePhase.interruptedRecovery ||
+        _isCancellingInterrupted) {
+      return;
+    }
     final inFlight = state.pendingTransfer;
     if (inFlight == null || !inFlight.canCancelBeforeServerTakeover) return;
 
-    final result = await _repository.discardPendingTransfer(inFlight.requestId);
-    if (isClosed) return;
-    await result.fold((_) async {}, (_) => loadPreview());
+    _isCancellingInterrupted = true;
+    try {
+      final result = await _repository.discardPendingTransfer(
+        inFlight.requestId,
+      );
+      if (isClosed) return;
+      await result.fold((_) => loadPreview(), (_) => loadPreview());
+    } finally {
+      _isCancellingInterrupted = false;
+    }
   }
 
   Future<void> _applyExecutionResult(RestoreExecutionResult result) async {
