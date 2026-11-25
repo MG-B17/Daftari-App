@@ -233,14 +233,24 @@ Future<void> runBackupBackgroundWorker(List<String> args) async {
     }
 
     if (decision.shouldCancelSchedule || decision.scheduleToSync != null) {
-      await _reconcileSuccessorWithPersistedSchedule(
-        localStore: localStore,
-        platformBridge: platformBridge,
-        dateService: dateService,
-        workerToken: workerToken,
-        pauseAfterFinalRead:
+      await reconcileBackupWorkerSuccessor(
+        readScheduleState: localStore.readScheduleState,
+        syncSchedule: (schedule, now) => platformBridge.syncScheduleFromWorker(
+          schedule,
+          now: now,
+          token: workerToken,
+        ),
+        cancelSchedule: () =>
+            platformBridge.cancelScheduledBackupFromWorker(token: workerToken),
+        now: dateService.now,
+        onPauseAfterFinalRead:
             isDebugTestMode &&
-            requestedMode == BackupWorkerModes.testPauseAfterFinalScheduleRead,
+                requestedMode ==
+                    BackupWorkerModes.testPauseAfterFinalScheduleRead
+            ? () => platformBridge.awaitTestCommitRelease(
+                BackupWorkerModes.testCommitPauseStageAfterFinalScheduleRead,
+              )
+            : null,
       );
     }
 
@@ -264,49 +274,82 @@ Future<void> runBackupBackgroundWorker(List<String> args) async {
 }
 
 /// Enqueues the worker's single successor from the latest committed SQLite
-/// schedule, then re-reads SQLite after the native enqueue and re-enqueues if a
-/// foreground interval change committed in between.
+/// schedule, retrying transient schedule read failures, then re-reads SQLite
+/// after the native enqueue and re-enqueues if a foreground interval change
+/// committed in between.
 ///
 /// A foreground change persists SQLite before it calls native scheduling. When
 /// that native call lands while this worker is still running with no queued
 /// successor it is a no-op, so the post-enqueue re-read is what closes the
 /// window between this worker's final read and its native enqueue.
-Future<void> _reconcileSuccessorWithPersistedSchedule({
-  required DriftBackupLocalStore localStore,
-  required AndroidBackupPlatformBridge platformBridge,
-  required DateService dateService,
-  required String workerToken,
-  required bool pauseAfterFinalRead,
+@visibleForTesting
+Future<void> reconcileBackupWorkerSuccessor({
+  required Future<Either<AppFailure, BackupScheduleState>> Function()
+  readScheduleState,
+  required Future<void> Function(BackupScheduleState schedule, DateTime now)
+  syncSchedule,
+  required Future<void> Function() cancelSchedule,
+  required DateTime Function() now,
+  Future<void> Function()? onPauseAfterFinalRead,
+  Duration retryDelay = const Duration(milliseconds: 50),
 }) async {
-  const maxAttempts = 5;
+  const maxReconcileRounds = 5;
   BackupScheduleState? lastEnqueued;
   var pausedOnce = false;
-  for (var attempt = 0; attempt < maxAttempts; attempt++) {
-    final latest = (await localStore.readScheduleState()).fold(
-      (_) => null,
-      (value) => value,
+  for (var round = 0; round < maxReconcileRounds; round++) {
+    final latest = await _readScheduleWithRetries(
+      readScheduleState: readScheduleState,
+      retryDelay: retryDelay,
     );
-    if (latest == null) return;
     if (lastEnqueued != null && latest == lastEnqueued) return;
 
-    if (pauseAfterFinalRead && !pausedOnce) {
+    if (onPauseAfterFinalRead != null && !pausedOnce) {
       pausedOnce = true;
-      await platformBridge.awaitTestCommitRelease(
-        BackupWorkerModes.testCommitPauseStageAfterFinalScheduleRead,
-      );
+      await onPauseAfterFinalRead();
     }
 
     if (latest.hasSchedule) {
-      await platformBridge.syncScheduleFromWorker(
-        latest,
-        now: dateService.now(),
-        token: workerToken,
-      );
+      await syncSchedule(latest, now());
     } else {
-      await platformBridge.cancelScheduledBackupFromWorker(token: workerToken);
+      await cancelSchedule();
     }
     lastEnqueued = latest;
   }
+
+  final finalCheck = await _readScheduleWithRetries(
+    readScheduleState: readScheduleState,
+    retryDelay: retryDelay,
+  );
+  if (finalCheck == lastEnqueued) return;
+
+  throw StateError(
+    'Persisted backup schedule did not converge after '
+    '$maxReconcileRounds reconciliation rounds',
+  );
+}
+
+Future<BackupScheduleState> _readScheduleWithRetries({
+  required Future<Either<AppFailure, BackupScheduleState>> Function()
+  readScheduleState,
+  required Duration retryDelay,
+}) async {
+  const maxReadAttempts = 5;
+  AppFailure? lastFailure;
+  for (var attempt = 0; attempt < maxReadAttempts; attempt++) {
+    final readResult = await readScheduleState();
+    final latest = readResult.fold<BackupScheduleState?>((failure) {
+      lastFailure = failure;
+      return null;
+    }, (value) => value);
+    if (latest != null) return latest;
+    if (attempt + 1 < maxReadAttempts && retryDelay > Duration.zero) {
+      await Future<void>.delayed(retryDelay);
+    }
+  }
+  throw StateError(
+    'Failed to read persisted backup schedule during successor '
+    'reconciliation: ${lastFailure?.message ?? 'unknown error'}',
+  );
 }
 
 Future<bool> _shouldUseRealSupabase({

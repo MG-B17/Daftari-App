@@ -19,11 +19,13 @@ import 'package:daftariapp/features/auth/session/domain/entities/auth_user.dart'
 import 'package:daftariapp/features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'package:daftariapp/features/auth/session/presentation/cubit/auth_session_state.dart';
 import 'package:daftariapp/features/backup/data/repositories/drift_backup_local_store.dart';
+import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_batch.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_eligibility.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_run_result.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_schedule.dart';
+import 'package:daftariapp/features/backup/domain/policies/backup_schedule_policy.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_scheduler.dart';
 import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.dart';
@@ -36,6 +38,7 @@ import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -955,4 +958,136 @@ void main() {
     );
     expect(schedule.lastConfirmedAt, isNull);
   });
+
+  test('P12-24: failed daily registration through selection and refresh recovers on resume without cold launch', () async {
+    final app = openAppInstance();
+    final flakyScheduler = _FlakyScheduler(shouldFail: false);
+    final cubit = BackupCubit(
+      runBackup: app.runBackup,
+      updateSchedule: app.updateSchedule,
+      localStore: app.localStore,
+      scheduler: flakyScheduler,
+      runLock: runLock,
+      dateService: dateService,
+      readAuthState: () => currentAuthState,
+      authStateStream: authStateController.stream,
+      connectivityStream: const Stream<bool>.empty(),
+    );
+
+    await cubit.initialize();
+    expect(flakyScheduler.syncedSchedules, isEmpty);
+
+    // Fail every registration of daily during selectSchedule and its immediate refresh.
+    flakyScheduler.shouldFail = true;
+    await cubit.selectSchedule(BackupSchedule.daily);
+    expect(cubit.state.schedule, BackupSchedule.daily);
+    expect(flakyScheduler.syncedSchedules, isEmpty);
+
+    // Restore scheduler and resume foreground without a cold launch.
+    flakyScheduler.shouldFail = false;
+    await cubit.onAppResumed();
+
+    expect(flakyScheduler.syncedSchedules.length, 1);
+    final registered = flakyScheduler.syncedSchedules.single;
+    expect(registered.schedule, BackupSchedule.daily);
+    expect(
+      registered.nextDueAt,
+      BackupSchedulePolicy.nextDueAfter(
+        dateService.now(),
+        BackupSchedule.daily,
+      ),
+    );
+    await cubit.close();
+  });
+
+  test(
+    'P12-24: failed native enqueue over MethodChannel recovers on resume',
+    () async {
+      final app = openAppInstance();
+      const channel = MethodChannel('com.mgb.daftari/backup_p12_24_test');
+      var failNativeEnqueue = false;
+      final registeredCalls = <Map<Object?, Object?>>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'syncSchedule') {
+              if (failNativeEnqueue) {
+                throw PlatformException(
+                  code: 'enqueue_failed',
+                  message: 'WorkManager enqueue failed',
+                );
+              }
+              registeredCalls.add(call.arguments as Map<Object?, Object?>);
+            }
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+
+      final bridge = AndroidBackupPlatformBridge(channel: channel);
+      addTearDown(bridge.dispose);
+      final cubit = BackupCubit(
+        runBackup: app.runBackup,
+        updateSchedule: app.updateSchedule,
+        localStore: app.localStore,
+        scheduler: bridge,
+        runLock: bridge,
+        dateService: dateService,
+        readAuthState: () => currentAuthState,
+        authStateStream: authStateController.stream,
+        connectivityStream: const Stream<bool>.empty(),
+      );
+
+      await cubit.initialize();
+      expect(registeredCalls, isEmpty);
+
+      failNativeEnqueue = true;
+      await cubit.selectSchedule(BackupSchedule.daily);
+      expect(cubit.state.schedule, BackupSchedule.daily);
+      expect(registeredCalls, isEmpty);
+
+      failNativeEnqueue = false;
+      await cubit.onAppResumed();
+
+      expect(registeredCalls.length, 1);
+      expect(registeredCalls.single['schedule'], BackupSchedule.daily.name);
+      expect(
+        registeredCalls.single['nextDueAtEpochMs'],
+        BackupSchedulePolicy.nextDueAfter(
+          dateService.now(),
+          BackupSchedule.daily,
+        ).toUtc().millisecondsSinceEpoch,
+      );
+      await cubit.close();
+    },
+  );
+}
+
+class _FlakyScheduler implements BackupScheduler {
+  _FlakyScheduler({required this.shouldFail});
+
+  bool shouldFail;
+  final List<BackupScheduleState> syncedSchedules = [];
+
+  @override
+  Future<void> syncSchedule(
+    BackupScheduleState scheduleState, {
+    required DateTime now,
+  }) async {
+    if (shouldFail) {
+      throw PlatformException(code: 'scheduler_unavailable');
+    }
+    if (scheduleState.hasSchedule) {
+      syncedSchedules.add(scheduleState);
+    }
+  }
+
+  @override
+  Future<void> cancelScheduledBackup() async {
+    if (shouldFail) {
+      throw PlatformException(code: 'scheduler_unavailable');
+    }
+    syncedSchedules.clear();
+  }
 }

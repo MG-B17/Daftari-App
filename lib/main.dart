@@ -29,7 +29,6 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await configureDependencies();
-  await sl<BackupCubit>().initialize();
   final logger = sl<AppLogger>();
   FlutterError.onError = (details) {
     unawaited(logger.recordError(details.exception, fatal: true));
@@ -39,13 +38,16 @@ Future<void> main() async {
     return true;
   };
 
+  final backupCubit = sl<BackupCubit>();
+  unawaited(backupCubit.initialize());
+
   runApp(
     DaftariApp(
       router: sl<GoRouter>(),
       settingsCubit: sl<SettingsCubit>(),
       appLockCubit: sl<AppLockCubit>(),
       authSessionCubit: sl<AuthSessionCubit>(),
-      backupCubit: sl<BackupCubit>(),
+      backupCubit: backupCubit,
     ),
   );
 }
