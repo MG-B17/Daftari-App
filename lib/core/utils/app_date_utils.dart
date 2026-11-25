@@ -149,7 +149,12 @@ abstract final class AppDateUtils {
       'الربع الرابع',
     ],
     AMPMS: const ['ص', 'م'],
-    DATEFORMATS: const ['EEEE، d MMMM y', 'd MMMM y', 'dd\u200f/MM\u200f/y', 'd\u200f/M\u200f/y'],
+    DATEFORMATS: const [
+      'EEEE، d MMMM y',
+      'd MMMM y',
+      'dd\u200f/MM\u200f/y',
+      'd\u200f/M\u200f/y',
+    ],
     TIMEFORMATS: const ['h:mm:ss a zzzz', 'h:mm:ss a z', 'h:mm:ss a', 'h:mm a'],
     DATETIMEFORMATS: const ['{1}، {0}', '{1}، {0}', '{1}، {0}', '{1}، {0}'],
     FIRSTDAYOFWEEK: 5,
