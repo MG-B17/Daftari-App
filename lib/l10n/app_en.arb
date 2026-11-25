@@ -366,5 +366,75 @@
   "backupScheduleWeekly": "Weekly",
   "backupScheduleMonthly": "Monthly",
   "backupScheduleCaption": "Choose how often to back up automatically when Android allows.",
-  "backupMockNotice": "Preview only — backup isn't available yet."
+  "backupMockNotice": "Preview only — backup isn't available yet.",
+  "backupRestoreAction": "Restore cloud backup",
+  "backupInactiveDeviceHint": "Another phone is now the active backup device for this account. Your local ledger remains available offline on this phone, or you can restore and transfer backup authority here.",
+  "restoreScreenTitle": "Restore cloud backup",
+  "restoreCloudSnapshotTitle": "Confirmed cloud backup",
+  "restoreConfirmedAt": "Confirmed backup: {day}, {time}",
+  "@restoreConfirmedAt": {
+    "placeholders": {
+      "day": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  },
+  "restoreCustomersCount": "{count, plural, =0{0 customers} =1{1 customer} other{{count} customers}}",
+  "@restoreCustomersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreTransactionsCount": "{count, plural, =0{0 transactions} =1{1 transaction} other{{count} transactions}}",
+  "@restoreTransactionsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreHistoryCount": "{count, plural, =0{0 deleted or audit records} =1{1 deleted or audit record} other{{count} deleted or audit records}}",
+  "@restoreHistoryCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreZeroRowsSnapshotNote": "This confirmed backup contains an empty ledger (0 records).",
+  "restoreConsequenceTitle": "What happens on this phone",
+  "restoreConsequenceTakeover": "This phone will receive the confirmed cloud ledger and become the active backup phone for this account. The previous phone keeps its local ledger offline, but will no longer upload cloud backups.",
+  "restoreConsequenceSameDevice": "This phone is already the active backup phone for this account. Restoring loads the confirmed cloud ledger onto this phone without changing backup device authority.",
+  "restorePreviousPhonePendingWarning": "Any changes still pending upload on the previous phone are not included in this confirmed backup and remain available only on that phone.",
+  "restoreLocalEmptyTitle": "This phone's ledger is empty",
+  "restoreLocalEmptyMessage": "No local customers, transactions, or audit history exist on this phone.",
+  "restoreLocalPopulatedTitle": "Existing local ledger on this phone",
+  "restoreLocalPopulatedWarning": "Restoring will replace all local records on this phone with the confirmed cloud backup. A second confirmation will be required.",
+  "restoreAndTransferAction": "Restore & transfer to this phone",
+  "restoreOnlyAction": "Restore cloud backup",
+  "restoreConfirmTakeoverTitle": "Confirm restore and device transfer?",
+  "restoreConfirmTakeoverMessage": "You are about to restore the confirmed cloud backup to this phone and make this phone the active backup device for your account. Future cloud uploads from the previous phone will stop, and any changes still pending on the previous phone will remain available only there.",
+  "restoreConfirmTakeoverButton": "Confirm restore & transfer",
+  "restoreConfirmSameDeviceTitle": "Confirm cloud restore?",
+  "restoreConfirmSameDeviceMessage": "You are about to restore the confirmed cloud backup onto this active phone. Only records included in the last server-confirmed backup will be restored.",
+  "restoreConfirmSameDeviceButton": "Confirm restore",
+  "restoreReplacementConfirmTitle": "Replace local ledger on this phone?",
+  "restoreReplacementConfirmMessage": "This phone already contains local ledger records. Confirming will permanently replace this phone's local ledger with the confirmed cloud backup.",
+  "restoreReplacementLocalSummaryTitle": "Local records to be replaced on this phone",
+  "restoreReplacementConfirmButton": "Replace local ledger",
+  "restoreSignedOutTitle": "Sign in to restore cloud backup",
+  "restoreSignedOutMessage": "Sign in to your account from Account settings to check and restore your confirmed cloud backup.",
+  "restoreEmailUnverifiedTitle": "Verify your email first",
+  "restoreEmailUnverifiedMessage": "Verify your account email address before restoring a cloud backup.",
+  "restoreAccountMismatchTitle": "Ledger linked to another account",
+  "restoreAccountMismatchMessage": "This phone's local ledger is linked to another account and cannot be replaced by this account's backup. Sign in with the original account to use this ledger.",
+  "restoreOfflineTitle": "No internet connection",
+  "restoreOfflineMessage": "Connect to the internet to preview and restore your confirmed cloud backup. Your local ledger on this phone remains intact and available offline.",
+  "restoreMissingBackupTitle": "No cloud backup found",
+  "restoreMissingBackupMessage": "No confirmed cloud backup exists for this account yet. Back up your ledger from your active phone first, then try again.",
+  "restoreInterruptedTitle": "Finish interrupted restore",
+  "restoreInterruptedMessage": "A previous cloud restore and device transfer was interrupted before completion. Your existing local ledger is still intact. Resume to finish installing the confirmed backup safely.",
+  "restoreInterruptedUploadsBlockedNote": "Cloud uploads on this phone remain paused until recovery completes.",
+  "restoreResumeAction": "Resume restore",
+  "restoreCloudVersionChangedNotice": "A newer cloud backup or device authority change was detected. Review the updated backup details and confirm again.",
+  "restoreLocalLedgerChangedNotice": "Local ledger changes were recorded after your preview. Review the updated local counts and confirm replacement again.",
+  "restoreCompletedTitle": "Cloud ledger restored",
+  "restoreCompletedTransferredMessage": "The confirmed cloud ledger is now installed on this phone, and future cloud backups will upload from this phone.",
+  "restoreCompletedSameDeviceMessage": "The confirmed cloud ledger is now installed on this phone.",
+  "restoreDoneAction": "Back to backup settings"
 }

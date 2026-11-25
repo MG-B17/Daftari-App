@@ -1119,4 +1119,214 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backupMockNotice => 'معاينة فقط — النسخ الاحتياطي غير متاح بعد.';
+
+  @override
+  String get backupRestoreAction => 'استعادة البيانات السحابية';
+
+  @override
+  String get backupInactiveDeviceHint =>
+      'أصبح هاتف آخر هو جهاز النسخ الاحتياطي النشط لهذا الحساب. يظل دفترك المحلي متاحًا على هذا الهاتف بدون إنترنت، أو يمكنك الاستعادة ونقل صلاحية النسخ الاحتياطي إلى هنا.';
+
+  @override
+  String get restoreScreenTitle => 'استعادة النسخة السحابية';
+
+  @override
+  String get restoreCloudSnapshotTitle => 'النسخة السحابية المؤكدة';
+
+  @override
+  String restoreConfirmedAt(String day, String time) {
+    return 'نسخة مؤكدة: $day $time';
+  }
+
+  @override
+  String restoreCustomersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عميل',
+      many: '$count عميلًا',
+      few: '$count عملاء',
+      two: 'عميلان',
+      one: 'عميل واحد',
+      zero: '0 عملاء',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreTransactionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حركة',
+      many: '$count حركة',
+      few: '$count حركات',
+      two: 'حركتان',
+      one: 'حركة واحدة',
+      zero: '0 حركات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreHistoryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count سجل محذوف أو تدقيق',
+      many: '$count سجلًا محذوفًا أو تدقيق',
+      few: '$count سجلات محذوفة أو تدقيق',
+      two: 'سجلان محذوفان أو تدقيق',
+      one: 'سجل محذوف أو تدقيق واحد',
+      zero: '0 سجلات محذوفة أو تدقيق',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restoreZeroRowsSnapshotNote =>
+      'تحتوي هذه النسخة المؤكدة على دفتر فارغ (0 سجلات).';
+
+  @override
+  String get restoreConsequenceTitle => 'ماذا سيحدث على هذا الهاتف';
+
+  @override
+  String get restoreConsequenceTakeover =>
+      'سيستلم هذا الهاتف الدفتر السحابي المؤكد ويصبح الهاتف النشط للنسخ الاحتياطي لهذا الحساب. يحتفظ الهاتف السابق بدفتره المحلي بدون إنترنت، لكنه لن يرفع نسخًا احتياطية سحابية بعد الآن.';
+
+  @override
+  String get restoreConsequenceSameDevice =>
+      'هذا الهاتف هو بالفعل الهاتف النشط للنسخ الاحتياطي لهذا الحساب. تؤدي الاستعادة إلى تحميل الدفتر السحابي المؤكد على هذا الهاتف دون تغيير صلاحية جهاز النسخ الاحتياطي.';
+
+  @override
+  String get restorePreviousPhonePendingWarning =>
+      'أي تغييرات لا تزال معلقة ولم تُرفع من الهاتف السابق ليست ضمن هذه النسخة المؤكدة وتظل متاحة على ذلك الهاتف فقط.';
+
+  @override
+  String get restoreLocalEmptyTitle => 'دفتر هذا الهاتف فارغ';
+
+  @override
+  String get restoreLocalEmptyMessage =>
+      'لا يوجد عملاء أو حركات أو سجل تدقيق محلي على هذا الهاتف.';
+
+  @override
+  String get restoreLocalPopulatedTitle => 'يوجد دفتر محلي حالي على هذا الهاتف';
+
+  @override
+  String get restoreLocalPopulatedWarning =>
+      'ستؤدي الاستعادة إلى استبدال جميع السجلات المحلية على هذا الهاتف بالنسخة السحابية المؤكدة. سيُطلب منك تأكيد ثانٍ.';
+
+  @override
+  String get restoreAndTransferAction =>
+      'استعادة الدفتر ونقل النسخ لهذا الهاتف';
+
+  @override
+  String get restoreOnlyAction => 'استعادة النسخة السحابية';
+
+  @override
+  String get restoreConfirmTakeoverTitle =>
+      'تأكيد الاستعادة ونقل الجهاز النشط؟';
+
+  @override
+  String get restoreConfirmTakeoverMessage =>
+      'أنت على وشك استعادة النسخة السحابية المؤكدة إلى هذا الهاتف وجعل هذا الهاتف جهاز النسخ الاحتياطي النشط لحسابك. سيتوقف رفع النسخ السحابية من الهاتف السابق، وأي تغييرات لا تزال معلقة على الهاتف السابق ستظل متاحة هناك فقط.';
+
+  @override
+  String get restoreConfirmTakeoverButton => 'تأكيد الاستعادة والنقل';
+
+  @override
+  String get restoreConfirmSameDeviceTitle => 'تأكيد الاستعادة السحابية؟';
+
+  @override
+  String get restoreConfirmSameDeviceMessage =>
+      'أنت على وشك استعادة النسخة السحابية المؤكدة على هذا الهاتف النشط. سيتم استعادة السجلات المشمولة في آخر نسخة مؤكدة على الخادم فقط.';
+
+  @override
+  String get restoreConfirmSameDeviceButton => 'تأكيد الاستعادة';
+
+  @override
+  String get restoreReplacementConfirmTitle =>
+      'استبدال الدفتر المحلي على هذا الهاتف؟';
+
+  @override
+  String get restoreReplacementConfirmMessage =>
+      'يحتوي هذا الهاتف بالفعل على سجلات دفتر محلي. سيؤدي التأكيد إلى استبدال الدفتر المحلي على هذا الهاتف نهائيًا بالنسخة السحابية المؤكدة.';
+
+  @override
+  String get restoreReplacementLocalSummaryTitle =>
+      'السجلات المحلية التي سيتم استبدالها على هذا الهاتف';
+
+  @override
+  String get restoreReplacementConfirmButton => 'استبدال الدفتر المحلي';
+
+  @override
+  String get restoreSignedOutTitle => 'سجّل الدخول لاستعادة النسخة السحابية';
+
+  @override
+  String get restoreSignedOutMessage =>
+      'سجّل الدخول إلى حسابك من إعدادات الحساب للتحقق من نسختك السحابية المؤكدة واستعادتها.';
+
+  @override
+  String get restoreEmailUnverifiedTitle => 'أكد بريدك الإلكتروني أولاً';
+
+  @override
+  String get restoreEmailUnverifiedMessage =>
+      'أكد عنوان البريد الإلكتروني لحسابك قبل استعادة النسخة السحابية.';
+
+  @override
+  String get restoreAccountMismatchTitle => 'الدفتر مرتبط بحساب آخر';
+
+  @override
+  String get restoreAccountMismatchMessage =>
+      'دفتر هذا الهاتف المحلي مرتبط بحساب آخر ولا يمكن استبداله بنسخة احتياطية من هذا الحساب. سجّل الدخول بالحساب الأصلي لاستخدام هذا الدفتر.';
+
+  @override
+  String get restoreOfflineTitle => 'لا يوجد اتصال بالإنترنت';
+
+  @override
+  String get restoreOfflineMessage =>
+      'اتصل بالإنترنت لمعاينة واستعادة نسختك السحابية المؤكدة. يظل دفترك المحلي على هذا الهاتف سليمًا ومتاحًا بدون إنترنت.';
+
+  @override
+  String get restoreMissingBackupTitle => 'لا توجد نسخة احتياطية سحابية';
+
+  @override
+  String get restoreMissingBackupMessage =>
+      'لا توجد نسخة احتياطية سحابية مؤكدة لهذا الحساب بعد. قم بنسخ دفترك احتياطيًا من هاتفك النشط أولاً ثم حاول مرة أخرى.';
+
+  @override
+  String get restoreInterruptedTitle => 'إكمال الاستعادة المتوقفة';
+
+  @override
+  String get restoreInterruptedMessage =>
+      'توقفت عملية استعادة سحابية ونقل للجهاز قبل اكتمالها. دفترك المحلي الحالي لا يزال سليمًا. استأنف العملية لإكمال تثبيت النسخة المؤكدة بأمان.';
+
+  @override
+  String get restoreInterruptedUploadsBlockedNote =>
+      'يظل رفع النسخ السحابية على هذا الهاتف متوقفًا مؤقتًا حتى يكتمل الاستئناف.';
+
+  @override
+  String get restoreResumeAction => 'استئناف الاستعادة';
+
+  @override
+  String get restoreCloudVersionChangedNotice =>
+      'تم اكتشاف نسخة سحابية أحدث أو تغيير في الجهاز النشط. راجع تفاصيل النسخة المحدثة وأكّد مرة أخرى.';
+
+  @override
+  String get restoreLocalLedgerChangedNotice =>
+      'تم تسجيل تغييرات في الدفتر المحلي بعد المعاينة. راجع الأعداد المحلية المحدثة وأكّد الاستبدال مرة أخرى.';
+
+  @override
+  String get restoreCompletedTitle => 'تمت استعادة الدفتر السحابي';
+
+  @override
+  String get restoreCompletedTransferredMessage =>
+      'تم تثبيت الدفتر السحابي المؤكد على هذا الهاتف، وسيتم رفع النسخ الاحتياطية السحابية المستقبلية من هذا الهاتف.';
+
+  @override
+  String get restoreCompletedSameDeviceMessage =>
+      'تم تثبيت الدفتر السحابي المؤكد على هذا الهاتف.';
+
+  @override
+  String get restoreDoneAction => 'العودة لإعدادات النسخ الاحتياطي';
 }

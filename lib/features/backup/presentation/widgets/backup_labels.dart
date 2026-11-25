@@ -68,6 +68,11 @@ extension BackupViewStateLabels on BackupViewState {
         ? context.l10n.backupFailedFirstHint
         : context.l10n.backupFailedHint;
   }
+
+  String? inactiveDeviceHint(BuildContext context) {
+    if (!isInactiveDevice) return null;
+    return context.l10n.backupInactiveDeviceHint;
+  }
 }
 
 /// Resolves an explicit [state] or falls back to an accurate preview state

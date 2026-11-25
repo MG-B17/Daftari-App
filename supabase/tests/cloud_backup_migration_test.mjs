@@ -11,11 +11,16 @@ const { Client } = pg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const migrationPath = path.resolve(
+const phase12MigrationPath = path.resolve(
   __dirname,
   '../migrations/20261124000000_phase_12_cloud_backup.sql',
 );
-const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+const phase13MigrationPath = path.resolve(
+  __dirname,
+  '../migrations/20261125000000_phase_13_cloud_restore_and_transfer.sql',
+);
+const phase12MigrationSql = fs.readFileSync(phase12MigrationPath, 'utf8');
+const phase13MigrationSql = fs.readFileSync(phase13MigrationPath, 'utf8');
 
 const USER_A = '11111111-1111-4111-8111-111111111111';
 const USER_B = '22222222-2222-4222-8222-222222222222';
@@ -199,8 +204,8 @@ async function run() {
       [USER_A, USER_B, USER_C, USER_D, USER_UNVERIFIED],
     );
 
-    // 2. Apply exact unmodified migration.
-    await admin.query(migrationSql);
+    // 2. Apply exact unmodified Phase 12 migration.
+    await admin.query(phase12MigrationSql);
 
     const capturedAt = '2026-11-24T10:00:00.000Z';
     const customerA1 = {
@@ -775,6 +780,536 @@ async function run() {
       },
     );
     assert.equal(publishB1.status, 'confirmed');
+
+    // =========================================================================
+    // 10. Phase 13 forward migration: confirmed_version backfill, cumulative
+    //     multi-batch snapshot read, missing vs zero-row snapshot, two-account
+    //     isolation, concurrent publication serialization, competing takeovers,
+    //     retries after lost responses, and former-device credential rejection.
+    // =========================================================================
+    await admin.query(phase13MigrationSql);
+
+    const USER_EMPTY = '66666666-6666-4666-8666-666666666666';
+    const USER_ZERO_ROWS = '77777777-7777-4777-8777-777777777777';
+    const DEVICE_A3 = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3';
+    const SECRET_A3 = 'a3'.repeat(32);
+    const DEVICE_B2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2';
+    const SECRET_B2 = 'b2'.repeat(32);
+    const DEVICE_Z1 = '99999999-9999-4999-8999-999999999991';
+    const CUST_A2 = '01000000-0000-4000-8000-000000000002';
+    const CUST_A3 = '01000000-0000-4000-8000-000000000003';
+    const TX_A2 = '01100000-0000-4000-8000-000000000002';
+    const BATCH_A4 = '10000000-0000-4000-8000-000000000006';
+    const BATCH_A5 = '10000000-0000-4000-8000-000000000007';
+    const BATCH_A6_OLD_REJECT = '10000000-0000-4000-8000-000000000008';
+    const BATCH_A7_NEW_ACTIVE = '10000000-0000-4000-8000-000000000009';
+    const REQ_A_TAKEOVER_1 = '80000000-0000-4000-8000-000000000001';
+    const REQ_A_TAKEOVER_2 = '80000000-0000-4000-8000-000000000002';
+    const REQ_A_TAKEOVER_3 = '80000000-0000-4000-8000-000000000003';
+    const REQ_A_TAKEOVER_4 = '80000000-0000-4000-8000-000000000004';
+    const REQ_B_TAKEOVER_1 = '81000000-0000-4000-8000-000000000001';
+
+    await admin.query(
+      `insert into auth.users (id, email_confirmed_at) values
+        ($1, '2026-11-20T00:00:00Z'),
+        ($2, '2026-11-20T00:00:00Z')`,
+      [USER_EMPTY, USER_ZERO_ROWS],
+    );
+
+    // 10A. Missing backup vs valid confirmed snapshot with zero rows.
+    const missingSnapshot = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_EMPTY },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.read_confirmed_backup_snapshot() as result`,
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(missingSnapshot, { status: 'missing_backup' });
+
+    // Seed a valid confirmed account header with zero ledger rows.
+    await admin.query(
+      `insert into public.backup_accounts (user_id, active_device_id, last_confirmed_at, confirmed_version)
+       values ($1, $2, '2026-11-25T08:00:00.000Z', 1)`,
+      [USER_ZERO_ROWS, DEVICE_Z1],
+    );
+    const zeroRowSnapshot = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_ZERO_ROWS },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.read_confirmed_backup_snapshot() as result`,
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(zeroRowSnapshot.status, 'ready');
+    assert.equal(zeroRowSnapshot.version, 'v-1');
+    assert.equal(zeroRowSnapshot.active_device_id, DEVICE_Z1);
+    assert.equal(zeroRowSnapshot.customer_count, 0);
+    assert.equal(zeroRowSnapshot.deleted_customer_count, 0);
+    assert.equal(zeroRowSnapshot.transaction_count, 0);
+    assert.equal(zeroRowSnapshot.deleted_transaction_count, 0);
+    assert.equal(zeroRowSnapshot.audit_log_count, 0);
+    assert.deepEqual(zeroRowSnapshot.customers, []);
+    assert.deepEqual(zeroRowSnapshot.transactions, []);
+    assert.deepEqual(zeroRowSnapshot.audit_logs, []);
+
+    // 10B. Multi-batch cumulative snapshot & two-account isolation.
+    // Account A already has 3 batches from Phase 12 (backfilled to v-3):
+    //   - CUST_A1 (rev 1, active) from BATCH_A1
+    //   - TX_A1 (rev 2, soft-deleted, 15000) from BATCH_A2
+    //   - AUDIT_A1, AUDIT_A2 from BATCH_A1 and BATCH_A2
+    // Publish BATCH_A4 with a new active customer CUST_A2, a soft-deleted
+    // customer CUST_A3, and an active transaction TX_A2.
+    const customerA2 = {
+      id: CUST_A2,
+      name: 'Mahmoud',
+      phone: '01003334444',
+      notes: 'wholesale',
+      created_at: '2026-11-25T08:00:00.000Z',
+      updated_at: '2026-11-25T08:00:00.000Z',
+      deleted_at: null,
+      local_revision: 1,
+    };
+    const customerA3Deleted = {
+      id: CUST_A3,
+      name: 'Deleted Customer',
+      phone: null,
+      notes: null,
+      created_at: '2026-11-25T08:01:00.000Z',
+      updated_at: '2026-11-25T08:02:00.000Z',
+      deleted_at: '2026-11-25T08:02:00.000Z',
+      local_revision: 2,
+    };
+    const txA2Active = {
+      id: TX_A2,
+      customer_id: CUST_A2,
+      type: 'payment',
+      amount_piasters: 25000,
+      note: 'cash settlement',
+      transaction_date: '2026-11-25T08:05:00.000Z',
+      created_at: '2026-11-25T08:05:00.000Z',
+      updated_at: '2026-11-25T08:05:00.000Z',
+      deleted_at: null,
+      local_revision: 1,
+    };
+    const publishA4 = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, $6::jsonb, '[]'::jsonb) as result`,
+          [
+            BATCH_A4,
+            DEVICE_A1,
+            SECRET_A1,
+            '2026-11-25T08:10:00.000Z',
+            JSON.stringify([customerA2, customerA3Deleted]),
+            JSON.stringify([txA2Active]),
+          ],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(publishA4.status, 'confirmed');
+
+    // Read Account A's cumulative multi-batch snapshot at v-4.
+    const snapshotA = await asRole(
+      conn2,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.read_confirmed_backup_snapshot($1) as result`,
+          ['v-4'],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(snapshotA.status, 'ready');
+    assert.equal(snapshotA.version, 'v-4');
+    assert.equal(snapshotA.active_device_id, DEVICE_A1);
+    assert.equal(snapshotA.customer_count, 2);
+    assert.equal(snapshotA.deleted_customer_count, 1);
+    assert.equal(snapshotA.transaction_count, 1);
+    assert.equal(snapshotA.deleted_transaction_count, 1);
+    assert.equal(snapshotA.audit_log_count, 2);
+    assert.deepEqual(
+      snapshotA.customers.map((c) => c.id),
+      [CUST_A1, CUST_A2, CUST_A3],
+    );
+    assert.deepEqual(
+      snapshotA.transactions.map((t) => [t.id, t.amount_piasters, t.local_revision, Boolean(t.deleted_at)]),
+      [
+        [TX_A1, 15000, 2, true],
+        [TX_A2, 25000, 1, false],
+      ],
+    );
+    assert.deepEqual(
+      snapshotA.audit_logs.map((a) => a.id),
+      [AUDIT_A1, AUDIT_A2],
+    );
+
+    // Asking for an older expected version returns version_changed with latest preview.
+    const staleVersionRead = await asRole(
+      conn2,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.read_confirmed_backup_snapshot($1) as result`,
+          ['v-3'],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(staleVersionRead.status, 'version_changed');
+    assert.equal(staleVersionRead.version, 'v-4');
+    assert.equal(staleVersionRead.active_device_id, DEVICE_A1);
+
+    // Account B reads only Account B's snapshot (v-1, 1 customer, 1 tx, 0 audits).
+    const snapshotB = await asRole(
+      conn2,
+      { role: 'authenticated', userId: USER_B },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.read_confirmed_backup_snapshot() as result`,
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(snapshotB.status, 'ready');
+    assert.equal(snapshotB.version, 'v-1');
+    assert.equal(snapshotB.active_device_id, DEVICE_B1);
+    assert.deepEqual(
+      snapshotB.customers.map((c) => c.id),
+      [CUST_B1],
+    );
+    assert.deepEqual(
+      snapshotB.transactions.map((t) => t.id),
+      [TX_B1],
+    );
+    assert.deepEqual(snapshotB.audit_logs, []);
+
+    // Security & RLS guards on Phase 13 objects.
+    await expectSqlState(
+      asRole(conn2, { role: 'authenticated', userId: USER_A }, (tx) =>
+        tx.query('select * from public.backup_authority_transfers'),
+      ),
+      '42501',
+      'authenticated client must never read backup_authority_transfers directly',
+    );
+    await expectSqlState(
+      asRole(conn2, { role: 'anon', userId: null }, (tx) =>
+        tx.query('select public.read_confirmed_backup_snapshot()'),
+      ),
+      '42501',
+      'anon must not execute read_confirmed_backup_snapshot',
+    );
+    await expectSqlState(
+      asRole(conn2, { role: 'authenticated', userId: USER_UNVERIFIED }, (tx) =>
+        tx.query('select public.read_confirmed_backup_snapshot()'),
+      ),
+      '42501',
+      'unverified email must not execute read_confirmed_backup_snapshot',
+    );
+    await expectSqlState(
+      asRole(conn2, { role: 'anon', userId: null }, (tx) =>
+        tx.query(
+          'select public.transfer_backup_authority($1, $2, $3, $4, $5)',
+          [REQ_A_TAKEOVER_1, DEVICE_A2, SECRET_A2, 'v-4', DEVICE_A1],
+        ),
+      ),
+      '42501',
+      'anon must not execute transfer_backup_authority',
+    );
+
+    // 10C. Concurrent publication vs takeover (publication holds FOR UPDATE,
+    //      commits v-5, and blocked takeover expecting v-4 returns precondition_failed).
+    await conn1.query('begin');
+    await conn1.query('set local role authenticated');
+    await conn1.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const publishA5Res = await conn1.query(
+      `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, '[]'::jsonb, '[]'::jsonb) as result`,
+      [
+        BATCH_A5,
+        DEVICE_A1,
+        SECRET_A1,
+        '2026-11-25T08:20:00.000Z',
+        JSON.stringify([
+          { ...customerA2, name: 'Mahmoud Updated', local_revision: 2 },
+        ]),
+      ],
+    );
+    assert.equal(publishA5Res.rows[0].result.status, 'confirmed');
+
+    // Start overlapping takeover on conn2 expecting old version 'v-4'.
+    await conn2.query('begin');
+    await conn2.query('set local role authenticated');
+    await conn2.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const staleTakeoverPromise = conn2.query(
+      `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+      [REQ_A_TAKEOVER_1, DEVICE_A2, SECRET_A2, 'v-4', DEVICE_A1],
+    );
+
+    await waitForBackendLock(admin, conn2Pid);
+
+    await conn1.query('commit');
+    const staleTakeoverRes = await staleTakeoverPromise;
+    await conn2.query('commit');
+
+    assert.equal(staleTakeoverRes.rows[0].result.status, 'precondition_failed');
+    assert.equal(staleTakeoverRes.rows[0].result.reason, 'version_changed');
+    assert.equal(staleTakeoverRes.rows[0].result.current_version, 'v-5');
+    assert.equal(staleTakeoverRes.rows[0].result.active_device_id, DEVICE_A1);
+
+    // 10D. Competing takeovers (DEVICE_A2 vs DEVICE_A3 both expecting v-5 and DEVICE_A1):
+    //      conn1 (DEVICE_A2) holds FOR UPDATE while conn2 (DEVICE_A3) blocks;
+    //      DEVICE_A2 wins and DEVICE_A3 receives precondition_failed (active_device_changed).
+    await conn1.query('begin');
+    await conn1.query('set local role authenticated');
+    await conn1.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const winningTakeoverRes = await conn1.query(
+      `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+      [REQ_A_TAKEOVER_2, DEVICE_A2, SECRET_A2, 'v-5', DEVICE_A1],
+    );
+    assert.equal(winningTakeoverRes.rows[0].result.status, 'transferred');
+    assert.equal(
+      winningTakeoverRes.rows[0].result.active_device_id,
+      DEVICE_A2,
+    );
+
+    await conn2.query('begin');
+    await conn2.query('set local role authenticated');
+    await conn2.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const competingTakeoverPromise = conn2.query(
+      `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+      [REQ_A_TAKEOVER_3, DEVICE_A3, SECRET_A3, 'v-5', DEVICE_A1],
+    );
+
+    await waitForBackendLock(admin, conn2Pid);
+
+    await conn1.query('commit');
+    const competingTakeoverRes = await competingTakeoverPromise;
+    await conn2.query('commit');
+
+    assert.equal(
+      competingTakeoverRes.rows[0].result.status,
+      'precondition_failed',
+    );
+    assert.equal(
+      competingTakeoverRes.rows[0].result.reason,
+      'active_device_changed',
+    );
+    assert.equal(
+      competingTakeoverRes.rows[0].result.active_device_id,
+      DEVICE_A2,
+    );
+    assert.equal(competingTakeoverRes.rows[0].result.current_version, 'v-5');
+
+    // 10E. Retries after lost responses: replaying REQ_A_TAKEOVER_2 with the
+    //      original parameters (including expected_active_device_id = DEVICE_A1)
+    //      and looking it up via find_backup_authority_transfer both return the
+    //      exact original committed outcome.
+    const retryTakeover = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+          [REQ_A_TAKEOVER_2, DEVICE_A2, SECRET_A2, 'v-5', DEVICE_A1],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(retryTakeover, winningTakeoverRes.rows[0].result);
+
+    const lookupTakeover = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.find_backup_authority_transfer($1, $2, $3) as result`,
+          [REQ_A_TAKEOVER_2, DEVICE_A2, SECRET_A2],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(lookupTakeover, winningTakeoverRes.rows[0].result);
+
+    // Reusing REQ_A_TAKEOVER_2 with another device or secret is rejected.
+    await expectSqlState(
+      asRole(conn2, { role: 'authenticated', userId: USER_A }, (tx) =>
+        tx.query(
+          `select public.transfer_backup_authority($1, $2, $3, $4, $5)`,
+          [REQ_A_TAKEOVER_2, DEVICE_A3, SECRET_A3, 'v-5', DEVICE_A1],
+        ),
+      ),
+      '22023',
+      'replaying committed request_id with different device must fail',
+    );
+    await expectSqlState(
+      asRole(conn2, { role: 'authenticated', userId: USER_A }, (tx) =>
+        tx.query(
+          `select public.find_backup_authority_transfer($1, $2, $3)`,
+          [REQ_A_TAKEOVER_2, DEVICE_A3, SECRET_A3],
+        ),
+      ),
+      '42501',
+      'finding committed transfer with another device credential must fail',
+    );
+
+    // 10F. Rejection of the former device's credentials (DEVICE_A1) &
+    //      successful publication by the new active device (DEVICE_A2).
+    const formerDevicePublish = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, '[]'::jsonb, '[]'::jsonb) as result`,
+          [
+            BATCH_A6_OLD_REJECT,
+            DEVICE_A1,
+            SECRET_A1,
+            '2026-11-25T08:30:00.000Z',
+            JSON.stringify([
+              { ...customerA1, name: 'Old Device Edit', local_revision: 50 },
+            ]),
+          ],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(formerDevicePublish, { status: 'inactive_device' });
+
+    const formerDeviceLookup = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.find_backup_batch_confirmation($1, $2, $3) as result`,
+          [BATCH_A1, DEVICE_A1, SECRET_A1],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(formerDeviceLookup, { status: 'inactive_device' });
+
+    // Former device spoofing DEVICE_A2 with SECRET_A1 is also rejected.
+    const formerDeviceSpoof = await asRole(
+      conn1,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, '[]'::jsonb, '[]'::jsonb) as result`,
+          [
+            BATCH_A6_OLD_REJECT,
+            DEVICE_A2,
+            SECRET_A1,
+            '2026-11-25T08:31:00.000Z',
+            JSON.stringify([
+              { ...customerA1, name: 'Spoofed Edit', local_revision: 51 },
+            ]),
+          ],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.deepEqual(formerDeviceSpoof, { status: 'inactive_device' });
+
+    // New active device (DEVICE_A2, SECRET_A2) publishes cleanly and advances version to v-6.
+    const newActivePublish = await asRole(
+      conn2,
+      { role: 'authenticated', userId: USER_A },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, '[]'::jsonb, '[]'::jsonb) as result`,
+          [
+            BATCH_A7_NEW_ACTIVE,
+            DEVICE_A2,
+            SECRET_A2,
+            '2026-11-25T08:35:00.000Z',
+            JSON.stringify([
+              { ...customerA1, name: 'Ahmed from Phone B', local_revision: 2 },
+            ]),
+          ],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(newActivePublish.status, 'confirmed');
+
+    // 10G. Takeover holding FOR UPDATE while former device (now DEVICE_A2)
+    //      attempts concurrent publish: takeover to DEVICE_A3 commits and
+    //      DEVICE_A2's blocked publish unblocks and returns inactive_device.
+    await conn1.query('begin');
+    await conn1.query('set local role authenticated');
+    await conn1.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const takeoverToA3Res = await conn1.query(
+      `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+      [REQ_A_TAKEOVER_4, DEVICE_A3, SECRET_A3, 'v-6', DEVICE_A2],
+    );
+    assert.equal(takeoverToA3Res.rows[0].result.status, 'transferred');
+
+    await conn2.query('begin');
+    await conn2.query('set local role authenticated');
+    await conn2.query(
+      `select pg_catalog.set_config('request.jwt.claim.sub', $1, true)`,
+      [USER_A],
+    );
+    const lateOldPublishPromise = conn2.query(
+      `select public.publish_backup_batch($1, $2, $3, $4, $5::jsonb, '[]'::jsonb, '[]'::jsonb) as result`,
+      [
+        BATCH_A6_OLD_REJECT,
+        DEVICE_A2,
+        SECRET_A2,
+        '2026-11-25T08:40:00.000Z',
+        JSON.stringify([
+          { ...customerA1, name: 'Late Phone B Edit', local_revision: 3 },
+        ]),
+      ],
+    );
+
+    await waitForBackendLock(admin, conn2Pid);
+
+    await conn1.query('commit');
+    const lateOldPublishRes = await lateOldPublishPromise;
+    await conn2.query('commit');
+
+    assert.deepEqual(lateOldPublishRes.rows[0].result, {
+      status: 'inactive_device',
+    });
+
+    // Account B's authority was completely unaffected by all Account A takeovers.
+    const takeoverB = await asRole(
+      conn2,
+      { role: 'authenticated', userId: USER_B },
+      async (tx) => {
+        const res = await tx.query(
+          `select public.transfer_backup_authority($1, $2, $3, $4, $5) as result`,
+          [REQ_B_TAKEOVER_1, DEVICE_B2, SECRET_B2, 'v-1', DEVICE_B1],
+        );
+        return res.rows[0].result;
+      },
+    );
+    assert.equal(takeoverB.status, 'transferred');
+    assert.equal(takeoverB.active_device_id, DEVICE_B2);
 
     console.log('ALL_POSTGRES_BACKUP_MIGRATION_TESTS_PASSED');
   } finally {

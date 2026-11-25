@@ -25,6 +25,7 @@ final class BackupEligibilityContext extends Equatable {
     required this.pendingChangesCount,
     required this.hasConnectivity,
     this.isBackupRunning = false,
+    this.isRestoreTransferPending = false,
     this.sessionInstanceId,
   }) : assert(pendingChangesCount >= 0);
 
@@ -36,6 +37,10 @@ final class BackupEligibilityContext extends Equatable {
   final int pendingChangesCount;
   final bool hasConnectivity;
   final bool isBackupRunning;
+
+  /// True while a cloud restore / device takeover transfer is persisted on
+  /// this receiving phone and awaiting local SQLite installation.
+  final bool isRestoreTransferPending;
 
   /// Optional opaque identifier of the active session instance (including
   /// cross-isolate session epoch and persisted session binding) captured when
@@ -57,6 +62,7 @@ final class BackupEligibilityContext extends Equatable {
 
   BackupEligibilityContext copyWith({
     bool? isBackupRunning,
+    bool? isRestoreTransferPending,
     String? Function()? sessionInstanceId,
   }) => BackupEligibilityContext(
     authenticatedUserId: authenticatedUserId,
@@ -67,6 +73,8 @@ final class BackupEligibilityContext extends Equatable {
     pendingChangesCount: pendingChangesCount,
     hasConnectivity: hasConnectivity,
     isBackupRunning: isBackupRunning ?? this.isBackupRunning,
+    isRestoreTransferPending:
+        isRestoreTransferPending ?? this.isRestoreTransferPending,
     sessionInstanceId: sessionInstanceId != null
         ? sessionInstanceId()
         : this.sessionInstanceId,
@@ -85,6 +93,7 @@ final class BackupEligibilityContext extends Equatable {
     pendingChangesCount,
     hasConnectivity,
     isBackupRunning,
+    isRestoreTransferPending,
     sessionInstanceId,
   ];
 }

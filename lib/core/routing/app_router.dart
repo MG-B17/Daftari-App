@@ -14,6 +14,8 @@ import '../../features/auth/update_password/presentation/screens/update_password
 import '../../features/auth/verify_email/presentation/cubit/verify_email_cubit.dart';
 import '../../features/auth/verify_email/presentation/screens/verify_email_screen.dart';
 import '../../features/backup/presentation/screens/backup_screen.dart';
+import '../../features/restore/presentation/cubit/restore_cubit.dart';
+import '../../features/restore/presentation/screens/restore_screen.dart';
 import '../../features/customers/domain/entities/picked_contact.dart';
 import '../../features/customers/presentation/cubit/customer_details_cubit.dart';
 import '../../features/customers/presentation/cubit/customer_form_cubit.dart';
@@ -71,6 +73,7 @@ abstract final class AppRouter {
     ForgotPasswordCubit Function()? createForgotPasswordCubit,
     VerifyEmailCubit Function()? createVerifyEmailCubit,
     UpdatePasswordCubit Function()? createUpdatePasswordCubit,
+    RestoreCubit Function()? createRestoreCubit,
   }) => GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: _combineListenables(appLock, authSessionCubit),
@@ -138,6 +141,19 @@ abstract final class AppRouter {
         pageBuilder: (context, state) => SlideRightTransitionPage(
           key: state.pageKey,
           child: const BackupScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsRestore,
+        name: AppRoutes.settingsRestoreName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: context.read<RestoreCubit?>() != null
+              ? const RestoreScreen()
+              : _withOptionalCubit<RestoreCubit>(
+                  factory: createRestoreCubit,
+                  child: const RestoreScreen(),
+                ),
         ),
       ),
       GoRoute(

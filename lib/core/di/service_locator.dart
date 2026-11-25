@@ -52,6 +52,14 @@ import '../../features/backup/domain/repositories/backup_scheduler.dart';
 import '../../features/backup/domain/usecases/run_backup_usecase.dart';
 import '../../features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import '../../features/backup/presentation/cubit/backup_cubit.dart';
+import '../../features/restore/data/repositories/drift_restore_local_store.dart';
+import '../../features/restore/data/repositories/restore_repository_impl.dart';
+import '../../features/restore/data/repositories/supabase_restore_cloud_service.dart';
+import '../../features/restore/data/services/restore_transfer_storage.dart';
+import '../../features/restore/domain/repositories/restore_cloud_service.dart';
+import '../../features/restore/domain/repositories/restore_local_store.dart';
+import '../../features/restore/domain/repositories/restore_repository.dart';
+import '../../features/restore/presentation/cubit/restore_cubit.dart';
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/create_customer_usecase.dart';
@@ -387,6 +395,11 @@ Future<void> configureDependencies() async {
       () => BackupDeviceStorage(sl<FlutterSecureStorage>(), sl<BackupDao>()),
     );
   }
+  if (!sl.isRegistered<RestoreTransferStorage>()) {
+    sl.registerLazySingleton<RestoreTransferStorage>(
+      () => RestoreTransferStorage(sl<FlutterSecureStorage>()),
+    );
+  }
   if (!sl.isRegistered<BackupLocalStore>()) {
     sl.registerLazySingleton<BackupLocalStore>(() {
       final persistedSessionStorage = SecureSupabaseLocalStorage(
@@ -401,6 +414,8 @@ Future<void> configureDependencies() async {
         errorHandler: sl<ErrorHandler>(),
         commitGate: sl<SessionCommitGate>(),
         isBackupRunning: () => sl<BackupRunLock>().isLocked,
+        hasPendingRestoreTransfer:
+            sl<RestoreTransferStorage>().hasPendingTransfer,
         hasPersistedSession: persistedSessionStorage.hasAccessToken,
         readPersistedSession: persistedSessionStorage.readSessionSnapshot,
       );
@@ -453,6 +468,65 @@ Future<void> configureDependencies() async {
             sl<AndroidBackupPlatformBridge>().refreshRemoteRunLocked,
       ),
       dispose: (cubit) => cubit.close(),
+    );
+  }
+  if (!sl.isRegistered<RestoreLocalStore>()) {
+    sl.registerLazySingleton<RestoreLocalStore>(() {
+      final persistedSessionStorage = SecureSupabaseLocalStorage(
+        sl<FlutterSecureStorage>(),
+      );
+      return DriftRestoreLocalStore(
+        backupDao: sl<BackupDao>(),
+        authService: sl<AuthService>(),
+        ownerStorage: sl<LedgerOwnerStorage>(),
+        deviceStorage: sl<BackupDeviceStorage>(),
+        errorHandler: sl<ErrorHandler>(),
+        commitGate: sl<SessionCommitGate>(),
+        hasPersistedSession: persistedSessionStorage.hasAccessToken,
+        readPersistedSession: persistedSessionStorage.readSessionSnapshot,
+      );
+    });
+  }
+  if (!sl.isRegistered<RestoreCloudService>()) {
+    sl.registerLazySingleton<RestoreCloudService>(
+      () => SupabaseRestoreCloudService(
+        bootstrap: sl<SupabaseBootstrap>(),
+        authService: sl<AuthService>(),
+        deviceStorage: sl<BackupDeviceStorage>(),
+        errorHandler: sl<ErrorHandler>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<RestoreRepository>()) {
+    sl.registerLazySingleton<RestoreRepository>(() {
+      final persistedSessionStorage = SecureSupabaseLocalStorage(
+        sl<FlutterSecureStorage>(),
+      );
+      return RestoreRepositoryImpl(
+        localStore: sl<RestoreLocalStore>(),
+        cloudService: sl<RestoreCloudService>(),
+        transferStorage: sl<RestoreTransferStorage>(),
+        runLock: sl<BackupRunLock>(),
+        scheduler: sl<BackupScheduler>(),
+        authService: sl<AuthService>(),
+        connectivityService: sl<ConnectivityService>(),
+        dateService: sl<DateService>(),
+        errorHandler: sl<ErrorHandler>(),
+        readAuthState: () => sl<AuthSessionCubit>().state,
+        hasPersistedSession: persistedSessionStorage.hasAccessToken,
+        readPersistedSession: persistedSessionStorage.readSessionSnapshot,
+        notifyExternalStateChanged:
+            sl<AndroidBackupPlatformBridge>().notifyBackupStateChanged,
+      );
+    });
+  }
+  if (!sl.isRegistered<RestoreCubit>()) {
+    sl.registerFactory<RestoreCubit>(
+      () => RestoreCubit(
+        repository: sl<RestoreRepository>(),
+        isPreview: false,
+        onRestoreCompleted: () => sl<BackupCubit>().refresh(),
+      ),
     );
   }
   if (!sl.isRegistered<ContactPickerService>()) {
@@ -685,6 +759,7 @@ Future<void> configureDependencies() async {
         createForgotPasswordCubit: () => sl<ForgotPasswordCubit>(),
         createVerifyEmailCubit: () => sl<VerifyEmailCubit>(),
         createUpdatePasswordCubit: () => sl<UpdatePasswordCubit>(),
+        createRestoreCubit: () => sl<RestoreCubit>(),
       ),
       dispose: (router) => router.dispose(),
     );

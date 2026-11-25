@@ -2131,6 +2131,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preview only — backup isn\'t available yet.'**
   String get backupMockNotice;
+
+  /// No description provided for @backupRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore cloud backup'**
+  String get backupRestoreAction;
+
+  /// No description provided for @backupInactiveDeviceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Another phone is now the active backup device for this account. Your local ledger remains available offline on this phone, or you can restore and transfer backup authority here.'**
+  String get backupInactiveDeviceHint;
+
+  /// No description provided for @restoreScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore cloud backup'**
+  String get restoreScreenTitle;
+
+  /// No description provided for @restoreCloudSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed cloud backup'**
+  String get restoreCloudSnapshotTitle;
+
+  /// No description provided for @restoreConfirmedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed backup: {day}, {time}'**
+  String restoreConfirmedAt(String day, String time);
+
+  /// No description provided for @restoreCustomersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 customers} =1{1 customer} other{{count} customers}}'**
+  String restoreCustomersCount(int count);
+
+  /// No description provided for @restoreTransactionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 transactions} =1{1 transaction} other{{count} transactions}}'**
+  String restoreTransactionsCount(int count);
+
+  /// No description provided for @restoreHistoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 deleted or audit records} =1{1 deleted or audit record} other{{count} deleted or audit records}}'**
+  String restoreHistoryCount(int count);
+
+  /// No description provided for @restoreZeroRowsSnapshotNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This confirmed backup contains an empty ledger (0 records).'**
+  String get restoreZeroRowsSnapshotNote;
+
+  /// No description provided for @restoreConsequenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens on this phone'**
+  String get restoreConsequenceTitle;
+
+  /// No description provided for @restoreConsequenceTakeover.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone will receive the confirmed cloud ledger and become the active backup phone for this account. The previous phone keeps its local ledger offline, but will no longer upload cloud backups.'**
+  String get restoreConsequenceTakeover;
+
+  /// No description provided for @restoreConsequenceSameDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone is already the active backup phone for this account. Restoring loads the confirmed cloud ledger onto this phone without changing backup device authority.'**
+  String get restoreConsequenceSameDevice;
+
+  /// No description provided for @restorePreviousPhonePendingWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Any changes still pending upload on the previous phone are not included in this confirmed backup and remain available only on that phone.'**
+  String get restorePreviousPhonePendingWarning;
+
+  /// No description provided for @restoreLocalEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone\'s ledger is empty'**
+  String get restoreLocalEmptyTitle;
+
+  /// No description provided for @restoreLocalEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No local customers, transactions, or audit history exist on this phone.'**
+  String get restoreLocalEmptyMessage;
+
+  /// No description provided for @restoreLocalPopulatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing local ledger on this phone'**
+  String get restoreLocalPopulatedTitle;
+
+  /// No description provided for @restoreLocalPopulatedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring will replace all local records on this phone with the confirmed cloud backup. A second confirmation will be required.'**
+  String get restoreLocalPopulatedWarning;
+
+  /// No description provided for @restoreAndTransferAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore & transfer to this phone'**
+  String get restoreAndTransferAction;
+
+  /// No description provided for @restoreOnlyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore cloud backup'**
+  String get restoreOnlyAction;
+
+  /// No description provided for @restoreConfirmTakeoverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm restore and device transfer?'**
+  String get restoreConfirmTakeoverTitle;
+
+  /// No description provided for @restoreConfirmTakeoverMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to restore the confirmed cloud backup to this phone and make this phone the active backup device for your account. Future cloud uploads from the previous phone will stop, and any changes still pending on the previous phone will remain available only there.'**
+  String get restoreConfirmTakeoverMessage;
+
+  /// No description provided for @restoreConfirmTakeoverButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm restore & transfer'**
+  String get restoreConfirmTakeoverButton;
+
+  /// No description provided for @restoreConfirmSameDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm cloud restore?'**
+  String get restoreConfirmSameDeviceTitle;
+
+  /// No description provided for @restoreConfirmSameDeviceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to restore the confirmed cloud backup onto this active phone. Only records included in the last server-confirmed backup will be restored.'**
+  String get restoreConfirmSameDeviceMessage;
+
+  /// No description provided for @restoreConfirmSameDeviceButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm restore'**
+  String get restoreConfirmSameDeviceButton;
+
+  /// No description provided for @restoreReplacementConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace local ledger on this phone?'**
+  String get restoreReplacementConfirmTitle;
+
+  /// No description provided for @restoreReplacementConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone already contains local ledger records. Confirming will permanently replace this phone\'s local ledger with the confirmed cloud backup.'**
+  String get restoreReplacementConfirmMessage;
+
+  /// No description provided for @restoreReplacementLocalSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local records to be replaced on this phone'**
+  String get restoreReplacementLocalSummaryTitle;
+
+  /// No description provided for @restoreReplacementConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace local ledger'**
+  String get restoreReplacementConfirmButton;
+
+  /// No description provided for @restoreSignedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to restore cloud backup'**
+  String get restoreSignedOutTitle;
+
+  /// No description provided for @restoreSignedOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your account from Account settings to check and restore your confirmed cloud backup.'**
+  String get restoreSignedOutMessage;
+
+  /// No description provided for @restoreEmailUnverifiedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email first'**
+  String get restoreEmailUnverifiedTitle;
+
+  /// No description provided for @restoreEmailUnverifiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your account email address before restoring a cloud backup.'**
+  String get restoreEmailUnverifiedMessage;
+
+  /// No description provided for @restoreAccountMismatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger linked to another account'**
+  String get restoreAccountMismatchTitle;
+
+  /// No description provided for @restoreAccountMismatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone\'s local ledger is linked to another account and cannot be replaced by this account\'s backup. Sign in with the original account to use this ledger.'**
+  String get restoreAccountMismatchMessage;
+
+  /// No description provided for @restoreOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get restoreOfflineTitle;
+
+  /// No description provided for @restoreOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to preview and restore your confirmed cloud backup. Your local ledger on this phone remains intact and available offline.'**
+  String get restoreOfflineMessage;
+
+  /// No description provided for @restoreMissingBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No cloud backup found'**
+  String get restoreMissingBackupTitle;
+
+  /// No description provided for @restoreMissingBackupMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No confirmed cloud backup exists for this account yet. Back up your ledger from your active phone first, then try again.'**
+  String get restoreMissingBackupMessage;
+
+  /// No description provided for @restoreInterruptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish interrupted restore'**
+  String get restoreInterruptedTitle;
+
+  /// No description provided for @restoreInterruptedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A previous cloud restore and device transfer was interrupted before completion. Your existing local ledger is still intact. Resume to finish installing the confirmed backup safely.'**
+  String get restoreInterruptedMessage;
+
+  /// No description provided for @restoreInterruptedUploadsBlockedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud uploads on this phone remain paused until recovery completes.'**
+  String get restoreInterruptedUploadsBlockedNote;
+
+  /// No description provided for @restoreResumeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume restore'**
+  String get restoreResumeAction;
+
+  /// No description provided for @restoreCloudVersionChangedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer cloud backup or device authority change was detected. Review the updated backup details and confirm again.'**
+  String get restoreCloudVersionChangedNotice;
+
+  /// No description provided for @restoreLocalLedgerChangedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Local ledger changes were recorded after your preview. Review the updated local counts and confirm replacement again.'**
+  String get restoreLocalLedgerChangedNotice;
+
+  /// No description provided for @restoreCompletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud ledger restored'**
+  String get restoreCompletedTitle;
+
+  /// No description provided for @restoreCompletedTransferredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The confirmed cloud ledger is now installed on this phone, and future cloud backups will upload from this phone.'**
+  String get restoreCompletedTransferredMessage;
+
+  /// No description provided for @restoreCompletedSameDeviceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The confirmed cloud ledger is now installed on this phone.'**
+  String get restoreCompletedSameDeviceMessage;
+
+  /// No description provided for @restoreDoneAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to backup settings'**
+  String get restoreDoneAction;
 }
 
 class _AppLocalizationsDelegate

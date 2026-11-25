@@ -51,6 +51,7 @@ class DriftBackupLocalStore implements BackupLocalStore {
     required this._errorHandler,
     SessionCommitGate? commitGate,
     this._isBackupRunning,
+    this._hasPendingRestoreTransfer,
     this._hasPersistedSession,
     this._readPersistedSession,
     this._beforeEnterCommitHook,
@@ -64,6 +65,7 @@ class DriftBackupLocalStore implements BackupLocalStore {
   final ErrorHandler _errorHandler;
   final SessionCommitGate _commitGate;
   final bool Function()? _isBackupRunning;
+  final Future<bool> Function()? _hasPendingRestoreTransfer;
   final Future<bool> Function()? _hasPersistedSession;
   final Future<PersistedSessionSnapshot?> Function()? _readPersistedSession;
   final Future<void> Function()? _beforeEnterCommitHook;
@@ -148,6 +150,8 @@ class DriftBackupLocalStore implements BackupLocalStore {
     final deviceId = await _deviceStorage.getOrCreateDeviceId();
     final localStatus = await _backupDao.readLocalStatus();
     final hasConnectivity = await _connectivityService.isConnected;
+    final hasPendingRestore =
+        await (_hasPendingRestoreTransfer?.call() ?? Future.value(false));
     return BackupEligibilityContext(
       authenticatedUserId: liveSession.authenticatedUserId,
       isEmailVerified: liveSession.isEmailVerified,
@@ -157,6 +161,7 @@ class DriftBackupLocalStore implements BackupLocalStore {
       pendingChangesCount: localStatus.pendingChangesCount,
       hasConnectivity: hasConnectivity,
       isBackupRunning: _isBackupRunning?.call() ?? false,
+      isRestoreTransferPending: hasPendingRestore,
       sessionInstanceId: liveSession.sessionInstanceId,
     );
   });
@@ -355,12 +360,19 @@ class DriftBackupLocalStore implements BackupLocalStore {
           final linkedOwnerUserId = await _ownerStorage.readOwnerId();
           final deviceId = await _deviceStorage.readDeviceId();
           final liveSession = await _resolveLiveSession();
+          final hasPendingRestore =
+              await (_hasPendingRestoreTransfer?.call() ?? Future.value(false));
           capturedEpoch = authorizedEpoch ?? liveSession.epoch;
           verifiedSessionInstanceId = liveSession.sessionInstanceId;
           verifiedLinkedOwnerId = linkedOwnerUserId;
           verifiedDeviceId = deviceId;
           verifiedIsDeviceActive = latest.isDeviceActive;
           blockedSchedule = BackupBatchCodec.scheduleStateFromMetadata(latest);
+
+          if (hasPendingRestore) {
+            blockedReason = BackupIneligibilityReason.alreadyRunning;
+            return false;
+          }
 
           final reason = evaluateCurrentAuthority(
             linkedOwnerUserId: linkedOwnerUserId,

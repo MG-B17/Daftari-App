@@ -13,6 +13,8 @@ abstract final class AppRoutes {
   static const settingsPinName = 'settings-pin';
   static const settingsBackup = '/settings/backup';
   static const settingsBackupName = 'settings-backup';
+  static const settingsRestore = '/settings/backup/restore';
+  static const settingsRestoreName = 'settings-restore';
   static const customers = '/customers';
   static const customersName = 'customers';
   static const customerNew = '/customers/new';

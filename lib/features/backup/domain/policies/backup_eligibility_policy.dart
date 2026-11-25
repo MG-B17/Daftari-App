@@ -10,7 +10,7 @@ abstract final class BackupEligibilityPolicy {
     required BackupScheduleState scheduleState,
     required DateTime now,
   }) {
-    if (context.isBackupRunning) {
+    if (context.isBackupRunning || context.isRestoreTransferPending) {
       return const BackupEligibilityDecision.ineligible(
         BackupIneligibilityReason.alreadyRunning,
       );
