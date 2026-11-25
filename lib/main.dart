@@ -54,9 +54,15 @@ void startDaftariApp({
   void Function(Widget) runAppCallback = runApp,
 }) {
   FlutterError.onError = (details) {
+    if (kDebugMode) {
+      FlutterError.presentError(details);
+    }
     unawaited(logger.recordError(details.exception, fatal: true));
   };
   PlatformDispatcher.instance.onError = (error, stack) {
+    if (kDebugMode) {
+      debugPrint('Uncaught platform error: $error\n$stack');
+    }
     unawaited(logger.recordError(error, fatal: true));
     return true;
   };

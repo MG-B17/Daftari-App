@@ -208,7 +208,6 @@ Future<void> configureDependencies() async {
   if (!sl.isRegistered<SupabaseBootstrap>()) {
     sl.registerLazySingleton<SupabaseBootstrap>(SupabaseBootstrap.new);
   }
-  await sl<SupabaseBootstrap>().initialize(sl<FlutterSecureStorage>());
   if (!sl.isRegistered<LedgerOwnerStorage>()) {
     sl.registerLazySingleton<LedgerOwnerStorage>(
       () => LedgerOwnerStorage(
@@ -750,8 +749,12 @@ Future<void> configureDependencies() async {
       dispose: (cubit) => cubit.close(),
     );
   }
-  await sl<AppLockCubit>().initialize();
-  await sl<AuthSessionCubit>().initialize();
+  await Future.wait([
+    sl<AppLockCubit>().initialize(),
+    sl<SupabaseBootstrap>()
+        .initialize(sl<FlutterSecureStorage>())
+        .then((_) => sl<AuthSessionCubit>().initialize()),
+  ]);
   if (!sl.isRegistered<GoRouter>()) {
     sl.registerLazySingleton<GoRouter>(
       () => AppRouter.create(
