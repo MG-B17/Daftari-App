@@ -44,7 +44,6 @@ Future<void> main({bool useMarionetteBinding = false}) async {
   );
 }
 
-/// Installs global error handlers, starts backup initialization without
 /// blocking the first frame, and mounts [app].
 @visibleForTesting
 void startDaftariApp({
