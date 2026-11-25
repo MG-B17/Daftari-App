@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'
+    show PlatformDispatcher, kDebugMode, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -20,8 +21,8 @@ import 'firebase_options.dart';
 Future<void> backupWorkerMain(List<String> args) =>
     runBackupBackgroundWorker(args);
 
-Future<void> main() async {
-  if (kDebugMode) {
+Future<void> main({bool useMarionetteBinding = false}) async {
+  if (kDebugMode && useMarionetteBinding) {
     MarionetteBinding.ensureInitialized();
   } else {
     WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,29 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await configureDependencies();
-  final logger = sl<AppLogger>();
+  final backupCubit = sl<BackupCubit>();
+  startDaftariApp(
+    logger: sl<AppLogger>(),
+    backupCubit: backupCubit,
+    app: DaftariApp(
+      router: sl<GoRouter>(),
+      settingsCubit: sl<SettingsCubit>(),
+      appLockCubit: sl<AppLockCubit>(),
+      authSessionCubit: sl<AuthSessionCubit>(),
+      backupCubit: backupCubit,
+    ),
+  );
+}
+
+/// Installs global error handlers, starts backup initialization without
+/// blocking the first frame, and mounts [app].
+@visibleForTesting
+void startDaftariApp({
+  required AppLogger logger,
+  required BackupCubit backupCubit,
+  required Widget app,
+  void Function(Widget) runAppCallback = runApp,
+}) {
   FlutterError.onError = (details) {
     unawaited(logger.recordError(details.exception, fatal: true));
   };
@@ -38,16 +61,6 @@ Future<void> main() async {
     return true;
   };
 
-  final backupCubit = sl<BackupCubit>();
   unawaited(backupCubit.initialize());
-
-  runApp(
-    DaftariApp(
-      router: sl<GoRouter>(),
-      settingsCubit: sl<SettingsCubit>(),
-      appLockCubit: sl<AppLockCubit>(),
-      authSessionCubit: sl<AuthSessionCubit>(),
-      backupCubit: backupCubit,
-    ),
-  );
+  runAppCallback(app);
 }

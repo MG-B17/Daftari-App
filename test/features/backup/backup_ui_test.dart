@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:ui' show Tristate;
+import 'dart:ui' show PlatformDispatcher, Tristate;
 
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/extensions/string_extensions.dart';
+import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_user.dart';
@@ -18,6 +19,7 @@ import 'package:daftariapp/features/backup/presentation/models/backup_view_state
 import 'package:daftariapp/features/backup/presentation/screens/backup_screen.dart';
 import 'package:daftariapp/features/backup/presentation/widgets/backup_settings_section.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
+import 'package:daftariapp/main.dart' show startDaftariApp;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -609,6 +611,93 @@ void main() {
       expect(failingScheduler.syncCalls, 1);
       expect(find.byType(BackupScreen), findsOneWidget);
       expect(cubit.state.schedule, BackupSchedule.daily);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'P12-22: startDaftariApp mounts first screen without waiting on pending backup scheduling',
+    (tester) async {
+      final dateService = FakeDateService(DateTime.utc(2026, 11, 24, 10));
+      final authController = StreamController<AuthSessionState>.broadcast();
+      addTearDown(authController.close);
+      const authState = AuthSessionState(
+        initialized: true,
+        isConfigured: true,
+        status: AuthStatus.authenticated,
+        user: _signedInUser,
+      );
+      final localStore = FakeBackupLocalStore(
+        scheduleState: BackupScheduleState(
+          schedule: BackupSchedule.daily,
+          lastConfirmedAt: DateTime.utc(2026, 11, 24, 9),
+          nextDueAt: DateTime.utc(2026, 11, 25, 9),
+        ),
+      );
+      final publisher = FakeBackupCloudPublisher(serverTime: dateService.now());
+      final runLock = InMemoryBackupRunLock();
+      final syncStarted = Completer<void>();
+      final releaseSync = Completer<void>();
+      final stalledScheduler = _ControlledFailingScheduler(
+        onSync: () {
+          if (!syncStarted.isCompleted) syncStarted.complete();
+          return releaseSync.future;
+        },
+      );
+      final cubit = BackupCubit(
+        runBackup: RunBackupUseCase(
+          localStore: localStore,
+          cloudPublisher: publisher,
+          runLock: runLock,
+          dateService: dateService,
+        ),
+        updateSchedule: UpdateBackupScheduleUseCase(
+          localStore: localStore,
+          dateService: dateService,
+        ),
+        localStore: localStore,
+        scheduler: stalledScheduler,
+        runLock: runLock,
+        dateService: dateService,
+        readAuthState: () => authState,
+        authStateStream: authController.stream,
+        connectivityStream: const Stream<bool>.empty(),
+      );
+      addTearDown(cubit.close);
+
+      final previousFlutterError = FlutterError.onError;
+      final previousPlatformError = PlatformDispatcher.instance.onError;
+      addTearDown(() {
+        FlutterError.onError = previousFlutterError;
+        PlatformDispatcher.instance.onError = previousPlatformError;
+      });
+
+      Widget? mountedApp;
+      startDaftariApp(
+        logger: AppLogger(output: (_) {}, enableCrashReporting: false),
+        backupCubit: cubit,
+        app: const BackupScreen(),
+        runAppCallback: (widget) {
+          mountedApp = widget;
+        },
+      );
+
+      // startDaftariApp returns synchronously and provides the root widget before
+      // backup scheduling completes.
+      expect(mountedApp, isNotNull);
+
+      await _pump(
+        tester,
+        mountedApp!,
+        providers: [BlocProvider<BackupCubit>.value(value: cubit)],
+      );
+
+      expect(find.byType(BackupScreen), findsOneWidget);
+      expect(syncStarted.isCompleted, isTrue);
+      expect(releaseSync.isCompleted, isFalse);
+
+      releaseSync.complete();
+      await tester.pump();
       expect(tester.takeException(), isNull);
     },
   );

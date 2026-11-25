@@ -63,7 +63,7 @@ dependencies:
   flutter_svg: ^2.4.0
   flutter_animate: ^4.5.2
   flutter_native_contact_picker: ^0.0.13
-
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
