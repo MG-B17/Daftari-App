@@ -211,7 +211,12 @@ Future<void> configureDependencies() async {
   await sl<SupabaseBootstrap>().initialize(sl<FlutterSecureStorage>());
   if (!sl.isRegistered<LedgerOwnerStorage>()) {
     sl.registerLazySingleton<LedgerOwnerStorage>(
-      () => LedgerOwnerStorage(sl<FlutterSecureStorage>()),
+      () => LedgerOwnerStorage(
+        sl<FlutterSecureStorage>(),
+        readDurableOwnerId: () => sl<BackupDao>().readDurableOwnerId(),
+        claimDurableOwnerId: (ownerUserId) =>
+            sl<BackupDao>().claimOrReadDurableOwnerId(ownerUserId),
+      ),
     );
   }
   if (!sl.isRegistered<AndroidBackupPlatformBridge>()) {

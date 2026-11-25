@@ -145,6 +145,10 @@ class _StatefulCloudBackend {
   /// simulate a lost HTTP response after server commit.
   bool dropNextTransferResponseAfterCommit = false;
 
+  /// When `true`, `findAuthorityTransfer` fails with a network failure to
+  /// simulate an unavailable lookup after a lost takeover response.
+  bool failFindTransferWithNetwork = false;
+
   Future<void> Function()? onDuringReadSnapshot;
   Future<void> Function()? onDuringTransferAuthority;
 
@@ -459,6 +463,9 @@ class _DeviceRestoreCloudService implements RestoreCloudService {
     required String targetDeviceId,
   }) async {
     backend.findTransferCalls++;
+    if (backend.failFindTransferWithNetwork) {
+      return const Left(AppFailure(AppErrorCode.network));
+    }
     final user = readCurrentUser();
     if (user == null || !user.emailVerified) {
       return const Left(AppFailure(AppErrorCode.auth));
@@ -1505,5 +1512,407 @@ void main() {
       (await appB.db.select(appB.db.customers).get()).single.name,
       'Cloud Customer V1',
     );
+  });
+
+  test('P13-01: lost takeover response disables Cancel immediately and across restart when lookup fails, keeps manual and scheduled uploads blocked, and recovers when connectivity returns', () async {
+    final deviceAHarness = createDeviceHarness(
+      'p13_01_a',
+      deviceId: 'device-p13-01-a',
+      deviceSecret: 'secret-p13-01-a',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceAHarness.activateStorageNamespace();
+    final appA = deviceAHarness.openInstance();
+    final cloudCustomer = await appA.db.customerDao.createCustomer(
+      name: 'P13-01 Confirmed Customer',
+    );
+    await appA.runBackup(trigger: BackupTrigger.manual);
+    await appA.dispose();
+
+    final deviceBHarness = createDeviceHarness(
+      'p13_01_b',
+      deviceId: 'device-p13-01-b',
+      deviceSecret: 'secret-p13-01-b',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceBHarness.activateStorageNamespace();
+    var appB = deviceBHarness.openInstance();
+    final localOldCustomer = await appB.db.customerDao.createCustomer(
+      name: 'P13-01 Old Local Customer On B',
+    );
+    await appB.backupCubit.initialize();
+    await appB.backupCubit.selectSchedule(BackupSchedule.daily);
+
+    // 1. Verify cancellation still works before the takeover request is sent.
+    appB.restoreRepository.beforeTakeoverHook = (transfer) async {
+      throw RestoreStageInterruption(transfer.stage);
+    };
+    await appB.restoreCubit.loadPreview();
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+    await appB.restoreCubit.confirmReplacement();
+    expect(appB.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    expect(
+      appB.restoreCubit.state.pendingTransfer!.canCancelBeforeServerTakeover,
+      isTrue,
+    );
+    await appB.restoreCubit.cancelInterruptedTransfer();
+    expect(appB.restoreCubit.state.phase, RestorePhase.previewReady);
+    expect(await appB.transferStorage.hasPendingTransfer(), isFalse);
+    appB.restoreRepository.beforeTakeoverHook = null;
+
+    // 2. Drop a committed takeover response and tap Cancel immediately.
+    backend.dropNextTransferResponseAfterCommit = true;
+    backend.failFindTransferWithNetwork = true;
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+    await appB.restoreCubit.confirmReplacement();
+
+    expect(
+      backend.accountFor(_account1User.id)!.activeDeviceId,
+      'device-p13-01-b',
+    );
+    expect(appB.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    final lostResponseTransfer = appB.restoreCubit.state.pendingTransfer!;
+    expect(lostResponseTransfer.stage, RestoreTransferStage.takeoverPending);
+    expect(lostResponseTransfer.isTakeoverOutcomeUnknown, isTrue);
+    expect(lostResponseTransfer.canCancelBeforeServerTakeover, isFalse);
+
+    // Tapping Cancel immediately (both via Cubit and directly via Repository)
+    // must NOT discard the staged transfer or unblock uploads.
+    await appB.restoreCubit.cancelInterruptedTransfer();
+    final directDiscard1 = await appB.restoreRepository.discardPendingTransfer(
+      lostResponseTransfer.requestId,
+    );
+    expect(directDiscard1.isLeft(), isTrue);
+    expect(await appB.transferStorage.hasPendingTransfer(), isTrue);
+
+    final publishesBefore1 = backend.publishBatchCalls;
+    await appB.backupCubit.backUpNow();
+    dateService.current = DateTime.utc(2026, 11, 27, 10);
+    final scheduled1 = await appB.runBackup(trigger: BackupTrigger.scheduled);
+    expect(
+      scheduled1.getOrElse((_) => throw StateError('failed')),
+      isA<BackupRunSkipped>().having(
+        (r) => r.reason,
+        'reason',
+        BackupIneligibilityReason.alreadyRunning,
+      ),
+    );
+    expect(backend.publishBatchCalls, publishesBefore1);
+
+    // 3. Restart with the lookup still unavailable -> Cancel remains disabled
+    // and uploads remain blocked.
+    await appB.dispose();
+    appB = deviceBHarness.openInstance();
+    await appB.backupCubit.initialize();
+    await appB.restoreCubit.loadPreview();
+    expect(appB.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    expect(
+      appB.restoreCubit.state.pendingTransfer!.canCancelBeforeServerTakeover,
+      isFalse,
+    );
+    await appB.restoreCubit.cancelInterruptedTransfer();
+    final directDiscard2 = await appB.restoreRepository.discardPendingTransfer(
+      lostResponseTransfer.requestId,
+    );
+    expect(directDiscard2.isLeft(), isTrue);
+    expect(await appB.transferStorage.hasPendingTransfer(), isTrue);
+
+    await appB.backupCubit.backUpNow();
+    final scheduled2 = await appB.runBackup(trigger: BackupTrigger.scheduled);
+    expect(
+      scheduled2.getOrElse((_) => throw StateError('failed')),
+      isA<BackupRunSkipped>().having(
+        (r) => r.reason,
+        'reason',
+        BackupIneligibilityReason.alreadyRunning,
+      ),
+    );
+    expect(backend.publishBatchCalls, publishesBefore1);
+    expect(
+      (await appB.db.select(appB.db.customers).get()).single.id,
+      localOldCustomer.id,
+    );
+
+    // 4. Restore lookup connectivity -> the same request recovers and
+    // installs the cloud snapshot.
+    backend.failFindTransferWithNetwork = false;
+    final transfersBeforeResume = backend.transferAuthorityCalls;
+    await appB.restoreCubit.resumeInterruptedTransfer();
+    expect(appB.restoreCubit.state.phase, RestorePhase.completed);
+    expect(backend.transferAuthorityCalls, transfersBeforeResume);
+    expect(await appB.transferStorage.hasPendingTransfer(), isFalse);
+    expect(
+      (await appB.db.select(appB.db.customers).get()).single.id,
+      cloudCustomer.id,
+    );
+  });
+
+  test('P13-02: local edit after takeover preserves edited ledger and upload block across restart until owner reconfirms replacement (including after lost takeover response and failing lookup)', () async {
+    final deviceAHarness = createDeviceHarness(
+      'p13_02_a',
+      deviceId: 'device-p13-02-a',
+      deviceSecret: 'secret-p13-02-a',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceAHarness.activateStorageNamespace();
+    final appA = deviceAHarness.openInstance();
+    final cloudCustomer = await appA.db.customerDao.createCustomer(
+      name: 'P13-02 Cloud Customer',
+    );
+    await appA.runBackup(trigger: BackupTrigger.manual);
+    await appA.dispose();
+
+    // Part 1: Edit on B after server takeover confirmation, before SQLite transaction.
+    final deviceBHarness = createDeviceHarness(
+      'p13_02_b',
+      deviceId: 'device-p13-02-b',
+      deviceSecret: 'secret-p13-02-b',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceBHarness.activateStorageNamespace();
+    var appB = deviceBHarness.openInstance();
+    await appB.db.customerDao.createCustomer(name: 'Old Customer 1 On B');
+    await appB.backupCubit.initialize();
+    await appB.backupCubit.selectSchedule(BackupSchedule.daily);
+
+    await appB.restoreCubit.loadPreview();
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+
+    // Inject local edit on B AFTER server confirms takeover but BEFORE the
+    // SQLite replacement transaction runs.
+    appB.restoreRepository.afterTakeoverBeforeLocalInstallHook = (_) async {
+      await appB.db.customerDao.createCustomer(
+        name: 'Edited Customer 2 Post-Takeover On B',
+      );
+    };
+
+    await appB.restoreCubit.confirmReplacement();
+    appB.restoreRepository.afterTakeoverBeforeLocalInstallHook = null;
+
+    // Takeover committed on server, Drift rejected replacement because of
+    // the new edit, edited ledger is intact, and upload block is PRESERVED!
+    expect(
+      backend.accountFor(_account1User.id)!.activeDeviceId,
+      'device-p13-02-b',
+    );
+    expect(appB.restoreCubit.state.phase, RestorePhase.previewReady);
+    expect(
+      appB.restoreCubit.state.refreshReason,
+      RestoreRefreshReason.localLedgerChanged,
+    );
+    expect((await appB.db.select(appB.db.customers).get()).length, 2);
+    expect(await appB.transferStorage.hasPendingTransfer(), isTrue);
+
+    // Leave the screen, restart, and try manual and due scheduled backup:
+    // neither may publish rows from B's old ledger!
+    await appB.dispose();
+    appB = deviceBHarness.openInstance();
+    await appB.backupCubit.initialize();
+    dateService.current = DateTime.utc(2026, 11, 27, 12);
+
+    final publishesBeforeAttempt = backend.publishBatchCalls;
+    expect(appB.backupCubit.state.canBackUpNow, isFalse);
+    await appB.backupCubit.backUpNow();
+    final scheduledOnB = await appB.runBackup(trigger: BackupTrigger.scheduled);
+    expect(
+      scheduledOnB.getOrElse((_) => throw StateError('failed')),
+      isA<BackupRunSkipped>().having(
+        (r) => r.reason,
+        'reason',
+        BackupIneligibilityReason.alreadyRunning,
+      ),
+    );
+    expect(backend.publishBatchCalls, publishesBeforeAttempt);
+
+    // Reopen Restore screen, resume -> prompts for fresh replacement consent,
+    // reconfirm -> installation succeeds and clears upload block.
+    await appB.restoreCubit.loadPreview();
+    expect(appB.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    await appB.restoreCubit.resumeInterruptedTransfer();
+    expect(appB.restoreCubit.state.phase, RestorePhase.previewReady);
+    expect(
+      appB.restoreCubit.state.refreshReason,
+      RestoreRefreshReason.localLedgerChanged,
+    );
+    expect(await appB.transferStorage.hasPendingTransfer(), isTrue);
+
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+    await appB.restoreCubit.confirmReplacement();
+    expect(appB.restoreCubit.state.phase, RestorePhase.completed);
+    expect(await appB.transferStorage.hasPendingTransfer(), isFalse);
+    expect(
+      (await appB.db.select(appB.db.customers).get()).single.id,
+      cloudCustomer.id,
+    );
+    await appB.dispose();
+
+    // Part 2: Repeat with a lost takeover response, a local edit on C, and
+    // a failing lookup.
+    final deviceCHarness = createDeviceHarness(
+      'p13_02_c',
+      deviceId: 'device-p13-02-c',
+      deviceSecret: 'secret-p13-02-c',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceCHarness.activateStorageNamespace();
+    var appC = deviceCHarness.openInstance();
+    await appC.db.customerDao.createCustomer(name: 'Old Customer On C');
+    await appC.backupCubit.initialize();
+    await appC.backupCubit.selectSchedule(BackupSchedule.daily);
+
+    backend.dropNextTransferResponseAfterCommit = true;
+    await appC.restoreCubit.loadPreview();
+    appC.restoreCubit.requestRestoreConfirmation();
+    await appC.restoreCubit.confirmPrimary();
+    await appC.restoreCubit.confirmReplacement();
+    expect(appC.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    expect(
+      backend.accountFor(_account1User.id)!.activeDeviceId,
+      'device-p13-02-c',
+    );
+
+    // Edit local ledger on C after lost takeover response, then fail lookup.
+    await appC.db.customerDao.createCustomer(
+      name: 'Local Edit After Lost Takeover Response On C',
+    );
+    backend.failFindTransferWithNetwork = true;
+
+    // Restart and attempt resume while lookup fails -> must NOT delete
+    // transfer or clear upload block!
+    await appC.dispose();
+    appC = deviceCHarness.openInstance();
+    await appC.backupCubit.initialize();
+    await appC.restoreCubit.loadPreview();
+    await appC.restoreCubit.resumeInterruptedTransfer();
+    expect(appC.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    expect(await appC.transferStorage.hasPendingTransfer(), isTrue);
+
+    await appC.backupCubit.backUpNow();
+    final scheduledOnC = await appC.runBackup(trigger: BackupTrigger.scheduled);
+    expect(
+      scheduledOnC.getOrElse((_) => throw StateError('failed')),
+      isA<BackupRunSkipped>().having(
+        (r) => r.reason,
+        'reason',
+        BackupIneligibilityReason.alreadyRunning,
+      ),
+    );
+    expect(backend.publishBatchCalls, publishesBeforeAttempt);
+
+    // Restore lookup, resume -> transitions to previewReady for fresh
+    // replacement consent while keeping upload block active, then reconfirm!
+    backend.failFindTransferWithNetwork = false;
+    await appC.restoreCubit.resumeInterruptedTransfer();
+    expect(appC.restoreCubit.state.phase, RestorePhase.previewReady);
+    expect(
+      appC.restoreCubit.state.refreshReason,
+      RestoreRefreshReason.localLedgerChanged,
+    );
+    expect(await appC.transferStorage.hasPendingTransfer(), isTrue);
+
+    appC.restoreCubit.requestRestoreConfirmation();
+    await appC.restoreCubit.confirmPrimary();
+    await appC.restoreCubit.confirmReplacement();
+    expect(appC.restoreCubit.state.phase, RestorePhase.completed);
+    expect(await appC.transferStorage.hasPendingTransfer(), isFalse);
+    expect(
+      (await appC.db.select(appC.db.customers).get()).single.id,
+      cloudCustomer.id,
+    );
+  });
+
+  test('P13-04: cancelling a pre-takeover request and submitting its stale Resume action issues no takeover, installs no rows, and leaves a newer persisted request intact', () async {
+    final deviceAHarness = createDeviceHarness(
+      'p13_04_a',
+      deviceId: 'device-p13-04-a',
+      deviceSecret: 'secret-p13-04-a',
+      initialUser: _account1User,
+      initialLinkedOwnerId: _account1User.id,
+    );
+    deviceAHarness.activateStorageNamespace();
+    final appA = deviceAHarness.openInstance();
+    await appA.db.customerDao.createCustomer(name: 'P13-04 Cloud Customer');
+    await appA.runBackup(trigger: BackupTrigger.manual);
+    await appA.dispose();
+
+    final deviceBHarness = createDeviceHarness(
+      'p13_04_b',
+      deviceId: 'device-p13-04-b',
+      deviceSecret: 'secret-p13-04-b',
+      initialUser: _account1User,
+    );
+    deviceBHarness.activateStorageNamespace();
+    final appB = deviceBHarness.openInstance();
+
+    // Interrupt request 1 before takeover.
+    appB.restoreRepository.beforeTakeoverHook = (transfer) async {
+      throw RestoreStageInterruption(transfer.stage);
+    };
+    await appB.restoreCubit.loadPreview();
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+    expect(appB.restoreCubit.state.phase, RestorePhase.interruptedRecovery);
+    final staleRequest1 = appB.restoreCubit.state.pendingTransfer!;
+    appB.restoreRepository.beforeTakeoverHook = null;
+
+    // 1. Overlap discard and stale resume for request 1:
+    // discard wins first, stale resume sees no matching durable request ID
+    // and aborts with zero takeovers and zero installed rows.
+    final transfersBefore = backend.transferAuthorityCalls;
+    final discardFuture = appB.restoreRepository.discardPendingTransfer(
+      staleRequest1.requestId,
+    );
+    final staleResumeFuture1 = appB.restoreRepository.resumePendingTransfer(
+      staleRequest1,
+    );
+    final discardRes = await discardFuture;
+    final staleResumeRes1 = await staleResumeFuture1;
+    expect(discardRes.isRight(), isTrue);
+    expect(staleResumeRes1.isLeft(), isTrue);
+    expect(backend.transferAuthorityCalls, transfersBefore);
+    expect(await appB.db.select(appB.db.customers).get(), isEmpty);
+
+    // 2. Persist a newer request (request 2) for the same version (v1) and
+    // submit the stale Resume action for cancelled request 1.
+    appB.restoreRepository.beforeTakeoverHook = (transfer) async {
+      throw RestoreStageInterruption(transfer.stage);
+    };
+    await appB.restoreCubit.loadPreview();
+    appB.restoreCubit.requestRestoreConfirmation();
+    await appB.restoreCubit.confirmPrimary();
+    final newerRequest2 = appB.restoreCubit.state.pendingTransfer!;
+    expect(newerRequest2.requestId, isNot(staleRequest1.requestId));
+    expect(newerRequest2.expectedVersion, staleRequest1.expectedVersion);
+    appB.restoreRepository.beforeTakeoverHook = null;
+
+    final staleResumeRes2 = await appB.restoreRepository.resumePendingTransfer(
+      staleRequest1,
+    );
+    expect(staleResumeRes2.isLeft(), isTrue);
+    expect(backend.transferAuthorityCalls, transfersBefore);
+    expect(await appB.db.select(appB.db.customers).get(), isEmpty);
+
+    // Newer request 2 remains completely intact in storage and can resume
+    // normally.
+    final persistedAfterStale = await appB.transferStorage
+        .readPendingTransfer();
+    expect(persistedAfterStale, isNotNull);
+    expect(persistedAfterStale!.transfer.requestId, newerRequest2.requestId);
+
+    final validResume = await appB.restoreRepository.resumePendingTransfer(
+      newerRequest2,
+    );
+    expect(validResume.isRight(), isTrue);
+    expect(backend.transferAuthorityCalls, transfersBefore + 1);
+    expect((await appB.db.select(appB.db.customers).get()).length, 1);
   });
 }

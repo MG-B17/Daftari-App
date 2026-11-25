@@ -82,11 +82,15 @@ class RestoreTransferStorage {
   }
 
   /// Advances the persisted transfer stage (and optionally updates
-  /// [cloudPreview] once server takeover commits).
+  /// [cloudPreview], [isTakeoverOutcomeUnknown], [consentedLocalRevisionStamp],
+  /// or [requiresReplacement]).
   Future<PersistedRestoreTransferPayload?> updateStage({
     required String requestId,
-    required RestoreTransferStage stage,
+    RestoreTransferStage? stage,
     CloudBackupSnapshotPreview? cloudPreview,
+    bool? isTakeoverOutcomeUnknown,
+    String? consentedLocalRevisionStamp,
+    bool? requiresReplacement,
   }) async {
     final current = await readPendingTransfer();
     if (current == null || current.transfer.requestId != requestId) {
@@ -94,8 +98,11 @@ class RestoreTransferStorage {
     }
     final nextPreview = cloudPreview ?? current.transfer.cloudPreview;
     final nextTransfer = current.transfer.copyWith(
-      stage: stage,
+      stage: stage ?? current.transfer.stage,
       cloudPreview: nextPreview,
+      isTakeoverOutcomeUnknown: isTakeoverOutcomeUnknown,
+      consentedLocalRevisionStamp: consentedLocalRevisionStamp,
+      requiresReplacement: requiresReplacement,
     );
     final nextSnapshot = CloudBackupSnapshot(
       preview: nextPreview,
@@ -156,6 +163,7 @@ class RestoreTransferStorage {
     'requires_replacement': transfer.requiresReplacement,
     'consented_local_revision_stamp': transfer.consentedLocalRevisionStamp,
     'stage': transfer.stage.name,
+    'is_takeover_outcome_unknown': transfer.isTakeoverOutcomeUnknown,
     'cloud_preview': _encodePreview(transfer.cloudPreview),
   };
 
@@ -172,6 +180,8 @@ class RestoreTransferStorage {
         consentedLocalRevisionStamp:
             json['consented_local_revision_stamp'] as String,
         stage: _parseStage(json['stage'] as String),
+        isTakeoverOutcomeUnknown:
+            (json['is_takeover_outcome_unknown'] as bool?) ?? false,
         cloudPreview: _decodePreview(_requireMap(json['cloud_preview'])),
       );
 

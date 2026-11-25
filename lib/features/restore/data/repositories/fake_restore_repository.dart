@@ -341,6 +341,11 @@ class FakeRestoreRepository implements RestoreRepository {
       return Left(failure);
     }
 
+    final current = pendingTransfer;
+    if (current == null || current.requestId != transfer.requestId) {
+      return const Left(AppFailure(AppErrorCode.validation));
+    }
+
     final resolvedAccount = _resolveAccount();
     if (resolvedAccount == null ||
         !resolvedAccount.isEmailVerified ||

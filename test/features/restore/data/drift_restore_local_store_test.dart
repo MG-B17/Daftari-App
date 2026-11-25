@@ -17,6 +17,7 @@ import 'package:daftariapp/features/auth/session/domain/entities/auth_user.dart'
 import 'package:daftariapp/features/backup/data/repositories/drift_backup_local_store.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_batch.dart';
+import 'package:daftariapp/features/backup/domain/entities/backup_eligibility.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_run_result.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_schedule.dart';
 import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.dart';
@@ -29,6 +30,7 @@ import 'package:daftariapp/features/transactions/domain/entities/transaction_ent
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -84,6 +86,11 @@ class _FakeAuthService implements AuthService {
         : gate.runSessionInvalidation(performSignOut);
   }
 
+  void signIn(AuthUser next) {
+    user = next;
+    _authController.add(AuthSessionSignedIn(next));
+  }
+
   Future<void> dispose() => _authController.close();
 
   @override
@@ -99,6 +106,8 @@ class _FakeAuthService implements AuthService {
 }
 
 class _MockConnectivity extends Mock implements Connectivity {}
+
+class _MockSecureStorage extends Mock implements FlutterSecureStorage {}
 
 /// Injects a SQLite failure mid-replacement AFTER existing tables have been
 /// deleted and while replacement rows are being inserted.
@@ -387,17 +396,20 @@ void main() {
   })
   openSession({
     QueryInterceptor? interceptor,
+    FlutterSecureStorage? secureStorage,
     Future<void> Function()? afterDeleteBeforeInsertHook,
     Future<void> Function()? beforeEnterCommitHook,
+    Future<void> Function()? afterSqlCommitBeforeOwnerClaimHook,
   }) {
     final QueryExecutor executor = interceptor == null
         ? NativeDatabase(databaseFile)
         : NativeDatabase(databaseFile).interceptWith(interceptor);
     final db = AppDatabase(executor);
-    const secureStorage = FlutterSecureStorage();
-    final ownerStorage = LedgerOwnerStorage(secureStorage);
+    final effectiveSecureStorage =
+        secureStorage ?? const FlutterSecureStorage();
+    final ownerStorage = LedgerOwnerStorage(effectiveSecureStorage);
     final deviceStorage = BackupDeviceStorage(
-      secureStorage,
+      effectiveSecureStorage,
       db.backupDao,
       generateDeviceId: () => receivingDeviceId,
       generateDeviceSecret: () => receivingDeviceSecret,
@@ -411,6 +423,7 @@ void main() {
       commitGate: commitGate,
       afterDeleteBeforeInsertHook: afterDeleteBeforeInsertHook,
       beforeEnterCommitHook: beforeEnterCommitHook,
+      afterSqlCommitBeforeOwnerClaimHook: afterSqlCommitBeforeOwnerClaimHook,
     );
     final lock = InMemoryBackupRunLock();
     final backupStore = DriftBackupLocalStore(
@@ -1300,6 +1313,203 @@ void main() {
         baselineDump.customers.length + 1,
       );
       await sSignOut.db.close();
+    });
+
+    test('P13-03: unlinked receiving phone makes ownership durable across SQLite commit when owner write fails or process interrupts immediately after SQLite commit', () async {
+      // Start with an unlinked receiving phone (no ownerKey in FlutterSecureStorage).
+      await const FlutterSecureStorage().delete(
+        key: LedgerOwnerStorage.ownerKey,
+      );
+      final snapshot = sampleConfirmedSnapshot();
+
+      // 1. Subcase A: Interrupt immediately after SQLite commit (before
+      // secure-storage owner write is called).
+      final sInterrupt = openSession(
+        afterSqlCommitBeforeOwnerClaimHook: () async {
+          throw const StorageException();
+        },
+      );
+      await sInterrupt.deviceStorage.getOrCreateIdentity();
+      final emptySummary =
+          (await sInterrupt.restoreStore.readLocalLedgerSummary()).getOrElse(
+            (_) => throw StateError('failed'),
+          );
+      expect(emptySummary.linkedOwnerUserId, isNull);
+
+      final consent = RestoreConsentToken(
+        version: snapshot.preview.version,
+        activeDeviceId: receivingDeviceId,
+        confirmedAt: snapshot.preview.confirmedAt,
+        ownerUserId: ownerUserId,
+        localDeviceId: receivingDeviceId,
+        localRevisionStamp: emptySummary.revisionStamp,
+        requiresTakeover: false,
+        requiresReplacement: false,
+        primaryConfirmed: true,
+        replacementConfirmed: false,
+      );
+
+      final interruptedInstall = await sInterrupt.restoreStore
+          .installConfirmedSnapshot(snapshot: snapshot, consent: consent);
+      expect(interruptedInstall.isLeft(), isTrue);
+      final dumpAfterSqlCommit = await dumpDatabase(sInterrupt.db);
+      expect(dumpAfterSqlCommit.customers.length, 3);
+      await sInterrupt.db.close();
+
+      // Reopen and switch to otherUserId -> only ownerUserId can own or
+      // publish the restored rows even though secure storage was never written!
+      authService.signIn(
+        const AuthUser(
+          id: otherUserId,
+          email: 'other@example.com',
+          shopName: 'Other Shop',
+          emailVerified: true,
+        ),
+      );
+      final sOther1 = openSession();
+      expect(await sOther1.ownerStorage.readOwnerId(), ownerUserId);
+      expect(await sOther1.ownerStorage.claimOwnerId(otherUserId), ownerUserId);
+      final otherSummary1 =
+          (await sOther1.restoreStore.readLocalLedgerSummary()).getOrElse(
+            (_) => throw StateError('failed'),
+          );
+      expect(otherSummary1.linkedOwnerUserId, ownerUserId);
+      expect(otherSummary1.isAccountMismatchFor(otherUserId), isTrue);
+
+      // Other account cannot publish the restored rows (even if a local edit exists).
+      await sOther1.db.customerDao.createCustomer(
+        name: 'Pending Edit While Other User Signed In',
+      );
+      final otherPublish1 = (await sOther1.runBackup(
+        trigger: BackupTrigger.manual,
+      )).getOrElse((_) => throw StateError('failed'));
+      expect(
+        otherPublish1,
+        isA<BackupRunSkipped>().having(
+          (r) => r.reason,
+          'reason',
+          BackupIneligibilityReason.accountMismatch,
+        ),
+      );
+      expect(cloudPublisher.publishedBatches, isEmpty);
+      await sOther1.db.close();
+
+      // 2. Subcase B: Reset database to unlinked empty state, then fail the
+      // secure-storage owner write itself after SQLite commit.
+      if (await databaseFile.exists()) {
+        await databaseFile.delete();
+      }
+      await const FlutterSecureStorage().delete(
+        key: LedgerOwnerStorage.ownerKey,
+      );
+      authService.signIn(
+        const AuthUser(
+          id: ownerUserId,
+          email: 'shop@example.com',
+          shopName: 'Al-Amana Grocery',
+          emailVerified: true,
+        ),
+      );
+
+      final failingOwnerStorage = _MockSecureStorage();
+      when(() => failingOwnerStorage.read(key: any(named: 'key')))
+          .thenAnswer((invocation) async {
+            final key = invocation.namedArguments[#key] as String?;
+            if (key == BackupDeviceStorage.secretKeyFor(receivingDeviceId)) {
+              return receivingDeviceSecret;
+            }
+            return null;
+          });
+      when(
+        () => failingOwnerStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((invocation) async {
+        final key = invocation.namedArguments[#key] as String?;
+        if (key == LedgerOwnerStorage.ownerKey) {
+          throw PlatformException(
+            code: 'write_failed',
+            message: 'Simulated secure storage write failure',
+          );
+        }
+      });
+
+      final sFailOwnerWrite = openSession(secureStorage: failingOwnerStorage);
+      late final RestoreConsentToken consent2;
+      late final _DatabaseFullDump committedDump;
+      try {
+        await sFailOwnerWrite.deviceStorage.getOrCreateIdentity();
+        final emptySummary2 =
+            (await sFailOwnerWrite.restoreStore.readLocalLedgerSummary())
+                .getOrElse((_) => throw StateError('failed'));
+
+        consent2 = RestoreConsentToken(
+          version: snapshot.preview.version,
+          activeDeviceId: receivingDeviceId,
+          confirmedAt: snapshot.preview.confirmedAt,
+          ownerUserId: ownerUserId,
+          localDeviceId: receivingDeviceId,
+          localRevisionStamp: emptySummary2.revisionStamp,
+          requiresTakeover: false,
+          requiresReplacement: false,
+          primaryConfirmed: true,
+          replacementConfirmed: false,
+        );
+        final failedOwnerWriteInstall = await sFailOwnerWrite.restoreStore
+            .installConfirmedSnapshot(snapshot: snapshot, consent: consent2);
+        expect(failedOwnerWriteInstall.isLeft(), isTrue);
+        committedDump = await dumpDatabase(sFailOwnerWrite.db);
+      } finally {
+        await sFailOwnerWrite.db.close();
+      }
+
+      // Reopen with otherUserId while secure storage still has no ownerKey:
+      // durable SQLite owner binding still blocks otherUserId from claiming
+      // or publishing the restored rows!
+      FlutterSecureStorage.setMockInitialValues({
+        BackupDeviceStorage.secretKeyFor(receivingDeviceId):
+            receivingDeviceSecret,
+      });
+      authService.signIn(
+        const AuthUser(
+          id: otherUserId,
+          email: 'other@example.com',
+          shopName: 'Other Shop',
+          emailVerified: true,
+        ),
+      );
+
+      final sOther2 = openSession();
+      expect(await sOther2.ownerStorage.readOwnerId(), ownerUserId);
+      expect(await sOther2.ownerStorage.claimOwnerId(otherUserId), ownerUserId);
+      final otherEligibility =
+          (await sOther2.backupStore.readEligibilityContext()).getOrElse(
+            (_) => throw StateError('failed'),
+          );
+      expect(otherEligibility.linkedOwnerUserId, ownerUserId);
+      expect(otherEligibility.isMatchingLinkedAccount, isFalse);
+      await sOther2.db.close();
+
+      // Switch back to ownerUserId, retry the exact same restore, and compare
+      // all rows, audit history, and backup markers.
+      authService.signIn(
+        const AuthUser(
+          id: ownerUserId,
+          email: 'shop@example.com',
+          shopName: 'Al-Amana Grocery',
+          emailVerified: true,
+        ),
+      );
+      final sRetry = openSession();
+      final retryResult = (await sRetry.restoreStore.installConfirmedSnapshot(
+        snapshot: snapshot,
+        consent: consent2,
+      )).getOrElse((_) => throw StateError('failed'));
+      expect(retryResult, isA<RestoreLocalInstallApplied>());
+      expect(await sRetry.ownerStorage.readOwnerId(), ownerUserId);
+      expectDumpsIdentical(await dumpDatabase(sRetry.db), committedDump);
+      await sRetry.db.close();
     });
   });
 }

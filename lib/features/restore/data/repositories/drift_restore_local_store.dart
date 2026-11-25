@@ -54,7 +54,13 @@ class DriftRestoreLocalStore implements RestoreLocalStore {
     this._readPersistedSession,
     this._afterDeleteBeforeInsertHook,
     this._beforeEnterCommitHook,
-  }) : _commitGate = commitGate ?? SessionCommitGate();
+    this._afterSqlCommitBeforeOwnerClaimHook,
+  }) : _commitGate = commitGate ?? SessionCommitGate() {
+    _ownerStorage.bindDurableOwnerCallbacks(
+      readDurableOwnerId: _backupDao.readDurableOwnerId,
+      claimDurableOwnerId: _backupDao.claimOrReadDurableOwnerId,
+    );
+  }
 
   final BackupDao _backupDao;
   final AuthService _authService;
@@ -66,6 +72,7 @@ class DriftRestoreLocalStore implements RestoreLocalStore {
   final Future<PersistedSessionSnapshot?> Function()? _readPersistedSession;
   final Future<void> Function()? _afterDeleteBeforeInsertHook;
   final Future<void> Function()? _beforeEnterCommitHook;
+  final Future<void> Function()? _afterSqlCommitBeforeOwnerClaimHook;
 
   Future<_ResolvedRestoreSession> _resolveLiveSession() async {
     final epoch = await _commitGate.readEpoch();
@@ -320,6 +327,7 @@ class DriftRestoreLocalStore implements RestoreLocalStore {
         restoredCustomers: restoredCustomers,
         restoredTransactions: restoredTransactions,
         restoredAuditLogs: restoredAuditLogs,
+        ownerUserId: consent.ownerUserId,
         afterDeleteBeforeInsertHook: _afterDeleteBeforeInsertHook,
         verifyInstallAllowed: (currentCounts, currentMetadata) async {
           latestObservedCounts = currentCounts;
@@ -447,12 +455,13 @@ class DriftRestoreLocalStore implements RestoreLocalStore {
         return blockedOutcome!;
       }
 
-      if (verifiedLinkedOwnerId == null ||
-          verifiedLinkedOwnerId!.trim().isEmpty) {
-        final claimed = await _ownerStorage.claimOwnerId(consent.ownerUserId);
-        if (claimed != consent.ownerUserId) {
-          throw const AuthException();
-        }
+      if (_afterSqlCommitBeforeOwnerClaimHook case final afterSqlHook?) {
+        await afterSqlHook();
+      }
+
+      final claimed = await _ownerStorage.claimOwnerId(consent.ownerUserId);
+      if (claimed != consent.ownerUserId) {
+        throw const AuthException();
       }
 
       return RestoreLocalInstallApplied(

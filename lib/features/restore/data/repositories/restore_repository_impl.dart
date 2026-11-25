@@ -83,6 +83,20 @@ class RestoreRepositoryImpl implements RestoreRepository {
   afterLocalCommitBeforeClearHook;
 
   Future<Either<AppFailure, RestoreExecutionResult>>? _activeExecution;
+  String? _activeExecutionKey;
+  Future<void> _operationQueue = Future<void>.value();
+
+  Future<T> _serializeOperation<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _operationQueue = _operationQueue.then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
 
   Future<RestoreAccountInfo?> _resolveAccount() async {
     final authState = _readAuthState?.call();
@@ -194,27 +208,40 @@ class RestoreRepositoryImpl implements RestoreRepository {
         }
 
         // If the previous attempt was interrupted while requesting takeover
-        // (e.g. response lost after server commit), check whether the server
-        // already committed takeover for this request ID.
+        // (e.g. response lost after server commit), reconcile with the server.
+        // If the lookup fails, preserve isTakeoverOutcomeUnknown=true so
+        // Cancel stays disabled while the server outcome is unknown (P13-01).
         if (transfer.requiresTakeover &&
             transfer.stage == RestoreTransferStage.takeoverPending) {
           final lookup = await _cloudService.findAuthorityTransfer(
             requestId: transfer.requestId,
             targetDeviceId: localLedger.deviceId,
           );
-          if (lookup case Right(value: final found?)) {
-            final updatedPreview = transfer.cloudPreview.copyWith(
-              activeDeviceId: found.activeDeviceId,
-              confirmedAt: found.confirmedAt,
-            );
-            final updatedPayload = await _transferStorage.updateStage(
-              requestId: transfer.requestId,
-              stage: RestoreTransferStage.takeoverConfirmed,
-              cloudPreview: updatedPreview,
-            );
-            if (updatedPayload != null) {
-              transfer = updatedPayload.transfer;
-            }
+          switch (lookup) {
+            case Right(value: final found?):
+              final updatedPreview = transfer.cloudPreview.copyWith(
+                activeDeviceId: found.activeDeviceId,
+                confirmedAt: found.confirmedAt,
+              );
+              final updatedPayload = await _transferStorage.updateStage(
+                requestId: transfer.requestId,
+                stage: RestoreTransferStage.takeoverConfirmed,
+                cloudPreview: updatedPreview,
+                isTakeoverOutcomeUnknown: false,
+              );
+              if (updatedPayload != null) {
+                transfer = updatedPayload.transfer;
+              }
+            case Left():
+              final updatedPayload = await _transferStorage.updateStage(
+                requestId: transfer.requestId,
+                isTakeoverOutcomeUnknown: true,
+              );
+              if (updatedPayload != null) {
+                transfer = updatedPayload.transfer;
+              }
+            case Right(value: null):
+              break;
           }
         }
 
@@ -280,14 +307,19 @@ class RestoreRepositoryImpl implements RestoreRepository {
     if (!consent.isFullyPermitted) {
       return Future.value(const Left(AppFailure(AppErrorCode.validation)));
     }
-    if (_activeExecution case final inFlight?) {
-      return inFlight;
+    final key = 'execute:${consent.version}:${consent.localRevisionStamp}';
+    if (_activeExecution != null && _activeExecutionKey == key) {
+      return _activeExecution!;
     }
-    final future = _runWithExclusiveLock(() => _executeRestoreLocked(consent));
+    final future = _serializeOperation(
+      () => _runWithExclusiveLock(() => _executeRestoreLocked(consent)),
+    );
     _activeExecution = future;
+    _activeExecutionKey = key;
     return future.whenComplete(() {
       if (identical(_activeExecution, future)) {
         _activeExecution = null;
+        _activeExecutionKey = null;
       }
     });
   }
@@ -296,41 +328,106 @@ class RestoreRepositoryImpl implements RestoreRepository {
   Future<Either<AppFailure, RestoreExecutionResult>> resumePendingTransfer(
     PendingRestoreTransfer pendingTransfer,
   ) {
-    if (_activeExecution case final inFlight?) {
-      return inFlight;
+    final key = 'resume:${pendingTransfer.requestId}';
+    if (_activeExecution != null && _activeExecutionKey == key) {
+      return _activeExecution!;
     }
-    final future = _runWithExclusiveLock(
-      () => _resumePendingTransferLocked(pendingTransfer),
+    final future = _serializeOperation(
+      () => _runWithExclusiveLock(
+        () => _resumePendingTransferLocked(pendingTransfer),
+      ),
     );
     _activeExecution = future;
+    _activeExecutionKey = key;
     return future.whenComplete(() {
       if (identical(_activeExecution, future)) {
         _activeExecution = null;
+        _activeExecutionKey = null;
       }
     });
   }
 
   @override
-  Future<Either<AppFailure, void>> discardPendingTransfer(
+  Future<Either<AppFailure, void>> discardPendingTransfer(String requestId) =>
+      _serializeOperation(
+        () => _runWithExclusiveLockVoid(
+          () => _discardPendingTransferLocked(requestId),
+        ),
+      );
+
+  Future<Either<AppFailure, void>> _discardPendingTransferLocked(
     String requestId,
   ) async {
-    try {
-      final current = await _transferStorage.readPendingTransfer();
-      if (current != null && current.transfer.requestId == requestId) {
-        if (!current.transfer.canCancelBeforeServerTakeover) {
-          return const Left(AppFailure(AppErrorCode.validation));
-        }
-        await _transferStorage.clearPendingTransfer(requestId: requestId);
-        await _notifyExternalStateChanged?.call();
-      }
+    final current = await _transferStorage.readPendingTransfer();
+    if (current == null || current.transfer.requestId != requestId) {
       return const Right(null);
-    } catch (error) {
-      return Left(await _errorHandler.handle(error));
     }
+
+    final transfer = current.transfer;
+    if (transfer.stage != RestoreTransferStage.takeoverPending) {
+      return const Left(AppFailure(AppErrorCode.validation));
+    }
+
+    // If a takeover request was already sent to the server, its outcome may be
+    // committed even though the local stage is still takeoverPending (P13-01).
+    // Never delete the staged transfer or clear the upload block while the
+    // server outcome is unknown or already committed.
+    if (transfer.requiresTakeover && transfer.isTakeoverOutcomeUnknown) {
+      if (!await _connectivityService.isConnected) {
+        return const Left(AppFailure(AppErrorCode.network));
+      }
+      final lookup = await _cloudService.findAuthorityTransfer(
+        requestId: transfer.requestId,
+        targetDeviceId: transfer.targetDeviceId,
+      );
+      switch (lookup) {
+        case Left(:final value):
+          return Left(value);
+        case Right(value: final found?):
+          final updatedPreview = transfer.cloudPreview.copyWith(
+            activeDeviceId: found.activeDeviceId,
+            confirmedAt: found.confirmedAt,
+          );
+          await _transferStorage.updateStage(
+            requestId: transfer.requestId,
+            stage: RestoreTransferStage.takeoverConfirmed,
+            cloudPreview: updatedPreview,
+            isTakeoverOutcomeUnknown: false,
+          );
+          return const Left(AppFailure(AppErrorCode.validation));
+        case Right(value: null):
+          break;
+      }
+    }
+
+    await _transferStorage.clearPendingTransfer(requestId: requestId);
+    await _notifyExternalStateChanged?.call();
+    return const Right(null);
   }
 
   Future<Either<AppFailure, RestoreExecutionResult>> _runWithExclusiveLock(
     Future<Either<AppFailure, RestoreExecutionResult>> Function() action,
+  ) async {
+    BackupRunLease? lease;
+    for (var attempt = 0; attempt < 20; attempt++) {
+      lease = await _runLock.tryAcquire();
+      if (lease != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+    if (lease == null) {
+      return const Left(AppFailure(AppErrorCode.unexpected));
+    }
+    try {
+      return await action();
+    } catch (error) {
+      return Left(await _errorHandler.handle(error));
+    } finally {
+      await lease.release();
+    }
+  }
+
+  Future<Either<AppFailure, void>> _runWithExclusiveLockVoid(
+    Future<Either<AppFailure, void>> Function() action,
   ) async {
     BackupRunLease? lease;
     for (var attempt = 0; attempt < 20; attempt++) {
@@ -395,6 +492,41 @@ class RestoreRepositoryImpl implements RestoreRepository {
 
     if (localLedger.isPopulated && !consent.replacementConfirmed) {
       return const Left(AppFailure(AppErrorCode.validation));
+    }
+
+    // If a persisted transfer already exists for this owner, device, and
+    // expected version (for example, when reconfirming replacement consent
+    // after a local edit occurred post-takeover in P13-02), update its
+    // consented local revision stamp and drive that existing request to
+    // completion without losing the committed takeover or upload block.
+    final existingPersisted = await _transferStorage.readPendingTransfer();
+    if (existingPersisted != null &&
+        existingPersisted.transfer.ownerUserId == account.userId &&
+        existingPersisted.transfer.targetDeviceId == localLedger.deviceId &&
+        existingPersisted.transfer.expectedVersion == consent.version &&
+        (existingPersisted.transfer.stage !=
+                RestoreTransferStage.takeoverPending ||
+            existingPersisted.transfer.isTakeoverOutcomeUnknown)) {
+      final updatedPayload = await _transferStorage.updateStage(
+        requestId: existingPersisted.transfer.requestId,
+        consentedLocalRevisionStamp: consent.localRevisionStamp,
+        requiresReplacement: localLedger.isPopulated,
+      );
+      final resumedTransfer =
+          updatedPayload?.transfer ??
+          existingPersisted.transfer.copyWith(
+            consentedLocalRevisionStamp: consent.localRevisionStamp,
+            requiresReplacement: localLedger.isPopulated,
+          );
+      final resumedSnapshot =
+          updatedPayload?.stagedSnapshot ?? existingPersisted.stagedSnapshot;
+      return _driveStagedTransfer(
+        account: account,
+        currentLedger: localLedger,
+        transfer: resumedTransfer,
+        stagedSnapshot: resumedSnapshot,
+        isInitialExecution: false,
+      );
     }
 
     if (!await _connectivityService.isConnected) {
@@ -517,6 +649,7 @@ class RestoreRepositoryImpl implements RestoreRepository {
       consentedLocalRevisionStamp: consent.localRevisionStamp,
       stage: initialStage,
       cloudPreview: snapshot.preview,
+      isTakeoverOutcomeUnknown: false,
     );
 
     await _transferStorage.writePendingTransfer(
@@ -560,12 +693,17 @@ class RestoreRepositoryImpl implements RestoreRepository {
       );
     }
 
+    // Require the durable persisted request ID to match the requested transfer
+    // so a stale Resume action can never revive a cancelled request or hijack a
+    // newer request's staged snapshot (P13-04).
     final persisted = await _transferStorage.readPendingTransfer();
-    final transfer =
-        (persisted != null &&
-            persisted.transfer.requestId == requestedTransfer.requestId)
-        ? persisted.transfer
-        : requestedTransfer;
+    if (persisted == null ||
+        persisted.transfer.requestId != requestedTransfer.requestId) {
+      return const Left(AppFailure(AppErrorCode.validation));
+    }
+
+    final transfer = persisted.transfer;
+    final stagedSnapshot = persisted.stagedSnapshot;
 
     if (!await _connectivityService.isConnected) {
       return Right(
@@ -575,48 +713,6 @@ class RestoreRepositoryImpl implements RestoreRepository {
           pendingTransfer: transfer,
         ),
       );
-    }
-
-    CloudBackupSnapshot? stagedSnapshot = persisted?.stagedSnapshot;
-    if (stagedSnapshot == null ||
-        stagedSnapshot.preview.version != transfer.expectedVersion) {
-      switch (await _cloudService.readConfirmedSnapshot(
-        expectedVersion: transfer.expectedVersion,
-      )) {
-        case Left(:final value):
-          if (value.errorCode == AppErrorCode.network) {
-            return Right(
-              RestoreExecutionOffline(
-                account: account,
-                localLedger: localLedger,
-                pendingTransfer: transfer,
-              ),
-            );
-          }
-          return Left(value);
-        case Right(value: RestoreCloudSnapshotMissing()):
-          await _transferStorage.clearPendingTransfer(
-            requestId: transfer.requestId,
-          );
-          return const Left(AppFailure(AppErrorCode.validation));
-        case Right(value: RestoreCloudSnapshotVersionChanged(:final preview)):
-          await _transferStorage.clearPendingTransfer(
-            requestId: transfer.requestId,
-          );
-          return Right(
-            RestoreExecutionCloudVersionChanged(
-              account: account,
-              localLedger: localLedger,
-              updatedCloudPreview: preview,
-            ),
-          );
-        case Right(value: RestoreCloudSnapshotFound(:final snapshot)):
-          stagedSnapshot = snapshot;
-          await _transferStorage.writePendingTransfer(
-            transfer: transfer,
-            stagedSnapshot: stagedSnapshot,
-          );
-      }
     }
 
     return _driveStagedTransfer(
@@ -640,7 +736,9 @@ class RestoreRepositoryImpl implements RestoreRepository {
 
     // 1. Coordinate server takeover when restoring onto a new phone.
     if (activeTransfer.requiresTakeover) {
-      if (beforeTakeoverHook != null) {
+      if (beforeTakeoverHook != null &&
+          activeTransfer.stage == RestoreTransferStage.takeoverPending &&
+          !activeTransfer.isTakeoverOutcomeUnknown) {
         try {
           await beforeTakeoverHook!(activeTransfer);
         } on RestoreStageInterruption {
@@ -654,66 +752,29 @@ class RestoreRepositoryImpl implements RestoreRepository {
         }
       }
 
-      // If a local edit occurred before server takeover has committed, abort
-      // takeover, clear the pre-takeover transfer, and ask for consent again.
-      if (activeTransfer.stage == RestoreTransferStage.takeoverPending) {
-        switch (await _localStore.readLocalLedgerSummary()) {
-          case Left(:final value):
-            return Left(value);
-          case Right(value: final latestLedger):
-            if (latestLedger.isAccountMismatchFor(account.userId)) {
-              await _transferStorage.clearPendingTransfer(
-                requestId: activeTransfer.requestId,
-              );
-              await _notifyExternalStateChanged?.call();
-              return Right(
-                RestoreExecutionBlockedAccountMismatch(
-                  account: account,
-                  localLedger: latestLedger,
-                ),
-              );
-            }
-            if (latestLedger.revisionStamp !=
-                activeTransfer.consentedLocalRevisionStamp) {
-              // Ensure takeover did not already commit on the server during a
-              // prior interrupted request before discarding.
-              RestoreAuthorityTransferred? alreadyTransferred;
-              if (!isInitialExecution) {
-                final lookup = await _cloudService.findAuthorityTransfer(
-                  requestId: activeTransfer.requestId,
-                  targetDeviceId: activeTransfer.targetDeviceId,
-                );
-                alreadyTransferred = lookup.fold((_) => null, (v) => v);
-              }
-              if (alreadyTransferred == null) {
-                await _transferStorage.clearPendingTransfer(
-                  requestId: activeTransfer.requestId,
-                );
-                await _notifyExternalStateChanged?.call();
-                return Right(
-                  RestoreExecutionLocalLedgerChanged(
-                    account: account,
-                    updatedLocalLedger: latestLedger,
-                    cloudPreview: activeSnapshot.preview,
-                  ),
-                );
-              }
-            }
-        }
-      }
-
+      // If a takeover request was previously dispatched and its response was
+      // lost, reconcile its server outcome FIRST before deciding whether a
+      // local edit can discard the transfer or must preserve the upload block
+      // (P13-01, P13-02).
       if (activeTransfer.stage == RestoreTransferStage.takeoverPending &&
-          !isInitialExecution) {
+          (!isInitialExecution || activeTransfer.isTakeoverOutcomeUnknown)) {
         switch (await _cloudService.findAuthorityTransfer(
           requestId: activeTransfer.requestId,
           targetDeviceId: activeTransfer.targetDeviceId,
         )) {
           case Left(:final value):
+            final unknownTransfer = activeTransfer.copyWith(
+              isTakeoverOutcomeUnknown: true,
+            );
+            await _transferStorage.writePendingTransfer(
+              transfer: unknownTransfer,
+              stagedSnapshot: activeSnapshot,
+            );
             return _handleTransferFailure(
               value,
               account: account,
               localLedger: currentLedger,
-              transfer: activeTransfer,
+              transfer: unknownTransfer,
             );
           case Right(value: final found?):
             final nextPreview = activeSnapshot.preview.copyWith(
@@ -723,6 +784,7 @@ class RestoreRepositoryImpl implements RestoreRepository {
             activeTransfer = activeTransfer.copyWith(
               stage: RestoreTransferStage.takeoverConfirmed,
               cloudPreview: nextPreview,
+              isTakeoverOutcomeUnknown: false,
             );
             activeSnapshot = CloudBackupSnapshot(
               preview: nextPreview,
@@ -735,11 +797,73 @@ class RestoreRepositoryImpl implements RestoreRepository {
               stagedSnapshot: activeSnapshot,
             );
           case Right(value: null):
-            break;
+            if (activeTransfer.isTakeoverOutcomeUnknown) {
+              activeTransfer = activeTransfer.copyWith(
+                isTakeoverOutcomeUnknown: false,
+              );
+              await _transferStorage.writePendingTransfer(
+                transfer: activeTransfer,
+                stagedSnapshot: activeSnapshot,
+              );
+            }
+        }
+      }
+
+      // When takeover is still pending, check local ledger ownership and
+      // revision stamp before dispatching a new takeover request to the server.
+      // (Once takeover is confirmed or installingLocally, _localStore enforces
+      // the atomic revision and idempotent-already-installed check inside the
+      // SQLite transaction.)
+      if (activeTransfer.stage == RestoreTransferStage.takeoverPending) {
+        switch (await _localStore.readLocalLedgerSummary()) {
+          case Left(:final value):
+            return Left(value);
+          case Right(value: final latestLedger):
+            if (latestLedger.isAccountMismatchFor(account.userId)) {
+              if (!activeTransfer.isTakeoverOutcomeUnknown) {
+                await _transferStorage.clearPendingTransfer(
+                  requestId: activeTransfer.requestId,
+                );
+                await _notifyExternalStateChanged?.call();
+              }
+              return Right(
+                RestoreExecutionBlockedAccountMismatch(
+                  account: account,
+                  localLedger: latestLedger,
+                ),
+              );
+            }
+            if (latestLedger.revisionStamp !=
+                activeTransfer.consentedLocalRevisionStamp) {
+              if (!activeTransfer.isTakeoverOutcomeUnknown) {
+                await _transferStorage.clearPendingTransfer(
+                  requestId: activeTransfer.requestId,
+                );
+                await _notifyExternalStateChanged?.call();
+              }
+              return Right(
+                RestoreExecutionLocalLedgerChanged(
+                  account: account,
+                  updatedLocalLedger: latestLedger,
+                  cloudPreview: activeSnapshot.preview,
+                ),
+              );
+            }
         }
       }
 
       if (activeTransfer.stage == RestoreTransferStage.takeoverPending) {
+        // Mark the takeover outcome as unknown immediately before dispatching
+        // the RPC so a lost response or mid-request crash disables Cancel until
+        // the server outcome is reconciled (P13-01).
+        activeTransfer = activeTransfer.copyWith(
+          isTakeoverOutcomeUnknown: true,
+        );
+        await _transferStorage.writePendingTransfer(
+          transfer: activeTransfer,
+          stagedSnapshot: activeSnapshot,
+        );
+
         switch (await _cloudService.transferBackupAuthority(
           requestId: activeTransfer.requestId,
           targetDeviceId: activeTransfer.targetDeviceId,
@@ -797,6 +921,7 @@ class RestoreRepositoryImpl implements RestoreRepository {
             activeTransfer = activeTransfer.copyWith(
               stage: RestoreTransferStage.takeoverConfirmed,
               cloudPreview: nextPreview,
+              isTakeoverOutcomeUnknown: false,
             );
             activeSnapshot = CloudBackupSnapshot(
               preview: nextPreview,
@@ -831,6 +956,7 @@ class RestoreRepositoryImpl implements RestoreRepository {
     if (activeTransfer.stage != RestoreTransferStage.installingLocally) {
       activeTransfer = activeTransfer.copyWith(
         stage: RestoreTransferStage.installingLocally,
+        isTakeoverOutcomeUnknown: false,
       );
       await _transferStorage.writePendingTransfer(
         transfer: activeTransfer,
@@ -860,10 +986,12 @@ class RestoreRepositoryImpl implements RestoreRepository {
       case Right(
         value: RestoreLocalInstallBlockedAccountMismatch(:final localLedger),
       ):
-        await _transferStorage.clearPendingTransfer(
-          requestId: activeTransfer.requestId,
-        );
-        await _notifyExternalStateChanged?.call();
+        if (!activeTransfer.requiresTakeover) {
+          await _transferStorage.clearPendingTransfer(
+            requestId: activeTransfer.requestId,
+          );
+          await _notifyExternalStateChanged?.call();
+        }
         return Right(
           RestoreExecutionBlockedAccountMismatch(
             account: account,
@@ -875,9 +1003,25 @@ class RestoreRepositoryImpl implements RestoreRepository {
           :final updatedLocalLedger,
         ),
       ):
-        await _transferStorage.clearPendingTransfer(
-          requestId: activeTransfer.requestId,
-        );
+        // P13-02: If takeover already committed on the server, keep the
+        // persisted transfer and upload block intact in _transferStorage (at
+        // stage takeoverConfirmed) so the receiving phone cannot publish rows
+        // from its old ledger before fresh replacement consent is granted and
+        // local installation succeeds!
+        if (activeTransfer.requiresTakeover) {
+          activeTransfer = activeTransfer.copyWith(
+            stage: RestoreTransferStage.takeoverConfirmed,
+            isTakeoverOutcomeUnknown: false,
+          );
+          await _transferStorage.writePendingTransfer(
+            transfer: activeTransfer,
+            stagedSnapshot: activeSnapshot,
+          );
+        } else {
+          await _transferStorage.clearPendingTransfer(
+            requestId: activeTransfer.requestId,
+          );
+        }
         await _notifyExternalStateChanged?.call();
         return Right(
           RestoreExecutionLocalLedgerChanged(

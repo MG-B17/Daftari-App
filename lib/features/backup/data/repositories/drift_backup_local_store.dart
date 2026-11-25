@@ -55,7 +55,12 @@ class DriftBackupLocalStore implements BackupLocalStore {
     this._hasPersistedSession,
     this._readPersistedSession,
     this._beforeEnterCommitHook,
-  }) : _commitGate = commitGate ?? SessionCommitGate();
+  }) : _commitGate = commitGate ?? SessionCommitGate() {
+    _ownerStorage.bindDurableOwnerCallbacks(
+      readDurableOwnerId: _backupDao.readDurableOwnerId,
+      claimDurableOwnerId: _backupDao.claimOrReadDurableOwnerId,
+    );
+  }
 
   final BackupDao _backupDao;
   final AuthService _authService;
