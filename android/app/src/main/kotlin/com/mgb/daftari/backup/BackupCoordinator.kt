@@ -405,6 +405,7 @@ object BackupCoordinator {
         nextDueAtEpochMs: Long?,
         targetTag: String?,
         binding: WorkerRequestBinding,
+        existingId: UUID? = null,
     ): OneTimeWorkRequest {
         val effectiveDelayMs = computeEffectiveDelayMs(delayMs, nextDueAtEpochMs)
         val constraints = Constraints.Builder()
@@ -423,7 +424,55 @@ object BackupCoordinator {
         if (!targetTag.isNullOrBlank()) {
             builder.addTag(targetTag)
         }
+        if (existingId != null) {
+            builder.setId(existingId)
+        }
         return builder.build()
+    }
+
+    private fun appendOrUpdateSuccessor(
+        workManager: WorkManager,
+        workName: String,
+        existingSuccessors: List<WorkInfo>,
+        context: Context,
+        delayMs: Long,
+        nextDueAtEpochMs: Long?,
+        targetTag: String?,
+        binding: WorkerRequestBinding,
+    ) {
+        if (existingSuccessors.isEmpty()) {
+            val request = buildScheduledRequest(
+                context = context,
+                delayMs = delayMs,
+                nextDueAtEpochMs = nextDueAtEpochMs,
+                targetTag = targetTag,
+                binding = binding,
+            )
+            workManager.enqueueUniqueWork(
+                workName,
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
+                request,
+            ).result.get()
+            return
+        }
+
+        // Update the existing BLOCKED/ENQUEUED successor in place instead of
+        // cancelling it and calling APPEND_OR_REPLACE, because WorkManager
+        // treats any CANCELLED work in the unique sequence as a trigger to
+        // REPLACE (and cancel) the currently RUNNING worker.
+        val primary = existingSuccessors.first()
+        for (extra in existingSuccessors.drop(1)) {
+            workManager.cancelWorkById(extra.id).result.get()
+        }
+        val updated = buildScheduledRequest(
+            context = context,
+            delayMs = delayMs,
+            nextDueAtEpochMs = nextDueAtEpochMs,
+            targetTag = targetTag,
+            binding = binding,
+            existingId = primary.id,
+        )
+        workManager.updateWork(updated).get()
     }
 
     fun syncSchedule(
@@ -470,20 +519,15 @@ object BackupCoordinator {
                 ) {
                     return@withLock
                 }
-                for (queued in nonRunningUnfinished) {
-                    workManager.cancelWorkById(queued.id)
-                }
-                val request = buildScheduledRequest(
+                appendOrUpdateSuccessor(
+                    workManager = workManager,
+                    workName = workName,
+                    existingSuccessors = nonRunningUnfinished,
                     context = context,
                     delayMs = delayMs,
                     nextDueAtEpochMs = nextDueAtEpochMs,
                     targetTag = targetTag,
                     binding = binding,
-                )
-                workManager.enqueueUniqueWork(
-                    workName,
-                    ExistingWorkPolicy.APPEND_OR_REPLACE,
-                    request,
                 )
                 return@withLock
             }
@@ -507,7 +551,7 @@ object BackupCoordinator {
                 workName,
                 ExistingWorkPolicy.REPLACE,
                 request,
-            )
+            ).result.get()
         }
     }
 
@@ -547,20 +591,15 @@ object BackupCoordinator {
             ) {
                 return@withLock
             }
-            for (info in otherUnfinished) {
-                workManager.cancelWorkById(info.id)
-            }
-            val request = buildScheduledRequest(
+            appendOrUpdateSuccessor(
+                workManager = workManager,
+                workName = workName,
+                existingSuccessors = otherUnfinished,
                 context = context,
                 delayMs = delayMs,
                 nextDueAtEpochMs = nextDueAtEpochMs,
                 targetTag = targetTag,
                 binding = binding,
-            )
-            workManager.enqueueUniqueWork(
-                workName,
-                ExistingWorkPolicy.APPEND_OR_REPLACE,
-                request,
             )
         }
     }
@@ -581,7 +620,7 @@ object BackupCoordinator {
             val infos = workManager.getWorkInfosForUniqueWork(workName).get()
             for (info in infos) {
                 if (!info.state.isFinished && "worker-${info.id}" != workerToken) {
-                    workManager.cancelWorkById(info.id)
+                    workManager.cancelWorkById(info.id).result.get()
                 }
             }
         }
@@ -594,7 +633,7 @@ object BackupCoordinator {
     ) {
         val workName = resolveWorkName(context, ownerId, requestedWorkName)
         scheduleMutex.withLock {
-            WorkManager.getInstance(context).cancelUniqueWork(workName)
+            WorkManager.getInstance(context).cancelUniqueWork(workName).result.get()
         }
     }
 

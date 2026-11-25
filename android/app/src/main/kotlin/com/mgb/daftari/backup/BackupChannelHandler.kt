@@ -126,12 +126,14 @@ class BackupChannelHandler private constructor(
             }
 
             "cancelSchedule" -> {
-                BackupCoordinator.cancelSchedule(
-                    context = context,
-                    ownerId = ownerId,
-                    requestedWorkName = uniqueWorkName,
-                )
-                result.success(null)
+                runAsync(result) {
+                    BackupCoordinator.cancelSchedule(
+                        context = context,
+                        ownerId = ownerId,
+                        requestedWorkName = uniqueWorkName,
+                    )
+                    null
+                }
             }
 
             "getScheduledWorkCount" -> runAsync(result) {

@@ -91,6 +91,7 @@ class BackupCubit extends Cubit<BackupViewState> {
   bool _manualRunning = false;
   bool _scheduledRunning = false;
   bool _lastAttemptFailed = false;
+  bool _pendingScheduleSync = false;
   Future<void>? _refreshLoop;
   bool _refreshRequested = false;
 
@@ -132,7 +133,7 @@ class BackupCubit extends Cubit<BackupViewState> {
     final scheduleResult = await _localStore.readScheduleState();
     if (isClosed) return;
     await scheduleResult.fold((_) async {}, (scheduleState) async {
-      await _scheduler.syncSchedule(scheduleState, now: _dateService.now());
+      await _syncScheduleSafely(scheduleState, now: _dateService.now());
     });
 
     if (!isClosed) {
@@ -208,6 +209,10 @@ class BackupCubit extends Cubit<BackupViewState> {
             : null,
       ),
     );
+    if (_pendingScheduleSync && scheduleResult.isRight()) {
+      await _syncScheduleSafely(scheduleState, now: _dateService.now());
+      if (isClosed) return;
+    }
     final eligibility = eligibilityResult.fold<BackupEligibilityContext?>(
       (_) => null,
       (value) => value,
@@ -263,7 +268,7 @@ class BackupCubit extends Cubit<BackupViewState> {
       },
       (saved) async {
         final now = _dateService.now();
-        await _scheduler.syncSchedule(saved, now: now);
+        await _syncScheduleSafely(saved, now: now);
         await refresh();
         if (!isClosed && BackupSchedulePolicy.isDue(saved, now)) {
           unawaited(runScheduledIfDue());
@@ -301,10 +306,7 @@ class BackupCubit extends Cubit<BackupViewState> {
           switch (runResult) {
             case BackupRunConfirmed(:final scheduleState):
               _lastAttemptFailed = false;
-              await _scheduler.syncSchedule(
-                scheduleState,
-                now: _dateService.now(),
-              );
+              await _syncScheduleSafely(scheduleState, now: _dateService.now());
             case BackupRunSkipped():
               break;
           }
@@ -374,9 +376,9 @@ class BackupCubit extends Cubit<BackupViewState> {
       if (isClosed) return;
       final workerDecision = BackupWorkerPolicy.decide(result);
       if (workerDecision.shouldCancelSchedule) {
-        await _scheduler.cancelScheduledBackup();
+        await _cancelScheduleSafely();
       } else if (workerDecision.scheduleToSync case final nextSchedule?) {
-        await _scheduler.syncSchedule(nextSchedule, now: _dateService.now());
+        await _syncScheduleSafely(nextSchedule, now: _dateService.now());
       }
       result.fold(
         (_) {
@@ -398,10 +400,35 @@ class BackupCubit extends Cubit<BackupViewState> {
     }
   }
 
+  Future<void> _syncScheduleSafely(
+    BackupScheduleState scheduleState, {
+    required DateTime now,
+  }) async {
+    try {
+      await _scheduler.syncSchedule(scheduleState, now: now);
+      _pendingScheduleSync = false;
+    } catch (_) {
+      _pendingScheduleSync = true;
+    }
+  }
+
+  Future<void> _cancelScheduleSafely() async {
+    try {
+      await _scheduler.cancelScheduledBackup();
+      _pendingScheduleSync = false;
+    } catch (_) {
+      _pendingScheduleSync = true;
+    }
+  }
+
   Future<bool> _isRemoteLocked() async {
     final check = _checkRemoteRunLocked;
     if (check != null) {
-      return check();
+      try {
+        return await check();
+      } catch (_) {
+        return _runLock.isLocked;
+      }
     }
     return _runLock.isLocked;
   }
