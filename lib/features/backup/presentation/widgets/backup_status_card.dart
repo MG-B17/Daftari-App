@@ -18,6 +18,7 @@ class BackupStatusCard extends StatelessWidget {
       color: context.colorScheme.onSurfaceVariant,
     );
     final failureText = state.failureHint(context);
+    final inactiveText = state.inactiveDeviceHint(context);
     return Container(
       width: double.infinity,
       padding: AppSpacing.settingsCardPadding,
@@ -52,6 +53,14 @@ class BackupStatusCard extends StatelessWidget {
                     if (failureText != null)
                       Text(
                         failureText,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.appColors.creditColor,
+                        ),
+                      ),
+                    if (inactiveText != null)
+                      Text(
+                        inactiveText,
+                        key: const ValueKey('backup-inactive-device-hint'),
                         style: context.textTheme.bodySmall?.copyWith(
                           color: context.appColors.creditColor,
                         ),

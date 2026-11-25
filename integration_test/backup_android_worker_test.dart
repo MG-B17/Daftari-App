@@ -28,6 +28,8 @@ import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.da
 import 'package:daftariapp/features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import 'package:daftariapp/features/backup/presentation/cubit/backup_cubit.dart';
 import 'package:daftariapp/features/backup/presentation/models/backup_view_state.dart';
+import 'package:daftariapp/features/restore/data/services/restore_transfer_storage.dart';
+import 'package:daftariapp/features/restore/domain/entities/restore_entities.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -919,7 +921,99 @@ void main() {
           expect(customers16.single.acknowledgedRevision, 0);
           final meta16 = await db.backupDao.readMetadata();
           expect(meta16.lastConfirmedAtIso, isNull);
+
+          // 6b. Phase 13: Queued old-device Android BackupWorker isolate runs
+          // after authority transferred to another phone (isDeviceActive=false).
+          // Verify the worker skips publication, retains pending offline edits,
+          // cannot reacquire authority, and does not enqueue a successor.
+          await bridge.cancelScheduledBackup();
+          await seedDueLedger(
+            db,
+            customerName: 'P13 Inactive Old Device Worker Customer',
+          );
+          await db.backupDao.markDeviceInactive();
+          final workIdInactive = await bridge.enqueueImmediateWorkForTest(
+            requireNetwork: false,
+            workerMode: BackupWorkerModes.production,
+          );
+          expect(workIdInactive, isNotNull);
+          final terminalInactive = await waitForTerminalWorkState(
+            bridge,
+            workIdInactive!,
+          );
+          expect(terminalInactive, 'SUCCEEDED');
+
+          await db.close();
+          db = openIsolatedTestDatabase();
+          expect(await db.backupDao.countPendingChanges(), 1);
+          final metaInactive = await db.backupDao.readMetadata();
+          expect(metaInactive.isDeviceActive, isFalse);
+          expect(metaInactive.lastConfirmedAtIso, isNull);
+          expect(await bridge.getScheduledWorkCount(), 0);
+
+          // 6c. Phase 13: While a PendingRestoreTransfer is persisted on the
+          // receiving phone, a foreground or background backup attempt keeps
+          // uploads blocked until local installation completes and clears it.
+          const testTransferStorage = RestoreTransferStorage(testSecureStorage);
+          final blockedPreview = CloudBackupSnapshotPreview(
+            version: 'v1',
+            ownerUserId: ownerUserId,
+            activeDeviceId: 'device-target',
+            confirmedAt: DateTime.utc(2026, 11, 25, 10),
+          );
+          await testTransferStorage.writePendingTransfer(
+            transfer: PendingRestoreTransfer(
+              requestId: 'p13-worker-block-req',
+              ownerUserId: ownerUserId,
+              targetDeviceId: 'device-target',
+              expectedVersion: 'v1',
+              expectedActiveDeviceId: 'device-old',
+              confirmedAt: DateTime.utc(2026, 11, 25, 10),
+              requiresTakeover: true,
+              requiresReplacement: false,
+              consentedLocalRevisionStamp: 'rev-0',
+              stage: RestoreTransferStage.takeoverConfirmed,
+              cloudPreview: blockedPreview,
+            ),
+            stagedSnapshot: CloudBackupSnapshot(
+              preview: blockedPreview,
+              customers: const [],
+              transactions: const [],
+              auditLogs: const [],
+            ),
+          );
+          await seedDueLedger(
+            db,
+            customerName: 'P13 Upload Blocked During Pending Restore Customer',
+          );
+          final blockedCubit = buildForegroundCubit(db);
+          final blockedStore = DriftBackupLocalStore(
+            backupDao: db.backupDao,
+            authService: fgAuthService,
+            ownerStorage: LedgerOwnerStorage(testSecureStorage),
+            deviceStorage: BackupDeviceStorage(
+              testSecureStorage,
+              db.backupDao,
+            ),
+            connectivityService: ConnectivityService(Connectivity()),
+            errorHandler: ErrorHandler(
+              AppLogger(enableCrashReporting: false),
+            ),
+            commitGate: fgGate,
+            isBackupRunning: () => bridge.isLocked,
+            hasPendingRestoreTransfer: testTransferStorage.hasPendingTransfer,
+            hasPersistedSession: testSessionStorage.hasAccessToken,
+            readPersistedSession: testSessionStorage.readSessionSnapshot,
+          );
+          final blockedEligibility = (await blockedStore.readEligibilityContext())
+              .getOrElse((_) => throw StateError('failed'));
+          expect(blockedEligibility.isRestoreTransferPending, isTrue);
+          await blockedCubit.close();
+          await testTransferStorage.clearPendingTransfer();
         } finally {
+          await const RestoreTransferStorage(
+            testSecureStorage,
+          ).clearPendingTransfer();
           await bridge.cancelScheduledBackup();
           await bridge.clearTestHooks();
           await testSessionStorage.removePersistedSession();

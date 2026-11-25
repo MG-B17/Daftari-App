@@ -1132,4 +1132,205 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupMockNotice => 'Preview only — backup isn\'t available yet.';
+
+  @override
+  String get backupRestoreAction => 'Restore cloud backup';
+
+  @override
+  String get backupInactiveDeviceHint =>
+      'Another phone is now the active backup device for this account. Your local ledger remains available offline on this phone, or you can restore and transfer backup authority here.';
+
+  @override
+  String get restoreScreenTitle => 'Restore cloud backup';
+
+  @override
+  String get restoreCloudSnapshotTitle => 'Confirmed cloud backup';
+
+  @override
+  String restoreConfirmedAt(String day, String time) {
+    return 'Confirmed backup: $day, $time';
+  }
+
+  @override
+  String restoreCustomersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count customers',
+      one: '1 customer',
+      zero: '0 customers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreTransactionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+      zero: '0 transactions',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreHistoryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count deleted or audit records',
+      one: '1 deleted or audit record',
+      zero: '0 deleted or audit records',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restoreZeroRowsSnapshotNote =>
+      'This confirmed backup contains an empty ledger (0 records).';
+
+  @override
+  String get restoreConsequenceTitle => 'What happens on this phone';
+
+  @override
+  String get restoreConsequenceTakeover =>
+      'This phone will receive the confirmed cloud ledger and become the active backup phone for this account. The previous phone keeps its local ledger offline, but will no longer upload cloud backups.';
+
+  @override
+  String get restoreConsequenceSameDevice =>
+      'This phone is already the active backup phone for this account. Restoring loads the confirmed cloud ledger onto this phone without changing backup device authority.';
+
+  @override
+  String get restorePreviousPhonePendingWarning =>
+      'Any changes still pending upload on the previous phone are not included in this confirmed backup and remain available only on that phone.';
+
+  @override
+  String get restoreLocalEmptyTitle => 'This phone\'s ledger is empty';
+
+  @override
+  String get restoreLocalEmptyMessage =>
+      'No local customers, transactions, or audit history exist on this phone.';
+
+  @override
+  String get restoreLocalPopulatedTitle =>
+      'Existing local ledger on this phone';
+
+  @override
+  String get restoreLocalPopulatedWarning =>
+      'Restoring will replace all local records on this phone with the confirmed cloud backup. A second confirmation will be required.';
+
+  @override
+  String get restoreAndTransferAction => 'Restore & transfer to this phone';
+
+  @override
+  String get restoreOnlyAction => 'Restore cloud backup';
+
+  @override
+  String get restoreConfirmTakeoverTitle =>
+      'Confirm restore and device transfer?';
+
+  @override
+  String get restoreConfirmTakeoverMessage =>
+      'You are about to restore the confirmed cloud backup to this phone and make this phone the active backup device for your account. Future cloud uploads from the previous phone will stop, and any changes still pending on the previous phone will remain available only there.';
+
+  @override
+  String get restoreConfirmTakeoverButton => 'Confirm restore & transfer';
+
+  @override
+  String get restoreConfirmSameDeviceTitle => 'Confirm cloud restore?';
+
+  @override
+  String get restoreConfirmSameDeviceMessage =>
+      'You are about to restore the confirmed cloud backup onto this active phone. Only records included in the last server-confirmed backup will be restored.';
+
+  @override
+  String get restoreConfirmSameDeviceButton => 'Confirm restore';
+
+  @override
+  String get restoreReplacementConfirmTitle =>
+      'Replace local ledger on this phone?';
+
+  @override
+  String get restoreReplacementConfirmMessage =>
+      'This phone already contains local ledger records. Confirming will permanently replace this phone\'s local ledger with the confirmed cloud backup.';
+
+  @override
+  String get restoreReplacementLocalSummaryTitle =>
+      'Local records to be replaced on this phone';
+
+  @override
+  String get restoreReplacementConfirmButton => 'Replace local ledger';
+
+  @override
+  String get restoreSignedOutTitle => 'Sign in to restore cloud backup';
+
+  @override
+  String get restoreSignedOutMessage =>
+      'Sign in to your account from Account settings to check and restore your confirmed cloud backup.';
+
+  @override
+  String get restoreEmailUnverifiedTitle => 'Verify your email first';
+
+  @override
+  String get restoreEmailUnverifiedMessage =>
+      'Verify your account email address before restoring a cloud backup.';
+
+  @override
+  String get restoreAccountMismatchTitle => 'Ledger linked to another account';
+
+  @override
+  String get restoreAccountMismatchMessage =>
+      'This phone\'s local ledger is linked to another account and cannot be replaced by this account\'s backup. Sign in with the original account to use this ledger.';
+
+  @override
+  String get restoreOfflineTitle => 'No internet connection';
+
+  @override
+  String get restoreOfflineMessage =>
+      'Connect to the internet to preview and restore your confirmed cloud backup. Your local ledger on this phone remains intact and available offline.';
+
+  @override
+  String get restoreMissingBackupTitle => 'No cloud backup found';
+
+  @override
+  String get restoreMissingBackupMessage =>
+      'No confirmed cloud backup exists for this account yet. Back up your ledger from your active phone first, then try again.';
+
+  @override
+  String get restoreInterruptedTitle => 'Finish interrupted restore';
+
+  @override
+  String get restoreInterruptedMessage =>
+      'A previous cloud restore and device transfer was interrupted before completion. Your existing local ledger is still intact. Resume to finish installing the confirmed backup safely.';
+
+  @override
+  String get restoreInterruptedUploadsBlockedNote =>
+      'Cloud uploads on this phone remain paused until recovery completes.';
+
+  @override
+  String get restoreResumeAction => 'Resume restore';
+
+  @override
+  String get restoreCloudVersionChangedNotice =>
+      'A newer cloud backup or device authority change was detected. Review the updated backup details and confirm again.';
+
+  @override
+  String get restoreLocalLedgerChangedNotice =>
+      'Local ledger changes were recorded after your preview. Review the updated local counts and confirm replacement again.';
+
+  @override
+  String get restoreCompletedTitle => 'Cloud ledger restored';
+
+  @override
+  String get restoreCompletedTransferredMessage =>
+      'The confirmed cloud ledger is now installed on this phone, and future cloud backups will upload from this phone.';
+
+  @override
+  String get restoreCompletedSameDeviceMessage =>
+      'The confirmed cloud ledger is now installed on this phone.';
+
+  @override
+  String get restoreDoneAction => 'Back to backup settings';
 }

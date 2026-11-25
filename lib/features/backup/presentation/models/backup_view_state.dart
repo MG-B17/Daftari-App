@@ -19,6 +19,7 @@ final class BackupViewState extends Equatable {
     this.accountShopName,
     this.isPreview = false,
     this.isEligibleForManualBackup = true,
+    this.isInactiveDevice = false,
   });
 
   /// Default empty preview used when [BackupCubit] is not mounted (e.g.,
@@ -40,11 +41,15 @@ final class BackupViewState extends Equatable {
   final String? accountShopName;
   final bool isPreview;
   final bool isEligibleForManualBackup;
+  final bool isInactiveDevice;
 
   bool get isRunning => status == BackupStatus.running;
 
   bool get canBackUpNow =>
-      isEligibleForManualBackup && pendingChanges > 0 && !isRunning;
+      !isInactiveDevice &&
+      isEligibleForManualBackup &&
+      pendingChanges > 0 &&
+      !isRunning;
 
   BackupViewState copyWith({
     BackupStatus? status,
@@ -55,6 +60,7 @@ final class BackupViewState extends Equatable {
     String? Function()? accountShopName,
     bool? isPreview,
     bool? isEligibleForManualBackup,
+    bool? isInactiveDevice,
   }) => BackupViewState(
     status: status ?? this.status,
     pendingChanges: pendingChanges ?? this.pendingChanges,
@@ -69,6 +75,7 @@ final class BackupViewState extends Equatable {
     isPreview: isPreview ?? this.isPreview,
     isEligibleForManualBackup:
         isEligibleForManualBackup ?? this.isEligibleForManualBackup,
+    isInactiveDevice: isInactiveDevice ?? this.isInactiveDevice,
   );
 
   @override
@@ -81,5 +88,6 @@ final class BackupViewState extends Equatable {
     accountShopName,
     isPreview,
     isEligibleForManualBackup,
+    isInactiveDevice,
   ];
 }

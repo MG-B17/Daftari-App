@@ -29,6 +29,7 @@ import '../../domain/entities/backup_schedule.dart';
 import '../../domain/repositories/backup_cloud_publisher.dart';
 import '../../domain/repositories/backup_scheduler.dart';
 import '../../domain/usecases/run_backup_usecase.dart';
+import '../../../restore/data/services/restore_transfer_storage.dart';
 import '../repositories/drift_backup_local_store.dart';
 import '../repositories/supabase_backup_cloud_publisher.dart';
 import 'android_backup_platform_bridge.dart';
@@ -192,6 +193,7 @@ Future<void> runBackupBackgroundWorker(List<String> args) async {
     }
 
     final ownerStorage = LedgerOwnerStorage(secureStorage);
+    final restoreTransferStorage = RestoreTransferStorage(secureStorage);
     final connectivityService = ConnectivityService(Connectivity());
 
     final localStore = DriftBackupLocalStore(
@@ -203,6 +205,7 @@ Future<void> runBackupBackgroundWorker(List<String> args) async {
       errorHandler: errorHandler,
       commitGate: commitGate,
       isBackupRunning: () => platformBridge.isLocked,
+      hasPendingRestoreTransfer: restoreTransferStorage.hasPendingTransfer,
       hasPersistedSession: persistedSessionStorage.hasAccessToken,
       readPersistedSession: persistedSessionStorage.readSessionSnapshot,
       beforeEnterCommitHook:

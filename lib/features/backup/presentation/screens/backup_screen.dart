@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../restore/presentation/widgets/restore_backup_button.dart';
 import '../models/backup_view_state.dart';
 import '../widgets/backup_labels.dart';
 import '../widgets/backup_now_button.dart';
@@ -28,6 +29,8 @@ class BackupScreen extends StatelessWidget {
           BackupStatusCard(state: view),
           SizedBox(height: AppSpacing.settingsSectionGap),
           BackupNowButton(state: view, fullWidth: true),
+          SizedBox(height: AppSpacing.compact),
+          const RestoreBackupButton(fullWidth: true),
           SizedBox(height: AppSpacing.settingsSectionGap),
           BackupScheduleSection(
             initialSchedule: view.schedule,

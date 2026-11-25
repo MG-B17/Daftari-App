@@ -63,16 +63,18 @@ class BackupAccountCard extends StatelessWidget {
           ),
           if (hasAccount) ...[
             SizedBox(width: AppSpacing.sm),
-            Container(
-              padding: AppSpacing.badgePadding,
-              decoration: BoxDecoration(
-                color: context.colorScheme.primary,
-                borderRadius: AppSpacing.settingsOptionRadius,
-              ),
-              child: Text(
-                context.l10n.backupActiveAccount,
-                style: context.textTheme.labelMedium?.copyWith(
-                  color: context.colorScheme.onPrimary,
+            Flexible(
+              child: Container(
+                padding: AppSpacing.badgePadding,
+                decoration: BoxDecoration(
+                  color: context.colorScheme.primary,
+                  borderRadius: AppSpacing.settingsOptionRadius,
+                ),
+                child: Text(
+                  context.l10n.backupActiveAccount,
+                  style: context.textTheme.labelMedium?.copyWith(
+                    color: context.colorScheme.onPrimary,
+                  ),
                 ),
               ),
             ),

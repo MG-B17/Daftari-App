@@ -240,6 +240,11 @@ class BackupCubit extends Cubit<BackupViewState> {
       lastConfirmedAt: scheduleState.lastConfirmedAt,
       pendingChanges: pendingCount,
     );
+    final isInactiveDevice =
+        eligibility != null &&
+        eligibility.isMatchingLinkedAccount &&
+        eligibility.hasDeviceId &&
+        !eligibility.isActiveDevice;
 
     emit(
       BackupViewState(
@@ -251,6 +256,7 @@ class BackupCubit extends Cubit<BackupViewState> {
         accountShopName: visibleUser?.shopName,
         isPreview: false,
         isEligibleForManualBackup: canBackUpNow,
+        isInactiveDevice: isInactiveDevice,
       ),
     );
   }
@@ -308,7 +314,10 @@ class BackupCubit extends Cubit<BackupViewState> {
               _lastAttemptFailed = false;
               await _syncScheduleSafely(scheduleState, now: _dateService.now());
             case BackupRunSkipped():
-              break;
+              final workerDecision = BackupWorkerPolicy.decide(result);
+              if (workerDecision.shouldCancelSchedule) {
+                await _cancelScheduleSafely();
+              }
           }
         },
       );

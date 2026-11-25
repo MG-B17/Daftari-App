@@ -366,5 +366,75 @@
   "backupScheduleWeekly": "أسبوعيًا",
   "backupScheduleMonthly": "شهريًا",
   "backupScheduleCaption": "اختر عدد مرات النسخ التلقائي عندما يسمح أندرويد بذلك.",
-  "backupMockNotice": "معاينة فقط — النسخ الاحتياطي غير متاح بعد."
+  "backupMockNotice": "معاينة فقط — النسخ الاحتياطي غير متاح بعد.",
+  "backupRestoreAction": "استعادة البيانات السحابية",
+  "backupInactiveDeviceHint": "أصبح هاتف آخر هو جهاز النسخ الاحتياطي النشط لهذا الحساب. يظل دفترك المحلي متاحًا على هذا الهاتف بدون إنترنت، أو يمكنك الاستعادة ونقل صلاحية النسخ الاحتياطي إلى هنا.",
+  "restoreScreenTitle": "استعادة النسخة السحابية",
+  "restoreCloudSnapshotTitle": "النسخة السحابية المؤكدة",
+  "restoreConfirmedAt": "نسخة مؤكدة: {day} {time}",
+  "@restoreConfirmedAt": {
+    "placeholders": {
+      "day": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  },
+  "restoreCustomersCount": "{count, plural, =0{0 عملاء} =1{عميل واحد} =2{عميلان} few{{count} عملاء} many{{count} عميلًا} other{{count} عميل}}",
+  "@restoreCustomersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreTransactionsCount": "{count, plural, =0{0 حركات} =1{حركة واحدة} =2{حركتان} few{{count} حركات} many{{count} حركة} other{{count} حركة}}",
+  "@restoreTransactionsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreHistoryCount": "{count, plural, =0{0 سجلات محذوفة أو تدقيق} =1{سجل محذوف أو تدقيق واحد} =2{سجلان محذوفان أو تدقيق} few{{count} سجلات محذوفة أو تدقيق} many{{count} سجلًا محذوفًا أو تدقيق} other{{count} سجل محذوف أو تدقيق}}",
+  "@restoreHistoryCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "restoreZeroRowsSnapshotNote": "تحتوي هذه النسخة المؤكدة على دفتر فارغ (0 سجلات).",
+  "restoreConsequenceTitle": "ماذا سيحدث على هذا الهاتف",
+  "restoreConsequenceTakeover": "سيستلم هذا الهاتف الدفتر السحابي المؤكد ويصبح الهاتف النشط للنسخ الاحتياطي لهذا الحساب. يحتفظ الهاتف السابق بدفتره المحلي بدون إنترنت، لكنه لن يرفع نسخًا احتياطية سحابية بعد الآن.",
+  "restoreConsequenceSameDevice": "هذا الهاتف هو بالفعل الهاتف النشط للنسخ الاحتياطي لهذا الحساب. تؤدي الاستعادة إلى تحميل الدفتر السحابي المؤكد على هذا الهاتف دون تغيير صلاحية جهاز النسخ الاحتياطي.",
+  "restorePreviousPhonePendingWarning": "أي تغييرات لا تزال معلقة ولم تُرفع من الهاتف السابق ليست ضمن هذه النسخة المؤكدة وتظل متاحة على ذلك الهاتف فقط.",
+  "restoreLocalEmptyTitle": "دفتر هذا الهاتف فارغ",
+  "restoreLocalEmptyMessage": "لا يوجد عملاء أو حركات أو سجل تدقيق محلي على هذا الهاتف.",
+  "restoreLocalPopulatedTitle": "يوجد دفتر محلي حالي على هذا الهاتف",
+  "restoreLocalPopulatedWarning": "ستؤدي الاستعادة إلى استبدال جميع السجلات المحلية على هذا الهاتف بالنسخة السحابية المؤكدة. سيُطلب منك تأكيد ثانٍ.",
+  "restoreAndTransferAction": "استعادة الدفتر ونقل النسخ لهذا الهاتف",
+  "restoreOnlyAction": "استعادة النسخة السحابية",
+  "restoreConfirmTakeoverTitle": "تأكيد الاستعادة ونقل الجهاز النشط؟",
+  "restoreConfirmTakeoverMessage": "أنت على وشك استعادة النسخة السحابية المؤكدة إلى هذا الهاتف وجعل هذا الهاتف جهاز النسخ الاحتياطي النشط لحسابك. سيتوقف رفع النسخ السحابية من الهاتف السابق، وأي تغييرات لا تزال معلقة على الهاتف السابق ستظل متاحة هناك فقط.",
+  "restoreConfirmTakeoverButton": "تأكيد الاستعادة والنقل",
+  "restoreConfirmSameDeviceTitle": "تأكيد الاستعادة السحابية؟",
+  "restoreConfirmSameDeviceMessage": "أنت على وشك استعادة النسخة السحابية المؤكدة على هذا الهاتف النشط. سيتم استعادة السجلات المشمولة في آخر نسخة مؤكدة على الخادم فقط.",
+  "restoreConfirmSameDeviceButton": "تأكيد الاستعادة",
+  "restoreReplacementConfirmTitle": "استبدال الدفتر المحلي على هذا الهاتف؟",
+  "restoreReplacementConfirmMessage": "يحتوي هذا الهاتف بالفعل على سجلات دفتر محلي. سيؤدي التأكيد إلى استبدال الدفتر المحلي على هذا الهاتف نهائيًا بالنسخة السحابية المؤكدة.",
+  "restoreReplacementLocalSummaryTitle": "السجلات المحلية التي سيتم استبدالها على هذا الهاتف",
+  "restoreReplacementConfirmButton": "استبدال الدفتر المحلي",
+  "restoreSignedOutTitle": "سجّل الدخول لاستعادة النسخة السحابية",
+  "restoreSignedOutMessage": "سجّل الدخول إلى حسابك من إعدادات الحساب للتحقق من نسختك السحابية المؤكدة واستعادتها.",
+  "restoreEmailUnverifiedTitle": "أكد بريدك الإلكتروني أولاً",
+  "restoreEmailUnverifiedMessage": "أكد عنوان البريد الإلكتروني لحسابك قبل استعادة النسخة السحابية.",
+  "restoreAccountMismatchTitle": "الدفتر مرتبط بحساب آخر",
+  "restoreAccountMismatchMessage": "دفتر هذا الهاتف المحلي مرتبط بحساب آخر ولا يمكن استبداله بنسخة احتياطية من هذا الحساب. سجّل الدخول بالحساب الأصلي لاستخدام هذا الدفتر.",
+  "restoreOfflineTitle": "لا يوجد اتصال بالإنترنت",
+  "restoreOfflineMessage": "اتصل بالإنترنت لمعاينة واستعادة نسختك السحابية المؤكدة. يظل دفترك المحلي على هذا الهاتف سليمًا ومتاحًا بدون إنترنت.",
+  "restoreMissingBackupTitle": "لا توجد نسخة احتياطية سحابية",
+  "restoreMissingBackupMessage": "لا توجد نسخة احتياطية سحابية مؤكدة لهذا الحساب بعد. قم بنسخ دفترك احتياطيًا من هاتفك النشط أولاً ثم حاول مرة أخرى.",
+  "restoreInterruptedTitle": "إكمال الاستعادة المتوقفة",
+  "restoreInterruptedMessage": "توقفت عملية استعادة سحابية ونقل للجهاز قبل اكتمالها. دفترك المحلي الحالي لا يزال سليمًا. استأنف العملية لإكمال تثبيت النسخة المؤكدة بأمان.",
+  "restoreInterruptedUploadsBlockedNote": "يظل رفع النسخ السحابية على هذا الهاتف متوقفًا مؤقتًا حتى يكتمل الاستئناف.",
+  "restoreResumeAction": "استئناف الاستعادة",
+  "restoreCloudVersionChangedNotice": "تم اكتشاف نسخة سحابية أحدث أو تغيير في الجهاز النشط. راجع تفاصيل النسخة المحدثة وأكّد مرة أخرى.",
+  "restoreLocalLedgerChangedNotice": "تم تسجيل تغييرات في الدفتر المحلي بعد المعاينة. راجع الأعداد المحلية المحدثة وأكّد الاستبدال مرة أخرى.",
+  "restoreCompletedTitle": "تمت استعادة الدفتر السحابي",
+  "restoreCompletedTransferredMessage": "تم تثبيت الدفتر السحابي المؤكد على هذا الهاتف، وسيتم رفع النسخ الاحتياطية السحابية المستقبلية من هذا الهاتف.",
+  "restoreCompletedSameDeviceMessage": "تم تثبيت الدفتر السحابي المؤكد على هذا الهاتف.",
+  "restoreDoneAction": "العودة لإعدادات النسخ الاحتياطي"
 }

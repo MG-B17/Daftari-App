@@ -75,6 +75,7 @@ class _StatusRow extends StatelessWidget {
       color: context.colorScheme.onSurfaceVariant,
     );
     final failureText = state.failureHint(context);
+    final inactiveText = state.inactiveDeviceHint(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,6 +103,14 @@ class _StatusRow extends StatelessWidget {
               if (failureText != null)
                 Text(
                   failureText,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.appColors.creditColor,
+                  ),
+                ),
+              if (inactiveText != null)
+                Text(
+                  inactiveText,
+                  key: const ValueKey('backup-inactive-device-hint'),
                   style: context.textTheme.bodySmall?.copyWith(
                     color: context.appColors.creditColor,
                   ),
