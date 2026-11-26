@@ -9,6 +9,8 @@ import 'core/constants/app_constants.dart';
 import 'core/animation/app_theme_transition.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_switcher_cubit.dart';
+import 'core/theme/theme_switcher_state.dart';
 import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'features/backup/presentation/cubit/backup_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
@@ -24,6 +26,7 @@ class DaftariApp extends StatefulWidget {
     this.themeMode = ThemeMode.system,
     this.router,
     this.settingsCubit,
+    this.themeSwitcherCubit,
     this.appLockCubit,
     this.authSessionCubit,
     this.backupCubit,
@@ -33,6 +36,7 @@ class DaftariApp extends StatefulWidget {
   final ThemeMode themeMode;
   final GoRouter? router;
   final SettingsCubit? settingsCubit;
+  final ThemeSwitcherCubit? themeSwitcherCubit;
   final AppLockCubit? appLockCubit;
   final AuthSessionCubit? authSessionCubit;
   final BackupCubit? backupCubit;
@@ -73,7 +77,15 @@ class _DaftariAppState extends State<DaftariApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    Widget child = _buildSettingsApp();
+    Widget child = _buildRootApp();
+    final themeSwitcher = widget.themeSwitcherCubit;
+    if (themeSwitcher != null) {
+      child = BlocProvider.value(value: themeSwitcher, child: child);
+    }
+    final settings = widget.settingsCubit;
+    if (settings != null) {
+      child = BlocProvider.value(value: settings, child: child);
+    }
     final backup = widget.backupCubit;
     if (backup != null) {
       child = BlocProvider.value(value: backup, child: child);
@@ -89,59 +101,66 @@ class _DaftariAppState extends State<DaftariApp> with WidgetsBindingObserver {
     return child;
   }
 
-  Widget _buildSettingsApp() {
-    final settingsCubit = widget.settingsCubit;
-    if (settingsCubit == null) {
-      return _buildApp(locale: widget.locale, themeMode: widget.themeMode);
-    }
-    return BlocProvider.value(
-      value: settingsCubit,
-      child: BlocBuilder<SettingsCubit, SettingsState>(
+  Widget _buildRootApp() {
+    Widget buildWithLocale(Locale locale) {
+      if (widget.themeSwitcherCubit == null) {
+        return _buildApp(locale: locale, themeMode: widget.themeMode);
+      }
+      return BlocBuilder<ThemeSwitcherCubit, ThemeSwitcherState>(
+        buildWhen: (previous, current) =>
+            previous.themeMode != current.themeMode,
         builder: (context, state) =>
-            _buildApp(locale: state.locale, themeMode: state.themeMode),
-      ),
+            _buildApp(locale: locale, themeMode: state.themeMode),
+      );
+    }
+
+    if (widget.settingsCubit == null) {
+      return buildWithLocale(widget.locale);
+    }
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      buildWhen: (previous, current) =>
+          previous.localeCode != current.localeCode,
+      builder: (context, state) => buildWithLocale(state.locale),
     );
   }
 
-  Widget _buildApp({
-    required Locale locale,
-    required ThemeMode themeMode,
-  }) => ScreenUtilInit(
-    designSize: AppConstants.designSize,
-    minTextAdapt: true,
-    splitScreenMode: true,
-    builder: (context, child) {
-      final lightTheme = AppTheme.light;
-      final darkTheme = AppTheme.dark;
-      final initialTheme =
-          themeMode == ThemeMode.dark ||
-              (themeMode == ThemeMode.system &&
-                  MediaQuery.platformBrightnessOf(context) == Brightness.dark)
-          ? darkTheme
-          : lightTheme;
-      return AppThemeTransitionProvider(
-        initialTheme: initialTheme,
-        child: MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-          locale: locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppConstants.supportedLocales,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: themeMode,
-          builder: (context, child) {
-            final content = AppThemeTransitionArea(
-              child: child ?? const SizedBox.shrink(),
-            );
-            final lock = widget.appLockCubit;
-            return lock == null
-                ? content
-                : AppLockGuard(lock: lock, child: content);
-          },
-          routerConfig: widget.router ?? (_ownedRouter ??= AppRouter.create()),
-        ),
+  Widget _buildApp({required Locale locale, required ThemeMode themeMode}) =>
+      ScreenUtilInit(
+        designSize: AppConstants.designSize,
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          final lightTheme = AppTheme.light;
+          final darkTheme = AppTheme.dark;
+          final initialTheme = AppTheme.resolve(
+            themeMode,
+            MediaQuery.platformBrightnessOf(context),
+          );
+          return AppThemeTransitionProvider(
+            initialTheme: initialTheme,
+            child: MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context)!.appTitle,
+              locale: locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppConstants.supportedLocales,
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: themeMode,
+              builder: (context, child) {
+                final content = AppThemeTransitionArea(
+                  child: child ?? const SizedBox.shrink(),
+                );
+                final lock = widget.appLockCubit;
+                return lock == null
+                    ? content
+                    : AppLockGuard(lock: lock, child: content);
+              },
+              routerConfig:
+                  widget.router ?? (_ownedRouter ??= AppRouter.create()),
+            ),
+          );
+        },
       );
-    },
-  );
 }

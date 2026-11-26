@@ -44,11 +44,9 @@ class AppThemeSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ThemeSwitcher.switcher(
     builder: (context, switcher) => builder(context, (mode) {
-      final dark =
-          mode == ThemeMode.dark ||
-          (mode == ThemeMode.system &&
-              MediaQuery.platformBrightnessOf(context) == Brightness.dark);
-      switcher.changeTheme(theme: dark ? AppTheme.dark : AppTheme.light);
+      switcher.changeTheme(
+        theme: AppTheme.resolve(mode, MediaQuery.platformBrightnessOf(context)),
+      );
     }),
   );
 }

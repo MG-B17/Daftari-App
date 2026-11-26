@@ -8,6 +8,8 @@ import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/usecases/send_password_reset_usecase.dart';
 import 'package:daftariapp/features/auth/forgot_password/presentation/cubit/forgot_password_cubit.dart';
@@ -35,7 +37,6 @@ import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.d
 import 'package:daftariapp/features/security/presentation/screens/pin_lock_screen.dart';
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
@@ -65,22 +66,25 @@ const _routeUserB = AuthUser(
 
 class _FakeRouteSettingsRepository implements SettingsRepository {
   String _localeCode = 'ar';
-  ThemeMode _themeMode = ThemeMode.light;
 
   @override
   String get localeCode => _localeCode;
 
   @override
-  ThemeMode get themeMode => _themeMode;
-
-  @override
   Future<void> setLocaleCode(String localeCode) async {
     _localeCode = localeCode;
   }
+}
+
+class _FakeRouteThemeStorage extends Fake implements LocalStorageService {
+  ThemeMode _themeMode = ThemeMode.light;
 
   @override
-  Future<void> setThemeMode(ThemeMode themeMode) async {
-    _themeMode = themeMode;
+  ThemeMode get themeMode => _themeMode;
+
+  @override
+  Future<void> setThemeMode(ThemeMode value) async {
+    _themeMode = value;
   }
 }
 
@@ -89,10 +93,14 @@ SettingsCubit _createRouteSettingsCubit() {
   return SettingsCubit(
     GetSettingsUseCase(repo),
     ChangeLanguageUseCase(repo),
-    ChangeThemeUseCase(repo),
     ErrorHandler(AppLogger(output: (_) {}, enableCrashReporting: false)),
   );
 }
+
+ThemeSwitcherCubit _createRouteThemeSwitcherCubit() => ThemeSwitcherCubit(
+  _FakeRouteThemeStorage(),
+  ErrorHandler(AppLogger(output: (_) {}, enableCrashReporting: false)),
+);
 
 GoRouter _createAuthRouter(
   FakeAuthBackend backend,
@@ -619,6 +627,8 @@ void main() {
 
         final settingsCubit = _createRouteSettingsCubit();
         addTearDown(settingsCubit.close);
+        final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+        addTearDown(themeSwitcherCubit.close);
         final lock = await testAppLock();
         addTearDown(lock.close);
         final router = _createAuthRouter(backend, session, appLock: lock);
@@ -629,6 +639,7 @@ void main() {
             appLockCubit: lock,
             authSessionCubit: session,
             settingsCubit: settingsCubit,
+            themeSwitcherCubit: themeSwitcherCubit,
           ),
         );
         await tester.pump(SplashScreen.displayDuration);
@@ -710,6 +721,8 @@ void main() {
 
         final settingsCubit = _createRouteSettingsCubit();
         addTearDown(settingsCubit.close);
+        final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+        addTearDown(themeSwitcherCubit.close);
         final lock = await testAppLock();
         addTearDown(lock.close);
         final router = _createAuthRouter(backend, session, appLock: lock);
@@ -720,6 +733,7 @@ void main() {
             appLockCubit: lock,
             authSessionCubit: session,
             settingsCubit: settingsCubit,
+            themeSwitcherCubit: themeSwitcherCubit,
           ),
         );
         await tester.pump(SplashScreen.displayDuration);
@@ -806,6 +820,8 @@ void main() {
 
       final settingsCubit = _createRouteSettingsCubit();
       addTearDown(settingsCubit.close);
+      final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+      addTearDown(themeSwitcherCubit.close);
       final lock = await testAppLock();
       addTearDown(lock.close);
       final router = _createAuthRouter(backend, session, appLock: lock);
@@ -816,6 +832,7 @@ void main() {
           appLockCubit: lock,
           authSessionCubit: session,
           settingsCubit: settingsCubit,
+          themeSwitcherCubit: themeSwitcherCubit,
         ),
       );
       await tester.pump(SplashScreen.displayDuration);
@@ -943,6 +960,8 @@ void main() {
         addTearDown(restartedSession.close);
         final restartedSettingsCubit = _createRouteSettingsCubit();
         addTearDown(restartedSettingsCubit.close);
+        final restartedThemeSwitcherCubit = _createRouteThemeSwitcherCubit();
+        addTearDown(restartedThemeSwitcherCubit.close);
         final restartedLock = await testAppLock();
         addTearDown(restartedLock.close);
         final restartedRouter = _createAuthRouter(
@@ -958,6 +977,7 @@ void main() {
             appLockCubit: restartedLock,
             authSessionCubit: restartedSession,
             settingsCubit: restartedSettingsCubit,
+            themeSwitcherCubit: restartedThemeSwitcherCubit,
           ),
         );
         await tester.pump(SplashScreen.displayDuration);
@@ -1000,6 +1020,8 @@ void main() {
 
         final settingsCubit = _createRouteSettingsCubit();
         addTearDown(settingsCubit.close);
+        final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+        addTearDown(themeSwitcherCubit.close);
         final lock = await testAppLock();
         addTearDown(lock.close);
         final router = _createAuthRouter(backend, session, appLock: lock);
@@ -1010,6 +1032,7 @@ void main() {
             appLockCubit: lock,
             authSessionCubit: session,
             settingsCubit: settingsCubit,
+            themeSwitcherCubit: themeSwitcherCubit,
           ),
         );
         await tester.pump(SplashScreen.displayDuration);
@@ -1066,6 +1089,8 @@ void main() {
 
         final settingsCubit = _createRouteSettingsCubit();
         addTearDown(settingsCubit.close);
+        final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+        addTearDown(themeSwitcherCubit.close);
         final lock = await testAppLock();
         addTearDown(lock.close);
         final router = _createAuthRouter(backend, session, appLock: lock);
@@ -1076,6 +1101,7 @@ void main() {
             appLockCubit: lock,
             authSessionCubit: session,
             settingsCubit: settingsCubit,
+            themeSwitcherCubit: themeSwitcherCubit,
           ),
         );
         await tester.pump(SplashScreen.displayDuration);
@@ -1242,6 +1268,8 @@ void main() {
 
           final settingsCubit = _createRouteSettingsCubit();
           addTearDown(settingsCubit.close);
+          final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+          addTearDown(themeSwitcherCubit.close);
           final lock = await testAppLock();
           addTearDown(lock.close);
           final createdLoginCubits = <LoginCubit>[];
@@ -1258,6 +1286,7 @@ void main() {
               appLockCubit: lock,
               authSessionCubit: session,
               settingsCubit: settingsCubit,
+              themeSwitcherCubit: themeSwitcherCubit,
             ),
           );
           await tester.pump(SplashScreen.displayDuration);
@@ -1363,6 +1392,8 @@ void main() {
 
           final settingsCubit = _createRouteSettingsCubit();
           addTearDown(settingsCubit.close);
+          final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+          addTearDown(themeSwitcherCubit.close);
           final lock = await testAppLock();
           addTearDown(lock.close);
           final createdSignUpCubits = <SignUpCubit>[];
@@ -1379,6 +1410,7 @@ void main() {
               appLockCubit: lock,
               authSessionCubit: session,
               settingsCubit: settingsCubit,
+              themeSwitcherCubit: themeSwitcherCubit,
             ),
           );
           await tester.pump(SplashScreen.displayDuration);
@@ -1492,6 +1524,8 @@ void main() {
 
           final settingsCubit = _createRouteSettingsCubit();
           addTearDown(settingsCubit.close);
+          final themeSwitcherCubit = _createRouteThemeSwitcherCubit();
+          addTearDown(themeSwitcherCubit.close);
           final lock = await testAppLock();
           addTearDown(lock.close);
           final createdVerifyCubits = <VerifyEmailCubit>[];
@@ -1508,6 +1542,7 @@ void main() {
               appLockCubit: lock,
               authSessionCubit: session,
               settingsCubit: settingsCubit,
+              themeSwitcherCubit: themeSwitcherCubit,
             ),
           );
           await tester.pump(SplashScreen.displayDuration);

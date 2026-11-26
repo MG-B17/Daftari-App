@@ -6,7 +6,6 @@ import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/app_failure.dart';
-import '../../../../core/extensions/string_extensions.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/picked_contact.dart';
 import '../../domain/usecases/pick_contact_usecase.dart';
@@ -16,7 +15,6 @@ class CustomersListState extends Equatable {
   const CustomersListState({
     this.loading = true,
     this.customers = const [],
-    this.query = '',
     this.filter = CustomerFilter.all,
     this.sort = CustomerSort.nameAsc,
     this.failure,
@@ -24,7 +22,6 @@ class CustomersListState extends Equatable {
 
   final bool loading;
   final List<CustomerEntity> customers;
-  final String query;
   final CustomerFilter filter;
   final CustomerSort sort;
   final AppFailure? failure;
@@ -34,17 +31,12 @@ class CustomersListState extends Equatable {
   int get totalDebt => customers.fold(0, (sum, c) => sum + c.balancePiasters);
 
   List<CustomerEntity> get visible {
-    final term = query.trim().toLowerCase().toWesternDigits;
     final result = customers.where((customer) {
-      final matches =
-          customer.name.toLowerCase().toWesternDigits.contains(term) ||
-          (customer.phone?.toWesternDigits.contains(term) ?? false);
-      return matches &&
-          switch (filter) {
-            CustomerFilter.all => true,
-            CustomerFilter.owes => customer.balancePiasters > 0,
-            CustomerFilter.settled => customer.balancePiasters == 0,
-          };
+      return switch (filter) {
+        CustomerFilter.all => true,
+        CustomerFilter.owes => customer.balancePiasters > 0,
+        CustomerFilter.settled => customer.balancePiasters == 0,
+      };
     }).toList();
     result.sort((a, b) {
       final comparison = switch (sort) {
@@ -64,21 +56,19 @@ class CustomersListState extends Equatable {
   CustomersListState copyWith({
     bool? loading,
     List<CustomerEntity>? customers,
-    String? query,
     CustomerFilter? filter,
     CustomerSort? sort,
     AppFailure? failure,
   }) => CustomersListState(
     loading: loading ?? this.loading,
     customers: customers ?? this.customers,
-    query: query ?? this.query,
     filter: filter ?? this.filter,
     sort: sort ?? this.sort,
     failure: failure,
   );
 
   @override
-  List<Object?> get props => [loading, customers, query, filter, sort, failure];
+  List<Object?> get props => [loading, customers, filter, sort, failure];
 }
 
 class CustomersListCubit extends Cubit<CustomersListState> {
@@ -116,8 +106,6 @@ class CustomersListCubit extends Cubit<CustomersListState> {
     );
   }
 
-  void setQuery(String query) =>
-      emit(state.copyWith(query: query, failure: state.failure));
   void setFilter(CustomerFilter filter) =>
       emit(state.copyWith(filter: filter, failure: state.failure));
   void setSort(CustomerSort sort) =>

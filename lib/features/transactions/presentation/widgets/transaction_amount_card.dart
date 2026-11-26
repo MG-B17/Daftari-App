@@ -10,10 +10,13 @@ class TransactionAmountCard extends StatelessWidget {
     required this.amount,
     required this.payment,
     required this.onAdd,
+    this.enabled = true,
   });
+
   final String amount;
   final bool payment;
   final ValueChanged<int> onAdd;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +57,7 @@ class TransactionAmountCard extends StatelessWidget {
                 for (final value in [50, 100, 200, 500])
                   ActionChip(
                     label: Text('+$value'),
-                    onPressed: () => onAdd(value),
+                    onPressed: enabled ? () => onAdd(value) : null,
                   ),
               ],
             ),

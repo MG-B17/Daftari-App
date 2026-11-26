@@ -257,7 +257,7 @@ void main() {
 
   for (final locale in ['ar', 'en']) {
     blocTest<StatementCubit, StatementState>(
-      'image renderer receives the exact $locale snapshot',
+      'image renderer receives the exact $locale snapshot and distinguishes stages',
       build: build,
       setUp: () => repository.handler = (_, _) async => Right(statement),
       act: (cubit) async {
@@ -266,11 +266,22 @@ void main() {
       },
       skip: 2,
       expect: () => [
-        StatementState(loading: false, statement: statement, sharing: true),
         StatementState(
           loading: false,
           statement: statement,
-          shareResult: ShareStatementResult.systemShare,
+          shareStatus: StatementShareStatus.generating,
+        ),
+        StatementState(
+          loading: false,
+          statement: statement,
+          shareStatus: StatementShareStatus.handingOff,
+        ),
+        StatementState(
+          loading: false,
+          statement: statement,
+          shareStatus: StatementShareStatus.completed,
+          shareSubmissionId: 1,
+          shareResult: ShareStatementResult.handedOff,
         ),
       ],
       verify: (_) {
@@ -293,13 +304,32 @@ void main() {
     },
     skip: 2,
     expect: () => [
-      isA<StatementState>().having((s) => s.sharing, 'sharing', true),
       isA<StatementState>()
+          .having(
+            (s) => s.shareStatus,
+            'status',
+            StatementShareStatus.generating,
+          )
+          .having((s) => s.sharing, 'sharing', true),
+      isA<StatementState>()
+          .having(
+            (s) => s.shareStatus,
+            'status',
+            StatementShareStatus.handingOff,
+          )
+          .having((s) => s.sharing, 'sharing', true),
+      isA<StatementState>()
+          .having(
+            (s) => s.shareStatus,
+            'status',
+            StatementShareStatus.completed,
+          )
           .having((s) => s.sharing, 'sharing', false)
+          .having((s) => s.shareSubmissionId, 'submissionId', 1)
           .having(
             (s) => s.shareResult,
             'result',
-            ShareStatementResult.systemShare,
+            ShareStatementResult.handedOff,
           ),
     ],
     verify: (cubit) {
@@ -312,13 +342,46 @@ void main() {
   );
 
   test(
+    'generation and handoff stages are observable separately while pending',
+    () async {
+      renderer.pendingRender = Completer<void>();
+      pendingShare = Completer<ShareResult>();
+      final cubit = build();
+      addTearDown(cubit.close);
+      await cubit.load('c1');
+
+      final share = cubit.shareViaSystem();
+      expect(cubit.state.generating, isTrue);
+      expect(cubit.state.handingOff, isFalse);
+      expect(cubit.state.sharing, isTrue);
+      expect(cubit.state.canShare, isFalse);
+      expect(shares, isEmpty);
+
+      renderer.pendingRender!.complete();
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.generating, isFalse);
+      expect(cubit.state.handingOff, isTrue);
+      expect(cubit.state.sharing, isTrue);
+      expect(cubit.state.canShare, isFalse);
+      expect(shares, hasLength(1));
+
+      pendingShare!.complete(const ShareResult('', ShareResultStatus.success));
+      await share;
+      expect(cubit.state.sharing, isFalse);
+      expect(cubit.state.shareStatus, StatementShareStatus.completed);
+      expect(cubit.state.shareResult, ShareStatementResult.handedOff);
+      expect(cubit.state.shareSubmissionId, 1);
+    },
+  );
+
+  test(
     'WhatsApp action uses native image sharing and preserves origin',
     () async {
       final cubit = build();
       addTearDown(cubit.close);
       await cubit.load('c1');
       await cubit.shareViaWhatsApp(sharePositionOrigin: origin);
-      expect(cubit.state.shareResult, ShareStatementResult.systemShare);
+      expect(cubit.state.shareResult, ShareStatementResult.handedOff);
       expect(shares.single.sharePositionOrigin, origin);
     },
   );
@@ -334,6 +397,8 @@ void main() {
       await cubit.load('c1');
       await cubit.shareViaSystem();
       expect(cubit.state.shareFailure, isNull);
+      expect(cubit.state.shareStatus, StatementShareStatus.completed);
+      expect(cubit.state.shareSubmissionId, 1);
       expect(
         cubit.state.shareResult,
         status == ShareResultStatus.dismissed
@@ -343,33 +408,38 @@ void main() {
     });
   }
 
-  test(
-    'share failure retains snapshot, clears busy, and retry clears old outcome',
-    () async {
-      shareThrows = true;
-      final cubit = build();
-      addTearDown(cubit.close);
-      await cubit.load('c1');
-      final snapshot = cubit.state.statement;
-      await cubit.shareViaSystem();
-      expect(
-        cubit.state.shareFailure,
-        const AppFailure(AppErrorCode.unexpected),
-      );
-      expect(cubit.state.failure, isNull);
-      expect(cubit.state.statement, same(snapshot));
-      expect(cubit.state.canShare, isTrue);
-      expect(logs.join(), isNot(contains('PRIVATE')));
-      shareThrows = false;
-      pendingShare = Completer<ShareResult>();
-      final retry = cubit.shareViaSystem();
-      expect(cubit.state.shareFailure, isNull);
-      expect(cubit.state.shareResult, isNull);
-      pendingShare!.complete(const ShareResult('', ShareResultStatus.success));
-      await retry;
-      expect(cubit.state.shareResult, ShareStatementResult.systemShare);
-    },
-  );
+  test('share failure retains snapshot, records stage, increments id, and retry clears old outcome', () async {
+    shareThrows = true;
+    final cubit = build();
+    addTearDown(cubit.close);
+    await cubit.load('c1');
+    final snapshot = cubit.state.statement;
+    await cubit.shareViaSystem();
+    expect(cubit.state.shareFailure, const AppFailure(AppErrorCode.unexpected));
+    expect(cubit.state.shareFailureStage, StatementShareFailureStage.handoff);
+    expect(cubit.state.shareSubmissionId, 1);
+    expect(cubit.state.failure, isNull);
+    expect(cubit.state.statement, same(snapshot));
+    expect(cubit.state.canShare, isTrue);
+    expect(logs.join(), isNot(contains('PRIVATE')));
+
+    // Consecutive identical failure increments submissionId so UI shows feedback again.
+    await cubit.shareViaSystem();
+    expect(cubit.state.shareSubmissionId, 2);
+    expect(cubit.state.shareFailureStage, StatementShareFailureStage.handoff);
+
+    shareThrows = false;
+    pendingShare = Completer<ShareResult>();
+    final retry = cubit.shareViaSystem();
+    expect(cubit.state.shareFailure, isNull);
+    expect(cubit.state.shareFailureStage, isNull);
+    expect(cubit.state.shareResult, isNull);
+    expect(cubit.state.shareSubmissionId, 2);
+    pendingShare!.complete(const ShareResult('', ShareResultStatus.success));
+    await retry;
+    expect(cubit.state.shareResult, ShareStatementResult.handedOff);
+    expect(cubit.state.shareSubmissionId, 3);
+  });
 
   test(
     'repeated share actions are serialized across both methods and reloads',
@@ -390,8 +460,10 @@ void main() {
       await pending;
       expect(cubit.state.sharing, isFalse);
       expect(cubit.state.shareResult, isNull);
+      expect(cubit.state.shareSubmissionId, 0);
       await cubit.shareViaWhatsApp();
       expect(shares, hasLength(2));
+      expect(cubit.state.shareSubmissionId, 1);
     },
   );
 
@@ -415,6 +487,7 @@ void main() {
       expect(cubit.state.range, StatementDateRange.last30Days);
       expect(cubit.state.sharing, isFalse);
       expect(cubit.state.shareResult, isNull);
+      expect(cubit.state.shareSubmissionId, 0);
       request.complete(const Left(failure));
       await reload;
       expect(cubit.state.failure, failure);
@@ -450,28 +523,28 @@ void main() {
     expect(cubit.state, closedState);
   });
 
-  test(
-    'async renderer stream failure is private, resets busy, and allows retry',
-    () async {
-      final cubit = build();
-      addTearDown(cubit.close);
-      await cubit.load('c1');
-      renderer.throwsError = true;
-      final share = cubit.shareViaSystem();
-      expect(cubit.state.sharing, isTrue);
-      expect(renderer.requests, isEmpty);
-      await share;
-      expect(renderer.requests, hasLength(1));
-      expect(
-        cubit.state.shareFailure,
-        const AppFailure(AppErrorCode.unexpected),
-      );
-      expect(cubit.state.sharing, isFalse);
-      expect(shares, isEmpty);
-      expect(logs, isEmpty);
-      renderer.throwsError = false;
-      await cubit.shareViaSystem();
-      expect(cubit.state.shareResult, ShareStatementResult.systemShare);
-    },
-  );
+  test('async renderer stream failure records generation stage, is private, resets busy, and allows retry', () async {
+    final cubit = build();
+    addTearDown(cubit.close);
+    await cubit.load('c1');
+    renderer.throwsError = true;
+    final share = cubit.shareViaSystem();
+    expect(cubit.state.generating, isTrue);
+    expect(renderer.requests, isEmpty);
+    await share;
+    expect(renderer.requests, hasLength(1));
+    expect(cubit.state.shareFailure, const AppFailure(AppErrorCode.unexpected));
+    expect(
+      cubit.state.shareFailureStage,
+      StatementShareFailureStage.generation,
+    );
+    expect(cubit.state.shareSubmissionId, 1);
+    expect(cubit.state.sharing, isFalse);
+    expect(shares, isEmpty);
+    expect(logs, isEmpty);
+    renderer.throwsError = false;
+    await cubit.shareViaSystem();
+    expect(cubit.state.shareResult, ShareStatementResult.handedOff);
+    expect(cubit.state.shareSubmissionId, 2);
+  });
 }

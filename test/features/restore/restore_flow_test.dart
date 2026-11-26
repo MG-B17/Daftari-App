@@ -26,7 +26,6 @@ import 'package:daftariapp/features/security/domain/repositories/security_reposi
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
@@ -395,7 +394,6 @@ void main() {
         final settingsCubit = SettingsCubit(
           GetSettingsUseCase(settingsRepo),
           ChangeLanguageUseCase(settingsRepo),
-          ChangeThemeUseCase(settingsRepo),
           ErrorHandler(AppLogger(output: (_) {}, enableCrashReporting: false)),
         );
         addTearDown(settingsCubit.close);

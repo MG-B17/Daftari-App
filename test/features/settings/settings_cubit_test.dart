@@ -1,15 +1,14 @@
-import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
-import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_state.dart';
-import 'package:flutter/material.dart' show Locale, ThemeMode;
+import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -21,34 +20,23 @@ void main() {
   late _Storage storage;
   late _Handler handler;
 
-  setUpAll(() {
-    registerFallbackValue(ThemeMode.system);
-  });
-
   setUp(() {
     storage = _Storage();
     handler = _Handler();
     when(() => storage.localeCode).thenReturn('ar');
-    when(() => storage.themeMode).thenReturn(ThemeMode.system);
     when(() => storage.setLocaleCode(any())).thenAnswer((_) async {});
-    when(() => storage.setThemeMode(any())).thenAnswer((_) async {});
     when(() => handler.handle(any()))
         .thenAnswer((_) async => const AppFailure(AppErrorCode.storage));
   });
 
-  test('reads the persisted locale and theme on creation', () async {
+  test('reads the persisted locale on creation', () async {
     when(() => storage.localeCode).thenReturn('en');
-    when(() => storage.themeMode).thenReturn(ThemeMode.dark);
     final cubit = SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
       handler,
     );
-    expect(
-      cubit.state,
-      const SettingsState(localeCode: 'en', themeMode: ThemeMode.dark),
-    );
+    expect(cubit.state, const SettingsState(localeCode: 'en'));
     expect(cubit.state.locale, const Locale('en'));
     expect(cubit.state.isArabic, isFalse);
     await cubit.close();
@@ -61,7 +49,6 @@ void main() {
       final cubit = SettingsCubit(
         GetSettingsUseCase(SettingsRepositoryImpl(storage)),
         ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-        ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
         handler,
       );
       expect(cubit.state, const SettingsState());
@@ -71,7 +58,7 @@ void main() {
   );
 
   test('state exposes Arabic natively and value equality', () {
-    const state = SettingsState(localeCode: 'en', themeMode: ThemeMode.light);
+    const state = SettingsState(localeCode: 'en');
     expect(state.isArabic, isFalse);
     expect(state.locale.languageCode, 'en');
     expect(state.copyWith(), state);
@@ -85,7 +72,6 @@ void main() {
     build: () => SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
       handler,
     ),
     act: (cubit) => cubit.setLocaleCode('en'),
@@ -94,35 +80,15 @@ void main() {
   );
 
   blocTest<SettingsCubit, SettingsState>(
-    'theme change emits immediately and persists',
-    build: () => SettingsCubit(
-      GetSettingsUseCase(SettingsRepositoryImpl(storage)),
-      ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
-      handler,
-    ),
-    act: (cubit) => cubit.setThemeMode(ThemeMode.dark),
-    expect: () => [const SettingsState(themeMode: ThemeMode.dark)],
-    verify: (_) => verify(() => storage.setThemeMode(ThemeMode.dark)).called(1),
-  );
-
-  blocTest<SettingsCubit, SettingsState>(
     'selecting the current values does not write again',
     build: () => SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
       handler,
     ),
-    act: (cubit) async {
-      await cubit.setLocaleCode('ar');
-      await cubit.setThemeMode(ThemeMode.system);
-    },
-    expect: () => [],
-    verify: (_) {
-      verifyNever(() => storage.setLocaleCode(any()));
-      verifyNever(() => storage.setThemeMode(any()));
-    },
+    act: (cubit) => cubit.setLocaleCode('ar'),
+    expect: () => const <SettingsState>[],
+    verify: (_) => verifyNever(() => storage.setLocaleCode(any())),
   );
 
   blocTest<SettingsCubit, SettingsState>(
@@ -133,33 +99,12 @@ void main() {
       return SettingsCubit(
         GetSettingsUseCase(SettingsRepositoryImpl(storage)),
         ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-        ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
         handler,
       );
     },
     act: (cubit) => cubit.setLocaleCode('en'),
     expect: () => [
       const SettingsState(localeCode: 'en'),
-      const SettingsState(hasError: true),
-    ],
-    verify: (_) => verify(() => handler.handle(any())).called(1),
-  );
-
-  blocTest<SettingsCubit, SettingsState>(
-    'theme failure reverts and reports the error',
-    build: () {
-      when(() => storage.setThemeMode(ThemeMode.dark))
-          .thenThrow(const StorageException());
-      return SettingsCubit(
-        GetSettingsUseCase(SettingsRepositoryImpl(storage)),
-        ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-        ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
-        handler,
-      );
-    },
-    act: (cubit) => cubit.setThemeMode(ThemeMode.dark),
-    expect: () => [
-      const SettingsState(themeMode: ThemeMode.dark),
       const SettingsState(hasError: true),
     ],
     verify: (_) => verify(() => handler.handle(any())).called(1),

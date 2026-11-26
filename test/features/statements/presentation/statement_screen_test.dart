@@ -12,6 +12,9 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/theme/app_color_scheme.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
+import 'package:daftariapp/core/widgets/app_error_dialog.dart';
+import 'package:daftariapp/core/widgets/app_success_dialog.dart';
+import 'package:daftariapp/core/widgets/daftari_loading.dart';
 import 'package:daftariapp/features/statements/data/repositories/statement_repository_impl.dart';
 import 'package:daftariapp/features/statements/domain/entities/customer_statement_entity.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
@@ -67,6 +70,7 @@ void main() {
   late List<Uri> launches;
   late List<ShareParams> shares;
   late List<String> logs;
+  late FakeStatementImageRenderer renderer;
   late bool shareThrows;
   late bool clipboardThrows;
   late ShareResultStatus shareStatus;
@@ -82,6 +86,7 @@ void main() {
     launches = [];
     shares = [];
     logs = [];
+    renderer = FakeStatementImageRenderer();
     shareThrows = false;
     clipboardThrows = false;
     shareStatus = ShareResultStatus.success;
@@ -98,7 +103,7 @@ void main() {
             return pendingShare?.future ?? ShareResult('', shareStatus);
           },
         ),
-        FakeStatementImageRenderer(),
+        renderer,
       );
       return cubit;
     });
@@ -223,13 +228,15 @@ void main() {
   });
 
   testWidgets(
-    'loading clears actions; error retries; missing customer cannot share',
+    'loading uses shared screen loader; error retries; missing customer cannot share',
     (tester) async {
       final pending = Completer<_Result>();
       repository.handler = (_) => pending.future;
       await pump(tester, settle: false);
       await tester.pump();
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      final loader = tester.widget<DaftariLoading>(find.byType(DaftariLoading));
+      expect(loader.variant, DaftariLoadingVariant.screen);
       expect(find.byKey(const ValueKey('statement-whatsapp')), findsNothing);
       pending.complete(const Left(AppFailure(AppErrorCode.database)));
       await tester.pumpAndSettle();
@@ -271,35 +278,59 @@ void main() {
     },
   );
 
-  testWidgets('primary action shares PNG files with nonempty origin', (
-    tester,
-  ) async {
-    await pump(tester);
-    await tapAction(tester, 'statement-whatsapp');
-    expect(launches, isEmpty);
-    expect(shares.single.text, isNull);
-    expect(shares.single.files!.single.mimeType, 'image/png');
-    expect(shares.single.sharePositionOrigin!.isEmpty, isFalse);
-    expect(find.text(l10n(tester).statementShareError), findsNothing);
-    expect(logs, isEmpty);
-  });
+  testWidgets(
+    'primary action shares PNG files, confirms handoff without claiming delivery, and stays on screen',
+    (tester) async {
+      await pump(tester);
+      await tapAction(tester, 'statement-whatsapp');
+      expect(launches, isEmpty);
+      expect(shares.single.text, isNull);
+      expect(shares.single.files!.single.mimeType, 'image/png');
+      expect(shares.single.sharePositionOrigin!.isEmpty, isFalse);
+      expect(find.byType(AppSuccessDialog), findsOneWidget);
+      expect(
+        find.text(l10n(tester).statementShareHandedOffTitle),
+        findsOneWidget,
+      );
+      expect(
+        find.text(l10n(tester).statementShareHandedOffMessage),
+        findsOneWidget,
+      );
+      expect(find.byType(AppErrorDialog), findsNothing);
+      expect(logs, isEmpty);
+
+      await tester.tap(find.text(l10n(tester).ok));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.byType(StatementScreen), findsOneWidget);
+    },
+  );
 
   testWidgets(
-    'sharing disables duplicate actions and dismissal is not an error',
+    'generation and handoff stages use inline shared loader, block duplicate taps, and distinguish cancellation',
     (tester) async {
+      renderer.pendingRender = Completer<void>();
       pendingShare = Completer<ShareResult>();
       await pump(tester);
       final preview = tester.widget(
         find.byKey(const ValueKey('statement-balance')),
       );
+
       await tapAction(tester, 'statement-whatsapp');
-      for (final key in ['statement-whatsapp']) {
-        expect(
-          tester.widget<FilledButton>(find.byKey(ValueKey(key))).onPressed,
-          isNull,
-        );
-      }
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('statement-whatsapp')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(
+        tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+        DaftariLoadingVariant.inline,
+      );
+      expect(find.text(l10n(tester).statementGenerating), findsOneWidget);
       expect(
         tester.widget(find.byKey(const ValueKey('statement-balance'))),
         same(preview),
@@ -310,29 +341,79 @@ void main() {
             .onPressed,
         isNotNull,
       );
+
+      renderer.pendingRender!.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(find.text(l10n(tester).statementHandingOff), findsOneWidget);
+      expect(
+        tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+        DaftariLoadingVariant.inline,
+      );
+
       pendingShare!.complete(
         const ShareResult('', ShareResultStatus.dismissed),
       );
       await tester.pumpAndSettle();
       expect(shares, hasLength(1));
-      expect(find.text(l10n(tester).statementShareError), findsNothing);
+      expect(find.byType(AppErrorDialog), findsNothing);
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.text(l10n(tester).statementShareCancelled), findsOneWidget);
     },
   );
 
-  testWidgets('share and clipboard errors display safe localized feedback', (
-    tester,
-  ) async {
-    shareThrows = true;
-    clipboardThrows = true;
-    await pump(tester);
-    await tapAction(tester, 'statement-whatsapp');
-    expect(find.text(l10n(tester).statementShareError), findsOneWidget);
-    await tester.pump(const Duration(seconds: 5));
-    await tapAction(tester, 'statement-copy');
-    expect(find.text(l10n(tester).statementCopyError), findsOneWidget);
-    expect(copied, isNull);
-    expect(logs.join(), isNot(contains('Private platform error')));
-  });
+  testWidgets(
+    'unavailable share sheet status reports handoff without showing success or error dialog',
+    (tester) async {
+      shareStatus = ShareResultStatus.unavailable;
+      await pump(tester);
+      await tapAction(tester, 'statement-whatsapp');
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.byType(AppErrorDialog), findsNothing);
+      expect(find.text(l10n(tester).statementShareSheetOpened), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'generation failure displays dedicated error dialog and retains snapshot for retry',
+    (tester) async {
+      renderer.throwsError = true;
+      await pump(tester);
+      await tapAction(tester, 'statement-whatsapp');
+      expect(find.byType(AppErrorDialog), findsOneWidget);
+      expect(find.text(l10n(tester).statementGenerateError), findsOneWidget);
+      expect(shares, isEmpty);
+
+      await tester.tap(find.text(l10n(tester).ok));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppErrorDialog), findsNothing);
+
+      renderer.throwsError = false;
+      await tapAction(tester, 'statement-whatsapp');
+      expect(find.byType(AppSuccessDialog), findsOneWidget);
+      expect(shares, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'share handoff and clipboard errors display safe localized feedback',
+    (tester) async {
+      shareThrows = true;
+      clipboardThrows = true;
+      await pump(tester);
+      await tapAction(tester, 'statement-whatsapp');
+      expect(find.byType(AppErrorDialog), findsOneWidget);
+      expect(find.text(l10n(tester).statementShareError), findsOneWidget);
+      await tester.tap(find.text(l10n(tester).ok));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppErrorDialog), findsNothing);
+
+      await tapAction(tester, 'statement-copy');
+      expect(find.text(l10n(tester).statementCopyError), findsOneWidget);
+      expect(copied, isNull);
+      expect(logs.join(), isNot(contains('Private platform error')));
+    },
+  );
 
   testWidgets(
     'real Drift snapshot excludes deleted transactions from preview and copy',

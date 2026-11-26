@@ -35,6 +35,7 @@ class StatementShareService {
   Future<Either<AppFailure, ShareStatementResult>> shareImages({
     required Stream<Uint8List> pages,
     Rect? sharePositionOrigin,
+    VoidCallback? onPrepared,
   }) async {
     if (_busy) return const Left(AppFailure(AppErrorCode.validation));
     _busy = true;
@@ -65,14 +66,15 @@ class StatementShareService {
         files.add(XFile(file.path, mimeType: 'image/png'));
       }
       if (files.isEmpty) throw const UnexpectedException();
+      onPrepared?.call();
       final result = await _systemShare(
         ShareParams(files: files, sharePositionOrigin: sharePositionOrigin),
       );
-      return Right(
-        result.status == ShareResultStatus.dismissed
-            ? ShareStatementResult.dismissed
-            : ShareStatementResult.systemShare,
-      );
+      return Right(switch (result.status) {
+        ShareResultStatus.success => ShareStatementResult.handedOff,
+        ShareResultStatus.dismissed => ShareStatementResult.dismissed,
+        ShareResultStatus.unavailable => ShareStatementResult.systemShare,
+      });
     } catch (_) {
       try {
         if (batch != null && await batch.exists()) {

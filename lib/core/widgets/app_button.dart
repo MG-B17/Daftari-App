@@ -41,7 +41,7 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.outlined => (Colors.transparent, colors.primary),
     };
     final content = isLoading
-        ? AppLoadingIndicator(color: onPressed == null ? null : foreground)
+        ? AppLoadingIndicator(color: colors.primary)
         : Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,

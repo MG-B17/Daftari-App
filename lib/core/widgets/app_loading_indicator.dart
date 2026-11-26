@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../l10n/generated/app_localizations.dart';
-import '../theme/app_spacing.dart';
+import 'daftari_loading.dart';
 
 class AppLoadingIndicator extends StatelessWidget {
-  const AppLoadingIndicator({super.key, this.color});
+  const AppLoadingIndicator({super.key, this.color, this.semanticsLabel});
 
   final Color? color;
+  final String? semanticsLabel;
 
   @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: AppSpacing.icon,
-    child: CircularProgressIndicator(
-      color: color,
-      strokeWidth: 2,
-      semanticsLabel: AppLocalizations.of(context)!.loading,
-    ),
-  );
+  Widget build(BuildContext context) =>
+      DaftariLoading.inline(color: color, semanticsLabel: semanticsLabel);
 }

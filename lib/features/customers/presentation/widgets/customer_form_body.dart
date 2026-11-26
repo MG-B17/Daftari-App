@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/picked_contact.dart';
@@ -26,6 +28,7 @@ class CustomerFormBody extends StatefulWidget {
 }
 
 class _CustomerFormBodyState extends State<CustomerFormBody> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
   late final TextEditingController _notes;
@@ -50,116 +53,137 @@ class _CustomerFormBodyState extends State<CustomerFormBody> {
     super.dispose();
   }
 
+  void _submit() {
+    if (widget.saving) return;
+    FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    context.read<CustomerFormCubit>().save(
+      name: _name.text,
+      phone: _phone.text,
+      notes: _notes.text,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: AppSpacing.customersMaxWidth),
-        child: ListView(
-          children: [
-            Card(
-              color: context.appColors.customersAccentSurface,
-              child: ListTile(
-                leading: Icon(
-                  Icons.menu_book,
-                  color: context.colorScheme.primary,
-                ),
-                title: Text(l10n.customerFormHeading),
-                subtitle: Text(l10n.customerFormDescription),
+    final locale = Localizations.localeOf(context).languageCode;
+    return Form(
+      key: _formKey,
+      child: ListView(
+        children: [
+          Card(
+            key: const ValueKey('customer-form-header-card'),
+            margin: EdgeInsets.zero,
+            color: context.appColors.customersAccentSurface,
+            child: ListTile(
+              leading: Icon(
+                Icons.menu_book,
+                color: context.colorScheme.primary,
               ),
+              title: Text(l10n.customerFormHeading),
+              subtitle: Text(l10n.customerFormDescription),
             ),
-            SizedBox(height: AppSpacing.md),
-            Card(
-              child: Padding(
-                padding: AppSpacing.customersCardPadding,
-                child: OutlinedButton.icon(
-                  onPressed: widget.saving
-                      ? null
-                      : () async {
-                          final result = await context
-                              .read<CustomerFormCubit>()
-                              .pickContact();
-                          if (!context.mounted) return;
-                          result.fold(
-                            (failure) => ScaffoldMessenger.of(context)
-                                .showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      customerErrorMessage(
-                                        context,
-                                        failure.errorCode,
-                                      ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: AppSpacing.customersCardPadding,
+              child: OutlinedButton.icon(
+                onPressed: widget.saving
+                    ? null
+                    : () async {
+                        final result = await context
+                            .read<CustomerFormCubit>()
+                            .pickContact();
+                        if (!context.mounted) return;
+                        result.fold(
+                          (failure) => ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    customerErrorMessage(
+                                      context,
+                                      failure.errorCode,
                                     ),
                                   ),
                                 ),
-                            (contact) {
-                              if (contact != null) {
-                                if (contact.name != null) {
-                                  _name.text = contact.name!;
-                                }
-                                if (contact.phone != null) {
-                                  _phone.text = contact.phone!;
-                                }
+                              ),
+                          (contact) {
+                            if (contact != null) {
+                              if (contact.name != null) {
+                                _name.text = contact.name!;
                               }
-                            },
-                          );
-                        },
-                  icon: const Icon(Icons.contacts_outlined),
-                  label: Text(l10n.customerImport),
-                ),
+                              if (contact.phone != null) {
+                                _phone.text = contact.phone!;
+                              }
+                            }
+                          },
+                        );
+                      },
+                icon: const Icon(Icons.contacts_outlined),
+                label: Text(l10n.customerImport),
               ),
             ),
-            SizedBox(height: AppSpacing.md),
-            Card(
-              child: Padding(
-                padding: AppSpacing.pagePadding,
-                child: Column(
-                  children: [
-                    AppTextField(
-                      key: const ValueKey('customer-name'),
-                      label: l10n.customerName,
-                      controller: _name,
-                      isRequired: true,
-                      hintText: l10n.customerNameHint,
-                      prefix: const Icon(Icons.person_outline),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      key: const ValueKey('customer-phone'),
-                      label: l10n.customerPhone,
-                      controller: _phone,
-                      hintText: l10n.customerPhoneHint,
-                      keyboardType: TextInputType.phone,
-                      prefix: const Icon(Icons.phone_outlined),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      key: const ValueKey('customer-notes'),
-                      label: l10n.customerNotes,
-                      controller: _notes,
-                      hintText: l10n.customerNotesHint,
-                      maxLines: 3,
-                      prefix: const Icon(Icons.edit_note),
-                    ),
-                  ],
-                ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          Card(
+            key: const ValueKey('customer-form-fields-card'),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: AppSpacing.pagePadding,
+              child: Column(
+                children: [
+                  AppTextField(
+                    key: const ValueKey('customer-name'),
+                    label: l10n.customerName,
+                    controller: _name,
+                    isRequired: true,
+                    enabled: !widget.saving,
+                    hintText: l10n.customerNameHint,
+                    textInputAction: TextInputAction.next,
+                    prefix: const Icon(Icons.person_outline),
+                    validator: (value) =>
+                        Validators.customerName(value, locale: locale),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    key: const ValueKey('customer-phone'),
+                    label: l10n.customerPhone,
+                    controller: _phone,
+                    enabled: !widget.saving,
+                    hintText: l10n.customerPhoneHint,
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    prefix: const Icon(Icons.phone_outlined),
+                    validator: (value) =>
+                        Validators.egyptianMobile(value, locale: locale),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    key: const ValueKey('customer-notes'),
+                    label: l10n.customerNotes,
+                    controller: _notes,
+                    enabled: !widget.saving,
+                    hintText: l10n.customerNotesHint,
+                    maxLines: 3,
+                    prefix: const Icon(Icons.edit_note),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: widget.saving
-                  ? null
-                  : () => context.read<CustomerFormCubit>().save(
-                      name: _name.text,
-                      phone: _phone.text,
-                      notes: _notes.text,
-                    ),
-              icon: const Icon(Icons.person_add_alt),
-              label: Text(l10n.customerSave),
-            ),
-          ],
-        ),
+          ),
+          SizedBox(height: AppSpacing.xl),
+          AppButton(
+            key: const ValueKey('customer-save'),
+            label: l10n.customerSave,
+            icon: Icons.person_add_alt,
+            fullWidth: true,
+            isLoading: widget.saving,
+            onPressed: _submit,
+          ),
+        ],
       ),
     );
   }

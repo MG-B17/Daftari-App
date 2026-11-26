@@ -10,23 +10,37 @@ import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/soft_delete_customer_usecase.dart';
 import '../../domain/usecases/watch_customer_details_usecase.dart';
 
+enum CustomerDeleteStatus { idle, pending, succeeded, failed }
+
 class CustomerDetailsState extends Equatable {
   const CustomerDetailsState({
     this.loading = true,
     this.customer,
     this.failure,
-    this.deleting = false,
-    this.deleted = false,
+    this.deleteStatus = CustomerDeleteStatus.idle,
+    this.deleteSubmissionId = 0,
+    this.deleteFailure,
   });
 
   final bool loading;
   final CustomerEntity? customer;
   final AppFailure? failure;
-  final bool deleting;
-  final bool deleted;
+  final CustomerDeleteStatus deleteStatus;
+  final int deleteSubmissionId;
+  final AppFailure? deleteFailure;
+
+  bool get deleting => deleteStatus == CustomerDeleteStatus.pending;
+  bool get deleted => deleteStatus == CustomerDeleteStatus.succeeded;
 
   @override
-  List<Object?> get props => [loading, customer, failure, deleting, deleted];
+  List<Object?> get props => [
+    loading,
+    customer,
+    failure,
+    deleteStatus,
+    deleteSubmissionId,
+    deleteFailure,
+  ];
 }
 
 class CustomerDetailsCubit extends Cubit<CustomerDetailsState> {
@@ -38,42 +52,51 @@ class CustomerDetailsCubit extends Cubit<CustomerDetailsState> {
   StreamSubscription<Either<AppFailure, CustomerEntity?>>? _subscription;
   String? _id;
   int _generation = 0;
+  int _deleteSubmissionId = 0;
 
   Future<void> load(String id) async {
     final generation = ++_generation;
     _id = id;
     await _subscription?.cancel();
     if (isClosed || generation != _generation) return;
-    emit(const CustomerDetailsState());
+    emit(CustomerDetailsState(deleteSubmissionId: _deleteSubmissionId));
     _subscription = _watch(id).listen(
       (result) {
-        if (isClosed || generation != _generation || state.deleted) return;
+        if (isClosed ||
+            generation != _generation ||
+            state.deleted ||
+            state.deleting) {
+          return;
+        }
         result.fold(
           (failure) => emit(
             CustomerDetailsState(
               loading: false,
               customer: state.customer,
               failure: failure,
-              deleting: state.deleting,
+              deleteSubmissionId: _deleteSubmissionId,
             ),
           ),
           (customer) => emit(
             CustomerDetailsState(
               loading: false,
               customer: customer,
-              deleting: state.deleting,
+              deleteSubmissionId: _deleteSubmissionId,
             ),
           ),
         );
       },
       onError: (Object error) {
-        if (!isClosed && generation == _generation && !state.deleted) {
+        if (!isClosed &&
+            generation == _generation &&
+            !state.deleted &&
+            !state.deleting) {
           emit(
             CustomerDetailsState(
               loading: false,
               customer: state.customer,
               failure: const AppFailure(AppErrorCode.unexpected),
-              deleting: state.deleting,
+              deleteSubmissionId: _deleteSubmissionId,
             ),
           );
         }
@@ -83,31 +106,45 @@ class CustomerDetailsCubit extends Cubit<CustomerDetailsState> {
 
   Future<void> delete() async {
     final id = _id;
-    if (id == null || state.customer == null || state.deleting) return;
+    if (id == null ||
+        state.customer == null ||
+        state.deleting ||
+        state.deleted) {
+      return;
+    }
     final generation = _generation;
     emit(
       CustomerDetailsState(
         loading: false,
         customer: state.customer,
-        deleting: true,
+        deleteStatus: CustomerDeleteStatus.pending,
+        deleteSubmissionId: _deleteSubmissionId,
       ),
     );
     final result = await _delete(id);
     if (isClosed || generation != _generation) return;
+    _deleteSubmissionId++;
     result.fold(
       (failure) => emit(
         CustomerDetailsState(
           loading: false,
           customer: state.customer,
-          failure: failure,
+          deleteStatus: CustomerDeleteStatus.failed,
+          deleteSubmissionId: _deleteSubmissionId,
+          deleteFailure: failure,
         ),
       ),
       (deleted) => emit(
         CustomerDetailsState(
           loading: false,
           customer: state.customer,
-          deleted: deleted,
-          failure: deleted ? null : const AppFailure(AppErrorCode.database),
+          deleteStatus: deleted
+              ? CustomerDeleteStatus.succeeded
+              : CustomerDeleteStatus.failed,
+          deleteSubmissionId: _deleteSubmissionId,
+          deleteFailure: deleted
+              ? null
+              : const AppFailure(AppErrorCode.database),
         ),
       ),
     );

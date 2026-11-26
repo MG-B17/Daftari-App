@@ -1,10 +1,6 @@
-import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
-import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/app.dart';
-import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/constants/app_constants.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
@@ -13,16 +9,20 @@ import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/auth/login/presentation/screens/login_screen.dart';
 import 'package:daftariapp/features/auth/sign_up/presentation/screens/register_screen.dart';
 import 'package:daftariapp/features/backup/presentation/screens/backup_screen.dart';
-import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
-import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:daftariapp/features/security/presentation/screens/pin_lock_screen.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
+import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
+import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/settings/presentation/widgets/language_picker_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
@@ -39,6 +39,7 @@ typedef _Harness = ({
   GoRouter router,
   LocalStorageService storage,
   SettingsCubit cubit,
+  ThemeSwitcherCubit themeSwitcher,
   AppLockCubit security,
 });
 
@@ -65,24 +66,36 @@ Future<_Harness> _pumpSettings(
   final cubit = SettingsCubit(
     GetSettingsUseCase(SettingsRepositoryImpl(storage)),
     ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-    ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
     _errorHandler(),
   );
+  final themeSwitcher = ThemeSwitcherCubit(storage, _errorHandler());
   final security = await testAppLock(repository: securityRepository);
   final router = AppRouter.create(localStorage: storage, appLock: security);
   await tester.pumpWidget(
-    DaftariApp(router: router, settingsCubit: cubit, appLockCubit: security),
+    DaftariApp(
+      router: router,
+      settingsCubit: cubit,
+      themeSwitcherCubit: themeSwitcher,
+      appLockCubit: security,
+    ),
   );
   await tester.pumpAndSettle();
   router.go(AppRoutes.settings);
   await tester.pumpAndSettle();
-  return (router: router, storage: storage, cubit: cubit, security: security);
+  return (
+    router: router,
+    storage: storage,
+    cubit: cubit,
+    themeSwitcher: themeSwitcher,
+    security: security,
+  );
 }
 
 Future<void> _dispose(WidgetTester tester, _Harness harness) async {
   await tester.pumpWidget(const SizedBox());
   harness.router.dispose();
   await harness.cubit.close();
+  await harness.themeSwitcher.close();
   await harness.security.close();
 }
 
@@ -143,7 +156,7 @@ void main() {
     final original = security();
     await original.setup('9876');
     await original.setBiometric(true);
-    await harness.cubit.setThemeMode(ThemeMode.dark);
+    await harness.themeSwitcher.setThemeMode(ThemeMode.dark);
     await tester.pumpAndSettle();
     await harness.cubit.setLocaleCode('ar');
     await tester.pumpAndSettle();
@@ -299,12 +312,12 @@ void main() {
     context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.dark);
     expect(harness.storage.themeMode, ThemeMode.dark);
-    expect(harness.cubit.state.themeMode, ThemeMode.dark);
+    expect(harness.themeSwitcher.state.themeMode, ThemeMode.dark);
 
     await tester.tap(find.byKey(const ValueKey('theme-system')));
     await tester.pumpAndSettle();
     expect(harness.storage.themeMode, ThemeMode.system);
-    expect(harness.cubit.state.themeMode, ThemeMode.system);
+    expect(harness.themeSwitcher.state.themeMode, ThemeMode.system);
 
     await tester.tap(find.byKey(const ValueKey('theme-light')));
     await tester.pumpAndSettle();
@@ -312,12 +325,7 @@ void main() {
     expect(Theme.of(context).brightness, Brightness.light);
     expect(harness.storage.themeMode, ThemeMode.light);
 
-    final restarted = SettingsCubit(
-      GetSettingsUseCase(SettingsRepositoryImpl(harness.storage)),
-      ChangeLanguageUseCase(SettingsRepositoryImpl(harness.storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(harness.storage)),
-      _errorHandler(),
-    );
+    final restarted = ThemeSwitcherCubit(harness.storage, _errorHandler());
     expect(restarted.state.themeMode, ThemeMode.light);
     await restarted.close();
     await _dispose(tester, harness);
@@ -371,7 +379,6 @@ void main() {
     final restarted = SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(harness.storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(harness.storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(harness.storage)),
       _errorHandler(),
     );
     expect(restarted.state.localeCode, 'ar');
@@ -392,13 +399,18 @@ void main() {
     final cubit = SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
       handler,
     );
+    final themeSwitcher = ThemeSwitcherCubit(storage, handler);
     final router = AppRouter.create();
     final security = await testAppLock();
     await tester.pumpWidget(
-      DaftariApp(router: router, settingsCubit: cubit, appLockCubit: security),
+      DaftariApp(
+        router: router,
+        settingsCubit: cubit,
+        themeSwitcherCubit: themeSwitcher,
+        appLockCubit: security,
+      ),
     );
     await tester.pumpAndSettle();
     router.go(AppRoutes.settings);
@@ -409,14 +421,15 @@ void main() {
     await tester.pumpAndSettle();
     final context = tester.element(find.byType(SettingsScreen));
     expect(Theme.of(context).brightness, Brightness.light);
-    expect(cubit.state.hasError, isTrue);
-    expect(cubit.state.themeMode, ThemeMode.light);
+    expect(themeSwitcher.state.hasError, isTrue);
+    expect(themeSwitcher.state.themeMode, ThemeMode.light);
     expect(find.text(context.l10n.settingsStorageError), findsOneWidget);
     verify(() => handler.handle(any())).called(1);
 
     await tester.pumpWidget(const SizedBox());
     router.dispose();
     await cubit.close();
+    await themeSwitcher.close();
     await security.close();
   });
 

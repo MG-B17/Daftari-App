@@ -23,6 +23,12 @@ abstract final class AppTheme {
   static ThemeData get light => _cached(Brightness.light);
   static ThemeData get dark => _cached(Brightness.dark);
 
+  static ThemeData resolve(ThemeMode mode, Brightness platformBrightness) =>
+      mode == ThemeMode.dark ||
+          (mode == ThemeMode.system && platformBrightness == Brightness.dark)
+      ? dark
+      : light;
+
   static (double, double, double) _currentMetrics() {
     final util = ScreenUtil();
     return (util.scaleWidth, util.scaleHeight, util.scaleText);

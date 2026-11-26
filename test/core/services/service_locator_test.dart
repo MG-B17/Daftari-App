@@ -1,4 +1,5 @@
 import 'package:daftariapp/core/database/app_database.dart';
+import 'package:daftariapp/core/di/di.dart' as core_di;
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
@@ -6,6 +7,7 @@ import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
@@ -15,6 +17,18 @@ import 'package:daftariapp/features/backup/domain/repositories/backup_scheduler.
 import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.dart';
 import 'package:daftariapp/features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import 'package:daftariapp/features/backup/presentation/cubit/backup_cubit.dart';
+import 'package:daftariapp/features/customers/di/customers_di.dart';
+import 'package:daftariapp/features/customers/domain/repositories/customer_repository.dart';
+import 'package:daftariapp/features/customers/domain/usecases/create_customer_usecase.dart';
+import 'package:daftariapp/features/customers/domain/usecases/pick_contact_usecase.dart';
+import 'package:daftariapp/features/customers/domain/usecases/soft_delete_customer_usecase.dart';
+import 'package:daftariapp/features/customers/domain/usecases/update_customer_usecase.dart';
+import 'package:daftariapp/features/customers/domain/usecases/watch_customer_details_usecase.dart';
+import 'package:daftariapp/features/customers/domain/usecases/watch_customers_usecase.dart';
+import 'package:daftariapp/features/customers/presentation/cubit/customer_details_cubit.dart';
+import 'package:daftariapp/features/customers/presentation/cubit/customer_form_cubit.dart';
+import 'package:daftariapp/features/customers/presentation/cubit/customers_list_cubit.dart';
+import 'package:daftariapp/features/dashboard/di/dashboard_di.dart';
 import 'package:daftariapp/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:daftariapp/features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import 'package:daftariapp/features/dashboard/presentation/cubit/dashboard_cubit.dart';
@@ -22,18 +36,23 @@ import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.d
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
+import 'package:daftariapp/core/services/widget_image_exporter.dart';
 import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
+import 'package:daftariapp/features/statements/di/statements_di.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
 import 'package:daftariapp/features/statements/domain/repositories/statement_repository.dart';
 import 'package:daftariapp/features/statements/domain/usecases/get_customer_statement_usecase.dart';
 import 'package:daftariapp/features/statements/presentation/cubit/statement_cubit.dart';
+import 'package:daftariapp/features/statements/presentation/services/statement_image_renderer.dart';
+import 'package:daftariapp/features/transactions/di/transactions_di.dart';
 import 'package:daftariapp/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/create_transaction_usecase.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/edit_transaction_usecase.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/get_transaction_by_id_usecase.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/soft_delete_transaction_usecase.dart';
 import 'package:daftariapp/features/transactions/domain/usecases/watch_customer_transactions_usecase.dart';
+import 'package:daftariapp/features/transactions/presentation/cubit/customer_transactions_cubit.dart';
+import 'package:daftariapp/features/transactions/presentation/cubit/transaction_form_cubit.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -43,6 +62,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:daftariapp/features/security/data/services/secure_storage_service.dart';
 import 'package:daftariapp/features/security/data/services/biometric_auth_service.dart';
 import 'package:daftariapp/features/security/domain/repositories/security_repository.dart';
+import 'package:daftariapp/features/search/domain/repositories/search_repository.dart';
+import 'package:daftariapp/features/search/domain/usecases/watch_search_customers_usecase.dart';
+import 'package:daftariapp/features/search/presentation/cubit/search_cubit.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 
 void main() {
@@ -70,18 +92,27 @@ void main() {
         sl<ErrorHandler>(),
         sl<GoRouter>(),
         sl<SettingsCubit>(),
+        sl<ThemeSwitcherCubit>(),
         sl<SettingsRepository>(),
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
-        sl<ChangeThemeUseCase>(),
         sl<TransactionRepository>(),
         sl<CreateTransactionUseCase>(),
         sl<EditTransactionUseCase>(),
         sl<GetTransactionByIdUseCase>(),
         sl<SoftDeleteTransactionUseCase>(),
         sl<WatchCustomerTransactionsUseCase>(),
+        sl<CustomerRepository>(),
+        sl<WatchCustomersUseCase>(),
+        sl<WatchCustomerDetailsUseCase>(),
+        sl<CreateCustomerUseCase>(),
+        sl<UpdateCustomerUseCase>(),
+        sl<SoftDeleteCustomerUseCase>(),
+        sl<PickContactUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<SearchRepository>(),
+        sl<WatchSearchCustomersUseCase>(),
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
@@ -112,18 +143,27 @@ void main() {
         sl<ErrorHandler>(),
         sl<GoRouter>(),
         sl<SettingsCubit>(),
+        sl<ThemeSwitcherCubit>(),
         sl<SettingsRepository>(),
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
-        sl<ChangeThemeUseCase>(),
         sl<TransactionRepository>(),
         sl<CreateTransactionUseCase>(),
         sl<EditTransactionUseCase>(),
         sl<GetTransactionByIdUseCase>(),
         sl<SoftDeleteTransactionUseCase>(),
         sl<WatchCustomerTransactionsUseCase>(),
+        sl<CustomerRepository>(),
+        sl<WatchCustomersUseCase>(),
+        sl<WatchCustomerDetailsUseCase>(),
+        sl<CreateCustomerUseCase>(),
+        sl<UpdateCustomerUseCase>(),
+        sl<SoftDeleteCustomerUseCase>(),
+        sl<PickContactUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<SearchRepository>(),
+        sl<WatchSearchCustomersUseCase>(),
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
@@ -197,19 +237,69 @@ void main() {
   });
 
   test(
-    'dashboard cubit is factory scoped and starts without a watch',
+    'customers DI registers lazy singletons and factory cubits via core di',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       sl.registerSingleton<AppDatabase>(database);
-      await configureDependencies();
+      await core_di.configureDependencies();
+
+      final repository = sl<CustomerRepository>();
+      final watchAll = sl<WatchCustomersUseCase>();
+      final watchDetails = sl<WatchCustomerDetailsUseCase>();
+      final create = sl<CreateCustomerUseCase>();
+      final update = sl<UpdateCustomerUseCase>();
+      final softDelete = sl<SoftDeleteCustomerUseCase>();
+      final pickContact = sl<PickContactUseCase>();
+
+      registerCustomersDependencies(sl);
+      expect(sl<CustomerRepository>(), same(repository));
+      expect(sl<WatchCustomersUseCase>(), same(watchAll));
+      expect(sl<WatchCustomerDetailsUseCase>(), same(watchDetails));
+      expect(sl<CreateCustomerUseCase>(), same(create));
+      expect(sl<UpdateCustomerUseCase>(), same(update));
+      expect(sl<SoftDeleteCustomerUseCase>(), same(softDelete));
+      expect(sl<PickContactUseCase>(), same(pickContact));
+
+      final firstList = sl<CustomersListCubit>();
+      final secondList = sl<CustomersListCubit>();
+      final firstForm = sl<CustomerFormCubit>();
+      final secondForm = sl<CustomerFormCubit>();
+      final firstDetails = sl<CustomerDetailsCubit>();
+      final secondDetails = sl<CustomerDetailsCubit>();
+      addTearDown(firstList.close);
+      addTearDown(secondList.close);
+      addTearDown(firstForm.close);
+      addTearDown(secondForm.close);
+      addTearDown(firstDetails.close);
+      addTearDown(secondDetails.close);
+      expect(firstList, isNot(same(secondList)));
+      expect(firstForm, isNot(same(secondForm)));
+      expect(firstDetails, isNot(same(secondDetails)));
+    },
+  );
+
+  test(
+    'dashboard DI registers lazy singletons and factory cubit via core di',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      final repository = sl<DashboardRepository>();
+      final useCase = sl<WatchDashboardSummaryUseCase>();
+      registerDashboardDependencies(sl);
+      expect(sl<DashboardRepository>(), same(repository));
+      expect(sl<WatchDashboardSummaryUseCase>(), same(useCase));
+
       final first = sl<DashboardCubit>();
       final second = sl<DashboardCubit>();
+      addTearDown(first.close);
+      addTearDown(second.close);
       expect(first, isNot(same(second)));
       expect(first.state, const DashboardState());
       expect(second.state, const DashboardState());
-      await first.close();
-      await second.close();
     },
   );
 
@@ -226,6 +316,93 @@ void main() {
       expect(sl<CustomerDao>(), same(database.customerDao));
       expect(sl<TransactionDao>(), same(database.transactionDao));
       expect(sl<BackupDao>(), same(database.backupDao));
+    },
+  );
+
+  test(
+    'search cubit is factory scoped and exposed through core di entry point',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      expect(core_di.sl, same(sl));
+      final first = sl<SearchCubit>();
+      final second = sl<SearchCubit>();
+      addTearDown(first.close);
+      addTearDown(second.close);
+
+      expect(first, isNot(same(second)));
+      first.setQuery('010');
+      expect(second.state.query, isEmpty);
+    },
+  );
+
+  test(
+    'transactions DI registers lazy singletons and factory cubits via core di',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      final repository = sl<TransactionRepository>();
+      final watch = sl<WatchCustomerTransactionsUseCase>();
+      final getById = sl<GetTransactionByIdUseCase>();
+      final create = sl<CreateTransactionUseCase>();
+      final edit = sl<EditTransactionUseCase>();
+      final softDelete = sl<SoftDeleteTransactionUseCase>();
+
+      registerTransactionsDependencies(sl);
+      expect(sl<TransactionRepository>(), same(repository));
+      expect(sl<WatchCustomerTransactionsUseCase>(), same(watch));
+      expect(sl<GetTransactionByIdUseCase>(), same(getById));
+      expect(sl<CreateTransactionUseCase>(), same(create));
+      expect(sl<EditTransactionUseCase>(), same(edit));
+      expect(sl<SoftDeleteTransactionUseCase>(), same(softDelete));
+
+      final firstForm = sl<TransactionFormCubit>();
+      final secondForm = sl<TransactionFormCubit>();
+      final firstHistory = sl<CustomerTransactionsCubit>();
+      final secondHistory = sl<CustomerTransactionsCubit>();
+      addTearDown(firstForm.close);
+      addTearDown(secondForm.close);
+      addTearDown(firstHistory.close);
+      addTearDown(secondHistory.close);
+      expect(firstForm, isNot(same(secondForm)));
+      expect(firstHistory, isNot(same(secondHistory)));
+    },
+  );
+
+  test(
+    'statements DI registers lazy singletons and factory cubit via core di',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      final exporter = sl<WidgetImageExporter>();
+      final repository = sl<StatementRepository>();
+      final useCase = sl<GetCustomerStatementUseCase>();
+      final renderer = sl<StatementImageRenderer>();
+      final shareService = sl<StatementShareService>();
+
+      registerStatementsDependencies(sl);
+      expect(sl<WidgetImageExporter>(), same(exporter));
+      expect(sl<StatementRepository>(), same(repository));
+      expect(sl<GetCustomerStatementUseCase>(), same(useCase));
+      expect(sl<StatementImageRenderer>(), same(renderer));
+      expect(sl<StatementShareService>(), same(shareService));
+
+      final first = sl<StatementCubit>();
+      final second = sl<StatementCubit>();
+      addTearDown(first.close);
+      addTearDown(second.close);
+      expect(first, isNot(same(second)));
+      expect(first.state, const StatementState());
+      expect(second.state, const StatementState());
     },
   );
 }

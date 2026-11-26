@@ -28,6 +28,8 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import '../../features/layout/presentation/screens/app_layout_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/search/presentation/cubit/search_cubit.dart';
+import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/security/presentation/cubit/app_lock_cubit.dart';
 import '../../features/security/domain/entities/pin_flow_mode.dart';
@@ -74,6 +76,7 @@ abstract final class AppRouter {
     VerifyEmailCubit Function()? createVerifyEmailCubit,
     UpdatePasswordCubit Function()? createUpdatePasswordCubit,
     RestoreCubit Function()? createRestoreCubit,
+    SearchCubit Function()? createSearchCubit,
   }) => GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: _combineListenables(appLock, authSessionCubit),
@@ -288,6 +291,18 @@ abstract final class AppRouter {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.search,
+        name: AppRoutes.searchName,
+        pageBuilder: (context, state) => SlideRightTransitionPage(
+          key: state.pageKey,
+          child: BlocProvider(
+            create: (_) =>
+                (createSearchCubit?.call() ?? sl<SearchCubit>())..load(),
+            child: const SearchScreen(),
+          ),
+        ),
       ),
       GoRoute(
         path: AppRoutes.transactionNew,

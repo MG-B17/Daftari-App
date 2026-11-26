@@ -170,6 +170,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get ok => 'OK';
+
+  @override
+  String get feedbackSuccessLabel => 'Success';
+
+  @override
+  String get feedbackErrorLabel => 'Error';
+
+  @override
   String get confirm => 'Confirm';
 
   @override
@@ -401,6 +410,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customersNoResults => 'No customers match your search.';
 
   @override
+  String get searchTitle => 'Search';
+
+  @override
+  String get searchClear => 'Clear search';
+
+  @override
+  String get searchEmptyTitle => 'Search customers';
+
+  @override
+  String get searchEmptyMessage =>
+      'Type a customer name or phone number to find their account.';
+
+  @override
+  String get searchNoResultsHint =>
+      'Check the name or phone number and try again.';
+
+  @override
+  String get searchIllustrationLabel => 'Search illustration';
+
+  @override
+  String get searchNoResultsIllustrationLabel => 'No matching customers found';
+
+  @override
   String get customersTotalDebt => 'Total debt';
 
   @override
@@ -483,6 +515,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get customerCreatedTitle => 'Customer added';
+
+  @override
+  String get customerCreatedMessage =>
+      'The customer has been saved to your ledger.';
+
+  @override
+  String get customerUpdatedTitle => 'Customer updated';
+
+  @override
+  String get customerUpdatedMessage =>
+      'The customer\'s details have been updated.';
+
+  @override
+  String get customerDeletedTitle => 'Customer deleted';
+
+  @override
+  String get customerDeletedMessage =>
+      'The customer has been removed from your active list while preserving their ledger history.';
+
+  @override
   String get transactionNew => 'New transaction';
 
   @override
@@ -544,6 +597,44 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get transactionSaveError =>
       'Could not save the transaction. Check the customer and amount, then try again.';
+
+  @override
+  String get transactionDeleteError =>
+      'Could not delete the transaction. Please try again.';
+
+  @override
+  String get transactionCustomerRequired => 'Choose a customer';
+
+  @override
+  String get transactionAmountRequired => 'Enter an amount greater than zero';
+
+  @override
+  String get transactionCreditAddedTitle => 'Credit recorded';
+
+  @override
+  String get transactionCreditAddedMessage =>
+      'The credit entry has been saved to the ledger.';
+
+  @override
+  String get transactionPaymentAddedTitle => 'Payment recorded';
+
+  @override
+  String get transactionPaymentAddedMessage =>
+      'The payment has been saved to the ledger.';
+
+  @override
+  String get transactionUpdatedTitle => 'Transaction updated';
+
+  @override
+  String get transactionUpdatedMessage =>
+      'The transaction changes have been saved to the ledger.';
+
+  @override
+  String get transactionDeletedTitle => 'Transaction deleted';
+
+  @override
+  String get transactionDeletedMessage =>
+      'The transaction has been removed while preserving its audit history.';
 
   @override
   String get transactionNotFound => 'Transaction not found.';
@@ -651,8 +742,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load the statement. Please try again.';
 
   @override
+  String get statementGenerateError =>
+      'Could not prepare the statement image. Please try again.';
+
+  @override
   String get statementShareError =>
       'Could not share the statement. Please try again.';
+
+  @override
+  String get statementGenerating => 'Preparing statement...';
+
+  @override
+  String get statementHandingOff => 'Opening share options...';
+
+  @override
+  String get statementShareHandedOffTitle => 'Statement handed off';
+
+  @override
+  String get statementShareHandedOffMessage =>
+      'The statement image was handed off to the app you chose. Complete sending it there.';
+
+  @override
+  String get statementShareSheetOpened =>
+      'Statement was handed off to the system share sheet.';
+
+  @override
+  String get statementShareCancelled => 'Sharing cancelled.';
 
   @override
   String get statementCopyError =>

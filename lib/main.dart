@@ -10,6 +10,7 @@ import 'package:marionette_flutter/marionette_flutter.dart';
 import 'app.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/app_logger.dart';
+import 'core/theme/theme_switcher_cubit.dart';
 import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'features/backup/data/services/backup_background_worker.dart';
 import 'features/backup/presentation/cubit/backup_cubit.dart';
@@ -37,6 +38,7 @@ Future<void> main({bool useMarionetteBinding = false}) async {
     app: DaftariApp(
       router: sl<GoRouter>(),
       settingsCubit: sl<SettingsCubit>(),
+      themeSwitcherCubit: sl<ThemeSwitcherCubit>(),
       appLockCubit: sl<AppLockCubit>(),
       authSessionCubit: sl<AuthSessionCubit>(),
       backupCubit: backupCubit,

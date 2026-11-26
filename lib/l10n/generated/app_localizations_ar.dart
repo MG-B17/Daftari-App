@@ -169,6 +169,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'إعادة المحاولة';
 
   @override
+  String get ok => 'حسناً';
+
+  @override
+  String get feedbackSuccessLabel => 'تم بنجاح';
+
+  @override
+  String get feedbackErrorLabel => 'خطأ';
+
+  @override
   String get confirm => 'تأكيد';
 
   @override
@@ -397,6 +406,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customersNoResults => 'لا يوجد عملاء يطابقون البحث.';
 
   @override
+  String get searchTitle => 'بحث';
+
+  @override
+  String get searchClear => 'مسح البحث';
+
+  @override
+  String get searchEmptyTitle => 'ابحث عن العملاء';
+
+  @override
+  String get searchEmptyMessage =>
+      'اكتب اسم العميل أو رقم الهاتف للوصول إلى حسابه.';
+
+  @override
+  String get searchNoResultsHint =>
+      'تأكد من الاسم أو رقم الهاتف وحاول مرة أخرى.';
+
+  @override
+  String get searchIllustrationLabel => 'رسم توضيحي للبحث';
+
+  @override
+  String get searchNoResultsIllustrationLabel =>
+      'لم يتم العثور على عملاء مطابقين';
+
+  @override
   String get customersTotalDebt => 'مجموع الديون';
 
   @override
@@ -476,6 +509,25 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get customerCreatedTitle => 'تمت إضافة العميل';
+
+  @override
+  String get customerCreatedMessage => 'تم حفظ بيانات العميل في دفترك.';
+
+  @override
+  String get customerUpdatedTitle => 'تم تحديث العميل';
+
+  @override
+  String get customerUpdatedMessage => 'تم حفظ التعديلات على بيانات العميل.';
+
+  @override
+  String get customerDeletedTitle => 'تم حذف العميل';
+
+  @override
+  String get customerDeletedMessage =>
+      'تمت إزالة العميل من القائمة النشطة مع الاحتفاظ بسجل حسابه.';
+
+  @override
   String get transactionNew => 'حركة جديدة';
 
   @override
@@ -535,6 +587,41 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get transactionSaveError =>
       'تعذر حفظ الحركة. تحقق من العميل والمبلغ وحاول مرة أخرى.';
+
+  @override
+  String get transactionDeleteError => 'تعذر حذف الحركة. حاول مرة أخرى.';
+
+  @override
+  String get transactionCustomerRequired => 'اختر العميل';
+
+  @override
+  String get transactionAmountRequired => 'أدخل مبلغًا أكبر من الصفر';
+
+  @override
+  String get transactionCreditAddedTitle => 'تم تسجيل الدين';
+
+  @override
+  String get transactionCreditAddedMessage => 'تم حفظ حركة الآجل في الدفتر.';
+
+  @override
+  String get transactionPaymentAddedTitle => 'تم تسجيل السداد';
+
+  @override
+  String get transactionPaymentAddedMessage => 'تم حفظ دفعة السداد في الدفتر.';
+
+  @override
+  String get transactionUpdatedTitle => 'تم تعديل الحركة';
+
+  @override
+  String get transactionUpdatedMessage =>
+      'تم حفظ التعديلات على الحركة في الدفتر.';
+
+  @override
+  String get transactionDeletedTitle => 'تم حذف الحركة';
+
+  @override
+  String get transactionDeletedMessage =>
+      'تم حذف الحركة مع الاحتفاظ بسجل التدقيق.';
 
   @override
   String get transactionNotFound => 'الحركة غير موجودة.';
@@ -641,7 +728,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get statementLoadError => 'تعذر تحميل كشف الحساب. حاول مرة أخرى.';
 
   @override
+  String get statementGenerateError =>
+      'تعذر تجهيز صورة كشف الحساب. حاول مرة أخرى.';
+
+  @override
   String get statementShareError => 'تعذرت مشاركة كشف الحساب. حاول مرة أخرى.';
+
+  @override
+  String get statementGenerating => 'جارٍ تجهيز كشف الحساب...';
+
+  @override
+  String get statementHandingOff => 'جارٍ فتح خيارات المشاركة...';
+
+  @override
+  String get statementShareHandedOffTitle => 'تم تسليم كشف الحساب للمشاركة';
+
+  @override
+  String get statementShareHandedOffMessage =>
+      'تم تسليم صورة كشف الحساب للتطبيق الذي اخترته. أكمل الإرسال من داخل التطبيق.';
+
+  @override
+  String get statementShareSheetOpened =>
+      'تم تسليم كشف الحساب إلى خيارات المشاركة في النظام.';
+
+  @override
+  String get statementShareCancelled => 'تم إلغاء المشاركة.';
 
   @override
   String get statementCopyError => 'تعذر نسخ كشف الحساب. حاول مرة أخرى.';

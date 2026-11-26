@@ -33,6 +33,12 @@ abstract final class AppSpacing {
   static double get xl => 32.r;
   static double get icon => 24.r;
   static double get stateIcon => 56.r;
+  static double get loadingInlineSize => icon;
+  static double get loadingScreenSize => 96.r;
+  static double get feedbackDialogVisualSize => 120.r;
+  static double get feedbackDialogBadgeSize => 80.r;
+  static double get feedbackDialogIconSize => 44.r;
+  static double get feedbackDialogMaxWidth => 360.w.clamp(280, 400).toDouble();
   static double get controlHeight => 48.r;
   static double get radius => 12.r;
   static BorderRadius get borderRadius => BorderRadius.circular(radius);
@@ -114,6 +120,10 @@ abstract final class AppSpacing {
   static double get customersIllustrationRadius =>
       customersIllustrationSize / 2;
   static EdgeInsets get customersCardPadding => EdgeInsets.all(compact);
+  static double get searchIllustrationSize => 160.r;
+  static double get searchTriggerHeight => controlHeight;
+  static EdgeInsetsDirectional get searchTriggerPadding =>
+      EdgeInsetsDirectional.symmetric(horizontal: compact, vertical: compact);
   static double get navigationMaxWidth => 480.r;
   static EdgeInsets get navigationMargin => EdgeInsets.fromLTRB(md, sm, md, sm);
   static EdgeInsets get navigationItemPadding =>
@@ -122,7 +132,6 @@ abstract final class AppSpacing {
   static double get navigationIndicatorStretch => 24.r;
   static double get navigationElevation => 4;
 
-  static double get dashboardMaxWidth => 520.w.clamp(0, 520).toDouble();
   static double get dashboardAvatarRadius => 22.r;
   static double get dashboardActivityIconBox => 40.r;
   static double get dashboardTipIconBox => 44.r;

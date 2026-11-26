@@ -8,9 +8,11 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/routing/app_routes.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/money_utils.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../cubit/customers_list_cubit.dart';
 import '../customer_error_message.dart';
+import 'customer_list_card.dart';
 
 class CustomersListBody extends StatelessWidget {
   const CustomersListBody({super.key});
@@ -25,7 +27,7 @@ class CustomersListBody extends StatelessWidget {
       final visible = state.visible;
       final total = state.totalDebt;
       if (state.loading) {
-        return const Center(child: CircularProgressIndicator());
+        return const DaftariLoading.screen();
       }
       if (state.failure != null) {
         return Center(
@@ -42,137 +44,119 @@ class CustomersListBody extends StatelessWidget {
         );
       }
 
-      return Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: AppSpacing.customersMaxWidth),
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: AppSpacing.pagePadding,
-                  child: Column(
-                    children: [
-                      TextField(
-                        key: const ValueKey('customers-search'),
-                        onChanged: context.read<CustomersListCubit>().setQuery,
-                        decoration: InputDecoration(
-                          hintText: l10n.customersSearch,
-                          prefixIcon: const Icon(Icons.search),
-                          fillColor: context.colorScheme.surface,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.md),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            for (final filter in CustomerFilter.values) ...[
-                              ChoiceChip(
-                                key: ValueKey(
-                                  'customers-filter-${filter.name}',
-                                ),
-                                label: Text(switch (filter) {
-                                  CustomerFilter.all =>
-                                    '${l10n.customersAll} ${customers.length}',
-                                  CustomerFilter.owes =>
-                                    '${l10n.customersOwes} $owing',
-                                  CustomerFilter.settled =>
-                                    '${l10n.customersSettled} ${state.settled}',
-                                }),
-                                selected: state.filter == filter,
-                                onSelected: (_) => context
-                                    .read<CustomersListCubit>()
-                                    .setFilter(filter),
-                              ),
-                              SizedBox(width: AppSpacing.sm),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: PopupMenuButton<CustomerSort>(
-                          key: const ValueKey('customers-sort'),
-                          tooltip: l10n.customersSort,
-                          icon: const Icon(Icons.sort),
-                          onSelected: context
-                              .read<CustomersListCubit>()
-                              .setSort,
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                              value: CustomerSort.nameAsc,
-                              child: Text(l10n.customersSortName),
-                            ),
-                            PopupMenuItem(
-                              value: CustomerSort.balanceDesc,
-                              child: Text(l10n.customersSortBalance),
-                            ),
-                            PopupMenuItem(
-                              value: CustomerSort.recent,
-                              child: Text(l10n.customersSortRecent),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: AppSpacing.pagePadding,
+              child: Column(
+                children: [
+                  _SearchTrigger(
+                    onTap: () => context.pushNamed(AppRoutes.searchName),
                   ),
-                ),
-              ),
-              if (customers.isEmpty)
-                SliverToBoxAdapter(
-                  child: _EmptyCustomers(
-                    onAdd: () => context.push(AppRoutes.customerNew),
-                  ),
-                )
-              else ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: AppSpacing.pagePadding,
+                  SizedBox(height: AppSpacing.md),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            l10n.customersCount(customers.length, owing),
+                        for (final filter in CustomerFilter.values) ...[
+                          ChoiceChip(
+                            key: ValueKey('customers-filter-${filter.name}'),
+                            label: Text(switch (filter) {
+                              CustomerFilter.all =>
+                                '${l10n.customersAll} ${customers.length}',
+                              CustomerFilter.owes =>
+                                '${l10n.customersOwes} $owing',
+                              CustomerFilter.settled =>
+                                '${l10n.customersSettled} ${state.settled}',
+                            }),
+                            selected: state.filter == filter,
+                            onSelected: (_) => context
+                                .read<CustomersListCubit>()
+                                .setFilter(filter),
                           ),
+                          SizedBox(width: AppSpacing.sm),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: PopupMenuButton<CustomerSort>(
+                      key: const ValueKey('customers-sort'),
+                      tooltip: l10n.customersSort,
+                      icon: const Icon(Icons.sort),
+                      onSelected: context.read<CustomersListCubit>().setSort,
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                          value: CustomerSort.nameAsc,
+                          child: Text(l10n.customersSortName),
                         ),
-                        Flexible(
-                          child: Text(
-                            '${l10n.customersTotalDebt}: ${_money(context, total)}',
-                            textAlign: TextAlign.end,
-                            style: context.textTheme.labelMedium?.copyWith(
-                              color: context.colorScheme.error,
-                            ),
-                          ),
+                        PopupMenuItem(
+                          value: CustomerSort.balanceDesc,
+                          child: Text(l10n.customersSortBalance),
+                        ),
+                        PopupMenuItem(
+                          value: CustomerSort.recent,
+                          child: Text(l10n.customersSortRecent),
                         ),
                       ],
                     ),
                   ),
-                ),
-                if (visible.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Center(child: Text(l10n.customersNoResults)),
-                  )
-                else
-                  SliverPadding(
-                    padding: AppSpacing.pagePadding,
-                    sliver: SliverList.separated(
-                      itemCount: visible.length,
-                      separatorBuilder: (_, _) =>
-                          SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) => StaggeredListItem(
-                        key: ValueKey(visible[index].id),
-                        index: index,
-                        child: _CustomerCard(customer: visible[index]),
+                ],
+              ),
+            ),
+          ),
+          if (customers.isEmpty)
+            SliverToBoxAdapter(
+              child: _EmptyCustomers(
+                onAdd: () => context.push(AppRoutes.customerNew),
+              ),
+            )
+          else ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: AppSpacing.pagePadding,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(l10n.customersCount(customers.length, owing)),
+                    ),
+                    Flexible(
+                      child: Text(
+                        '${l10n.customersTotalDebt}: ${_money(context, total)}',
+                        textAlign: TextAlign.end,
+                        style: context.textTheme.labelMedium?.copyWith(
+                          color: context.colorScheme.error,
+                        ),
                       ),
                     ),
-                  ),
-                SliverToBoxAdapter(
-                  child: SizedBox(height: AppSpacing.customersListBottomInset),
+                  ],
                 ),
-              ],
-            ],
-          ),
-        ),
+              ),
+            ),
+            if (visible.isEmpty)
+              SliverToBoxAdapter(
+                child: Center(child: Text(l10n.customersNoResults)),
+              )
+            else
+              SliverPadding(
+                padding: AppSpacing.pagePadding,
+                sliver: SliverList.separated(
+                  itemCount: visible.length,
+                  separatorBuilder: (_, _) => SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) => StaggeredListItem(
+                    key: ValueKey(visible[index].id),
+                    index: index,
+                    child: CustomerListCard(customer: visible[index]),
+                  ),
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.customersListBottomInset),
+            ),
+          ],
+        ],
       );
     },
   );
@@ -183,63 +167,53 @@ String _money(BuildContext context, int value) => MoneyUtils.formatPiasters(
   locale: Localizations.localeOf(context).languageCode,
 );
 
-class _CustomerCard extends StatelessWidget {
-  const _CustomerCard({required this.customer});
-  final CustomerEntity customer;
+class _SearchTrigger extends StatelessWidget {
+  const _SearchTrigger({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final owes = customer.balancePiasters > 0;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: AppSpacing.borderRadius,
-        onTap: () => context.pushNamed(
-          AppRoutes.customerDetailsName,
-          pathParameters: {'id': customer.id},
+    final hint = context.l10n.customersSearch;
+    return Semantics(
+      button: true,
+      label: hint,
+      child: Material(
+        key: const ValueKey('customers-search'),
+        color: context.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadius,
+          side: BorderSide(color: context.colorScheme.outline),
         ),
-        child: Padding(
-          padding: AppSpacing.customersCardPadding,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: AppSpacing.customersAvatarRadius,
-                backgroundColor: context.appColors.customersAccentSurface,
-                child: Text(customer.name.characters.first),
-              ),
-              SizedBox(width: AppSpacing.compact),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(customer.name, style: context.textTheme.titleSmall),
-                    Text(
-                      customer.phone ?? '',
-                      textDirection: TextDirection.ltr,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        child: InkWell(
+          borderRadius: AppSpacing.borderRadius,
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: AppSpacing.searchTriggerHeight,
+            ),
+            child: Padding(
+              padding: AppSpacing.searchTriggerPadding,
+              child: Row(
                 children: [
-                  Text(
-                    _money(context, customer.balancePiasters),
-                    style: context.textTheme.titleSmall?.copyWith(
-                      color: owes
-                          ? context.colorScheme.error
-                          : context.appColors.paymentColor,
-                    ),
+                  Icon(
+                    Icons.search,
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
-                  Text(
-                    owes
-                        ? context.l10n.customersOwes
-                        : context.l10n.customersSettled,
+                  SizedBox(width: AppSpacing.compact),
+                  Expanded(
+                    child: Text(
+                      hint,
+                      style: context.textTheme.bodyLarge?.copyWith(
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -255,6 +229,8 @@ class _EmptyCustomers extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: AppSpacing.pagePadding,
     child: Card(
+      key: const ValueKey('customers-empty-card'),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: AppSpacing.pagePadding,
         child: Column(
