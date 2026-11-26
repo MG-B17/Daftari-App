@@ -2144,17 +2144,47 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Please try again.'**
   String get authErrorGeneric;
 
+  /// No description provided for @authPasswordUpdatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated'**
+  String get authPasswordUpdatedTitle;
+
   /// No description provided for @authPasswordUpdated.
   ///
   /// In en, this message translates to:
   /// **'Password updated successfully.'**
   String get authPasswordUpdated;
 
+  /// No description provided for @authResendSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification link sent'**
+  String get authResendSentTitle;
+
   /// No description provided for @authEmailNotVerifiedYet.
   ///
   /// In en, this message translates to:
   /// **'Your email is not verified yet. Open the link in your inbox and try again.'**
   String get authEmailNotVerifiedYet;
+
+  /// No description provided for @authSignedInTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get authSignedInTitle;
+
+  /// No description provided for @authSignedInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You are signed in to your account.'**
+  String get authSignedInSuccess;
+
+  /// No description provided for @authSignedOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get authSignedOutTitle;
 
   /// No description provided for @authSignedOutSuccess.
   ///

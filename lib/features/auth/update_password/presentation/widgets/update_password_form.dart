@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -36,28 +38,27 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
   }
 
   Future<void> _submit() async {
+    final cubit = context.read<UpdatePasswordCubit?>();
+    final sessionBusy = context.read<AuthSessionCubit?>()?.state.busy ?? false;
+    if (cubit == null || cubit.state.busy || sessionBusy) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final cubit = context.read<UpdatePasswordCubit?>();
-    if (cubit == null) return;
-    final updated = await cubit.updatePassword(_password.text);
-    if (!updated || !mounted) return;
-    if (cubit.shouldNavigateToLoginAfterUpdate) {
-      GoRouter.maybeOf(context)?.go(AppRoutes.authLogin);
-    }
+    await cubit.updatePassword(_password.text);
   }
 
   Future<void> _backToLogin() async {
     final updateCubit = context.read<UpdatePasswordCubit?>();
+    final sessionCubit = context.read<AuthSessionCubit?>();
+    if ((updateCubit?.state.busy ?? false) ||
+        (sessionCubit?.state.busy ?? false)) {
+      return;
+    }
     if (updateCubit != null) {
       final cancelled = await updateCubit.cancelRecovery();
       if (!cancelled || !mounted) return;
-    } else {
-      final sessionCubit = context.read<AuthSessionCubit?>();
-      if (sessionCubit != null) {
-        final cancelled = await sessionCubit.cancelPasswordRecovery();
-        if (!cancelled || !mounted) return;
-      }
+    } else if (sessionCubit != null) {
+      final cancelled = await sessionCubit.cancelPasswordRecovery();
+      if (!cancelled || !mounted) return;
     }
     GoRouter.maybeOf(context)?.go(AppRoutes.authLogin);
   }
@@ -67,9 +68,14 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final cubit = context.read<UpdatePasswordCubit?>();
-    final updateBusy = context.select<UpdatePasswordCubit?, bool>(
-      (updateCubit) => updateCubit?.state.busy ?? false,
-    );
+    final pendingAction = context
+        .select<UpdatePasswordCubit?, UpdatePasswordPendingAction>(
+          (updateCubit) =>
+              updateCubit?.state.pendingAction ??
+              UpdatePasswordPendingAction.none,
+        );
+    final isUpdating = pendingAction == UpdatePasswordPendingAction.update;
+    final updateBusy = pendingAction != UpdatePasswordPendingAction.none;
     final sessionBusy = context.select<AuthSessionCubit?, bool>(
       (sessionCubit) => sessionCubit?.state.busy ?? false,
     );
@@ -92,6 +98,7 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
                   label: l10n.authNewPassword,
                   hintText: l10n.authPasswordHint,
                   isRequired: true,
+                  enabled: !busy,
                   controller: _password,
                   textInputAction: TextInputAction.next,
                   validator: (value) =>
@@ -103,6 +110,7 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
                   label: l10n.authConfirmPassword,
                   hintText: l10n.authPasswordHint,
                   isRequired: true,
+                  enabled: !busy,
                   controller: _confirmPassword,
                   textInputAction: TextInputAction.done,
                   validator: (value) => value != _password.text
@@ -113,8 +121,8 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
                 AppButton(
                   label: l10n.authUpdatePasswordAction,
                   fullWidth: true,
-                  isLoading: busy,
-                  onPressed: _submit,
+                  isLoading: isUpdating,
+                  onPressed: busy ? null : _submit,
                 ),
               ],
             ),
@@ -133,10 +141,15 @@ class _UpdatePasswordFormState extends State<UpdatePasswordForm> {
             previous.feedbackId != current.feedbackId &&
             current.feedback != AuthFeedback.none,
         listener: (context, state) =>
-            showAuthFeedbackSnackBar(context, state.feedback),
+            unawaited(showAuthFeedbackDialog(context, state.feedback)),
         child: form,
       );
     }
-    return AuthFlowListener(navigateOnVerifyEmail: false, child: form);
+    return AuthFlowListener(
+      navigateOnVerifyEmail: false,
+      onPasswordUpdatedWithoutSession: () =>
+          GoRouter.maybeOf(context)?.go(AppRoutes.authLogin),
+      child: form,
+    );
   }
 }

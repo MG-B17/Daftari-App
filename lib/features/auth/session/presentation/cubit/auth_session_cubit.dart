@@ -81,7 +81,10 @@ class AuthSessionCubit extends Cubit<AuthSessionState>
     )) {
       return false;
     }
-    _applyOutcome(outcome);
+    _applyOutcome(
+      outcome,
+      successFeedback: outcome is AuthSignedIn ? AuthFeedback.signedIn : null,
+    );
     return true;
   }
 
@@ -118,6 +121,9 @@ class AuthSessionCubit extends Cubit<AuthSessionState>
     AuthAccountMismatchBlocked() ||
     AuthEmailVerificationRequired() => nonSignOutEpoch == _nonSignOutEpoch,
   };
+
+  bool hasUnconsumedFeedback(int feedbackId) =>
+      feedbackId > _consumedFeedbackId;
 
   bool consumeFeedback(int feedbackId) {
     if (feedbackId <= _consumedFeedbackId) return false;
@@ -600,6 +606,7 @@ class AuthSessionCubit extends Cubit<AuthSessionState>
           ),
         );
       case AuthLinkConfirmationRequired(:final user, :final hasLocalData):
+        final feedback = successFeedback ?? AuthFeedback.none;
         emit(
           state.copyWith(
             initialized: initialized,
@@ -609,7 +616,10 @@ class AuthSessionCubit extends Cubit<AuthSessionState>
             clearPendingEmail: true,
             pendingHasLocalData: hasLocalData,
             passwordRecoveryPending: recoveryPending,
-            feedback: AuthFeedback.none,
+            feedback: feedback,
+            feedbackId: feedback == AuthFeedback.none
+                ? state.feedbackId
+                : state.feedbackId + 1,
           ),
         );
       case AuthAccountMismatchBlocked():

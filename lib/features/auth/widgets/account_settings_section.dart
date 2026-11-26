@@ -7,6 +7,7 @@ import '../../../core/routing/app_routes.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_confirmation_dialog.dart';
+import '../../../core/widgets/daftari_loading.dart';
 import '../../settings/presentation/widgets/settings_icon_box.dart';
 import '../../settings/presentation/widgets/settings_section_card.dart';
 import '../session/domain/entities/auth_user.dart';
@@ -18,6 +19,8 @@ class AccountSettingsSection extends StatelessWidget {
   const AccountSettingsSection({super.key});
 
   Future<void> _signOut(BuildContext context) async {
+    final cubit = context.read<AuthSessionCubit?>();
+    if (cubit != null && cubit.state.busy) return;
     final l10n = context.l10n;
     final confirmed = await AppConfirmationDialog.show(
       context,
@@ -145,12 +148,14 @@ class _AccountSectionBody extends StatelessWidget {
                 leading: const SettingsIconBox(icon: Icons.logout_rounded),
                 title: Text(l10n.authAccountSignOut),
                 subtitle: Text(l10n.authAccountLocalOnly),
-                trailing: Icon(
-                  Directionality.of(context) == TextDirection.rtl
-                      ? Icons.chevron_left_rounded
-                      : Icons.chevron_right_rounded,
-                  size: AppSpacing.iconSmall,
-                ),
+                trailing: busy
+                    ? const DaftariLoading.inline()
+                    : Icon(
+                        Directionality.of(context) == TextDirection.rtl
+                            ? Icons.chevron_left_rounded
+                            : Icons.chevron_right_rounded,
+                        size: AppSpacing.iconSmall,
+                      ),
                 onTap: busy ? null : onSignOut,
               ),
             )

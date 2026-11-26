@@ -1135,11 +1135,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorGeneric => 'Something went wrong. Please try again.';
 
   @override
+  String get authPasswordUpdatedTitle => 'Password updated';
+
+  @override
   String get authPasswordUpdated => 'Password updated successfully.';
+
+  @override
+  String get authResendSentTitle => 'Verification link sent';
 
   @override
   String get authEmailNotVerifiedYet =>
       'Your email is not verified yet. Open the link in your inbox and try again.';
+
+  @override
+  String get authSignedInTitle => 'Signed in';
+
+  @override
+  String get authSignedInSuccess => 'You are signed in to your account.';
+
+  @override
+  String get authSignedOutTitle => 'Signed out';
 
   @override
   String get authSignedOutSuccess =>

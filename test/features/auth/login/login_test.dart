@@ -524,7 +524,7 @@ void main() {
 
         expect(session.state.status, AuthStatus.authenticated);
         expect(backend.linkedUserId, _screenUser.id);
-        expect(authSnackBarText(l10n.authLinkedSuccess), findsOneWidget);
+        expect(find.text(l10n.authLinkedSuccess), findsOneWidget);
       },
     );
 

@@ -134,7 +134,7 @@ void main() {
 
       await tester.enterText(authFormField('auth-update-confirm'), 'password1');
       await tapAuthButton(tester, l10n.authUpdatePasswordAction);
-      expect(authSnackBarText(l10n.authPasswordUpdated), findsOneWidget);
+      expect(find.text(l10n.authPasswordUpdated), findsOneWidget);
     });
   });
 }

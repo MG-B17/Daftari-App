@@ -1115,11 +1115,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get authErrorGeneric => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
+  String get authPasswordUpdatedTitle => 'تم تحديث كلمة المرور';
+
+  @override
   String get authPasswordUpdated => 'تم تحديث كلمة المرور بنجاح.';
+
+  @override
+  String get authResendSentTitle => 'تم إرسال رابط التأكيد';
 
   @override
   String get authEmailNotVerifiedYet =>
       'لم يتم تأكيد بريدك الإلكتروني بعد. افتح الرابط في بريدك وحاول مرة أخرى.';
+
+  @override
+  String get authSignedInTitle => 'تم تسجيل الدخول';
+
+  @override
+  String get authSignedInSuccess => 'تم تسجيل الدخول إلى حسابك.';
+
+  @override
+  String get authSignedOutTitle => 'تم تسجيل الخروج';
 
   @override
   String get authSignedOutSuccess =>

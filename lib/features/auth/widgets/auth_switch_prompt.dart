@@ -13,7 +13,7 @@ class AuthSwitchPrompt extends StatelessWidget {
 
   final String prompt;
   final String action;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => Wrap(

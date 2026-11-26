@@ -6,7 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 class AuthOfflineFooter extends StatelessWidget {
   const AuthOfflineFooter({super.key, required this.onContinue});
 
-  final VoidCallback onContinue;
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) => Column(

@@ -105,10 +105,11 @@ void main() {
 
       await tapAuthButton(tester, l10n.authResendVerification);
       expect(backend.resendCalls, 1);
-      expect(authSnackBarText(l10n.authResendSent), findsOneWidget);
+      expect(find.text(l10n.authResendSent), findsOneWidget);
+      await tapAuthButton(tester, l10n.ok);
 
       await tapAuthButton(tester, l10n.authVerifiedAction);
-      expect(authSnackBarText(l10n.authEmailNotVerifiedYet), findsOneWidget);
+      expect(find.text(l10n.authEmailNotVerifiedYet), findsOneWidget);
     });
   });
 }
