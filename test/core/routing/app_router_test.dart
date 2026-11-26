@@ -8,9 +8,9 @@ import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:daftariapp/features/search/presentation/screens/search_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
-import 'package:daftariapp/features/customers/presentation/screens/customers_list_screen.dart';
 import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:daftariapp/features/dashboard/presentation/widgets/top_debtor_row.dart';
 import 'package:daftariapp/features/dashboard/presentation/widgets/recent_activity_row.dart';
@@ -183,7 +183,9 @@ void main() {
     router.dispose();
   });
 
-  testWidgets('root search action opens the customers route', (tester) async {
+  testWidgets('root search action opens the search route and pops back', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({'onboardingCompleted': true});
     final storage = LocalStorageService(await SharedPreferences.getInstance());
     final cubit = SettingsCubit(
@@ -196,18 +198,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
     expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.byType(CustomersListScreen), findsNothing);
+    expect(find.byType(SearchScreen), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('dashboard-search')));
-    await tester.pumpAndSettle();
-    expect(find.byType(CustomersListScreen), findsOneWidget);
-    expect(router.routeInformationProvider.value.uri.path, AppRoutes.customers);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(SearchScreen), findsOneWidget);
+    expect(
+      router.routerDelegate.currentConfiguration.last.matchedLocation,
+      AppRoutes.search,
+    );
+    expect(find.byKey(const ValueKey('navigation-0')), findsNothing);
 
-    router.go(AppRoutes.root);
+    router.pop();
     await tester.pumpAndSettle();
-    expect(find.byType(CustomersListScreen), findsNothing);
+    expect(find.byType(SearchScreen), findsNothing);
     expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
+    expect(
+      router.routerDelegate.currentConfiguration.last.matchedLocation,
+      AppRoutes.root,
+    );
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 1));

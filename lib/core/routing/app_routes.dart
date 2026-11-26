@@ -17,6 +17,8 @@ abstract final class AppRoutes {
   static const settingsRestoreName = 'settings-restore';
   static const customers = '/customers';
   static const customersName = 'customers';
+  static const search = '/search';
+  static const searchName = 'search';
   static const customerNew = '/customers/new';
   static const customerNewName = 'customer-new';
   static const customerDetails = '/customers/:id';

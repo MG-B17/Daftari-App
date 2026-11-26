@@ -103,11 +103,22 @@ void main() {
             find.byKey(const ValueKey('navigation-1')),
           );
           expect(fab.bottom, lessThan(nav.top));
-          await tester.enterText(
-            find.byKey(const ValueKey('customers-search')),
-            '010123',
+          await tester.ensureVisible(
+            find.byKey(const ValueKey('customers-filter-settled')),
           );
           await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('customers-filter-settled')),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .widget<ChoiceChip>(
+                  find.byKey(const ValueKey('customers-filter-settled')),
+                )
+                .selected,
+            isTrue,
+          );
           await tester.tap(find.byKey(const ValueKey('navigation-2')));
           await tester.pumpAndSettle();
           expect(
@@ -117,11 +128,14 @@ void main() {
           expect(find.byIcon(Icons.settings), findsOneWidget);
           await tester.tap(find.byKey(const ValueKey('navigation-1')));
           await tester.pumpAndSettle();
-          final field = find.descendant(
-            of: find.byKey(const ValueKey('customers-search')),
-            matching: find.byType(EditableText),
+          expect(
+            tester
+                .widget<ChoiceChip>(
+                  find.byKey(const ValueKey('customers-filter-settled')),
+                )
+                .selected,
+            isTrue,
           );
-          expect(tester.widget<EditableText>(field).controller.text, '010123');
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pump(const Duration(milliseconds: 1));
           router.dispose();

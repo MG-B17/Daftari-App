@@ -11,6 +11,7 @@ import '../../../../core/utils/money_utils.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../cubit/customers_list_cubit.dart';
 import '../customer_error_message.dart';
+import 'customer_list_card.dart';
 
 class CustomersListBody extends StatelessWidget {
   const CustomersListBody({super.key});
@@ -52,14 +53,8 @@ class CustomersListBody extends StatelessWidget {
                   padding: AppSpacing.pagePadding,
                   child: Column(
                     children: [
-                      TextField(
-                        key: const ValueKey('customers-search'),
-                        onChanged: context.read<CustomersListCubit>().setQuery,
-                        decoration: InputDecoration(
-                          hintText: l10n.customersSearch,
-                          prefixIcon: const Icon(Icons.search),
-                          fillColor: context.colorScheme.surface,
-                        ),
+                      _SearchTrigger(
+                        onTap: () => context.pushNamed(AppRoutes.searchName),
                       ),
                       SizedBox(height: AppSpacing.md),
                       SingleChildScrollView(
@@ -162,7 +157,7 @@ class CustomersListBody extends StatelessWidget {
                       itemBuilder: (context, index) => StaggeredListItem(
                         key: ValueKey(visible[index].id),
                         index: index,
-                        child: _CustomerCard(customer: visible[index]),
+                        child: CustomerListCard(customer: visible[index]),
                       ),
                     ),
                   ),
@@ -183,63 +178,53 @@ String _money(BuildContext context, int value) => MoneyUtils.formatPiasters(
   locale: Localizations.localeOf(context).languageCode,
 );
 
-class _CustomerCard extends StatelessWidget {
-  const _CustomerCard({required this.customer});
-  final CustomerEntity customer;
+class _SearchTrigger extends StatelessWidget {
+  const _SearchTrigger({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final owes = customer.balancePiasters > 0;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: AppSpacing.borderRadius,
-        onTap: () => context.pushNamed(
-          AppRoutes.customerDetailsName,
-          pathParameters: {'id': customer.id},
+    final hint = context.l10n.customersSearch;
+    return Semantics(
+      button: true,
+      label: hint,
+      child: Material(
+        key: const ValueKey('customers-search'),
+        color: context.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadius,
+          side: BorderSide(color: context.colorScheme.outline),
         ),
-        child: Padding(
-          padding: AppSpacing.customersCardPadding,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: AppSpacing.customersAvatarRadius,
-                backgroundColor: context.appColors.customersAccentSurface,
-                child: Text(customer.name.characters.first),
-              ),
-              SizedBox(width: AppSpacing.compact),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(customer.name, style: context.textTheme.titleSmall),
-                    Text(
-                      customer.phone ?? '',
-                      textDirection: TextDirection.ltr,
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        child: InkWell(
+          borderRadius: AppSpacing.borderRadius,
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: AppSpacing.searchTriggerHeight,
+            ),
+            child: Padding(
+              padding: AppSpacing.searchTriggerPadding,
+              child: Row(
                 children: [
-                  Text(
-                    _money(context, customer.balancePiasters),
-                    style: context.textTheme.titleSmall?.copyWith(
-                      color: owes
-                          ? context.colorScheme.error
-                          : context.appColors.paymentColor,
-                    ),
+                  Icon(
+                    Icons.search,
+                    color: context.colorScheme.onSurfaceVariant,
                   ),
-                  Text(
-                    owes
-                        ? context.l10n.customersOwes
-                        : context.l10n.customersSettled,
+                  SizedBox(width: AppSpacing.compact),
+                  Expanded(
+                    child: Text(
+                      hint,
+                      style: context.textTheme.bodyLarge?.copyWith(
+                        color: context.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

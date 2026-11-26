@@ -101,6 +101,7 @@ flutter:
     - assets/lottie/ERROR Animation.json
     - assets/lottie/Debt_Paid_Status_Animation_v1.json
     - assets/lottie/Transaction_Added_Ledger_Entry_v1.json
+    - assets/lottie/Not Found.json
   fonts:
     - family: Cairo
       fonts:

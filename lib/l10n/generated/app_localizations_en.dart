@@ -410,6 +410,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customersNoResults => 'No customers match your search.';
 
   @override
+  String get searchTitle => 'Search';
+
+  @override
+  String get searchClear => 'Clear search';
+
+  @override
+  String get searchEmptyTitle => 'Search customers';
+
+  @override
+  String get searchEmptyMessage =>
+      'Type a customer name or phone number to find their account.';
+
+  @override
+  String get searchNoResultsHint =>
+      'Check the name or phone number and try again.';
+
+  @override
+  String get searchIllustrationLabel => 'Search illustration';
+
+  @override
+  String get searchNoResultsIllustrationLabel => 'No matching customers found';
+
+  @override
   String get customersTotalDebt => 'Total debt';
 
   @override

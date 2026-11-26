@@ -1,4 +1,5 @@
 import 'package:daftariapp/core/database/app_database.dart';
+import 'package:daftariapp/core/di/di.dart' as core_di;
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
@@ -43,6 +44,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:daftariapp/features/security/data/services/secure_storage_service.dart';
 import 'package:daftariapp/features/security/data/services/biometric_auth_service.dart';
 import 'package:daftariapp/features/security/domain/repositories/security_repository.dart';
+import 'package:daftariapp/features/search/domain/repositories/search_repository.dart';
+import 'package:daftariapp/features/search/domain/usecases/watch_search_customers_usecase.dart';
+import 'package:daftariapp/features/search/presentation/cubit/search_cubit.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 
 void main() {
@@ -82,6 +86,8 @@ void main() {
         sl<WatchCustomerTransactionsUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<SearchRepository>(),
+        sl<WatchSearchCustomersUseCase>(),
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
@@ -124,6 +130,8 @@ void main() {
         sl<WatchCustomerTransactionsUseCase>(),
         sl<DashboardRepository>(),
         sl<WatchDashboardSummaryUseCase>(),
+        sl<SearchRepository>(),
+        sl<WatchSearchCustomersUseCase>(),
         sl<StatementRepository>(),
         sl<GetCustomerStatementUseCase>(),
         sl<StatementShareService>(),
@@ -226,6 +234,26 @@ void main() {
       expect(sl<CustomerDao>(), same(database.customerDao));
       expect(sl<TransactionDao>(), same(database.transactionDao));
       expect(sl<BackupDao>(), same(database.backupDao));
+    },
+  );
+
+  test(
+    'search cubit is factory scoped and exposed through core di entry point',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      expect(core_di.sl, same(sl));
+      final first = sl<SearchCubit>();
+      final second = sl<SearchCubit>();
+      addTearDown(first.close);
+      addTearDown(second.close);
+
+      expect(first, isNot(same(second)));
+      first.setQuery('010');
+      expect(second.state.query, isEmpty);
     },
   );
 }

@@ -138,15 +138,12 @@ void main() {
   );
 
   blocTest<CustomersListCubit, CustomersListState>(
-    'searches normalized digits, filters and sorts without changing totals',
+    'filters and sorts without changing totals',
     build: listCubit,
     act: (cubit) async {
       await cubit.load();
       repository.customers.add(Right([_alice, _bob]));
       await Future<void>.delayed(Duration.zero);
-      cubit.setQuery('٠١١');
-      expect(cubit.state.visible, [_bob]);
-      cubit.setQuery('');
       cubit.setFilter(CustomerFilter.settled);
       expect(cubit.state.visible, [_alice]);
       cubit.setFilter(CustomerFilter.owes);
@@ -163,8 +160,6 @@ void main() {
     expect: () => [
       const CustomersListState(),
       isA<CustomersListState>().having((s) => s.customers.length, 'count', 2),
-      isA<CustomersListState>().having((s) => s.query, 'query', '٠١١'),
-      isA<CustomersListState>().having((s) => s.query, 'query', ''),
       isA<CustomersListState>().having(
         (s) => s.filter,
         'filter',

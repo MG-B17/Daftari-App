@@ -848,6 +848,48 @@ abstract class AppLocalizations {
   /// **'No customers match your search.'**
   String get customersNoResults;
 
+  /// No description provided for @searchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchTitle;
+
+  /// No description provided for @searchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get searchClear;
+
+  /// No description provided for @searchEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search customers'**
+  String get searchEmptyTitle;
+
+  /// No description provided for @searchEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a customer name or phone number to find their account.'**
+  String get searchEmptyMessage;
+
+  /// No description provided for @searchNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the name or phone number and try again.'**
+  String get searchNoResultsHint;
+
+  /// No description provided for @searchIllustrationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search illustration'**
+  String get searchIllustrationLabel;
+
+  /// No description provided for @searchNoResultsIllustrationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching customers found'**
+  String get searchNoResultsIllustrationLabel;
+
   /// No description provided for @customersTotalDebt.
   ///
   /// In en, this message translates to:

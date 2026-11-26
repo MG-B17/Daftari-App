@@ -66,8 +66,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     actions: [
       IconButton(
         key: const ValueKey('dashboard-search'),
-        tooltip: context.l10n.customersTitle,
-        onPressed: () => context.go(AppRoutes.customers),
+        tooltip: context.l10n.searchTitle,
+        onPressed: () => context.pushNamed(AppRoutes.searchName),
         icon: const Icon(Icons.search),
       ),
     ],

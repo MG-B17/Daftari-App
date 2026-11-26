@@ -406,6 +406,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customersNoResults => 'لا يوجد عملاء يطابقون البحث.';
 
   @override
+  String get searchTitle => 'بحث';
+
+  @override
+  String get searchClear => 'مسح البحث';
+
+  @override
+  String get searchEmptyTitle => 'ابحث عن العملاء';
+
+  @override
+  String get searchEmptyMessage =>
+      'اكتب اسم العميل أو رقم الهاتف للوصول إلى حسابه.';
+
+  @override
+  String get searchNoResultsHint =>
+      'تأكد من الاسم أو رقم الهاتف وحاول مرة أخرى.';
+
+  @override
+  String get searchIllustrationLabel => 'رسم توضيحي للبحث';
+
+  @override
+  String get searchNoResultsIllustrationLabel =>
+      'لم يتم العثور على عملاء مطابقين';
+
+  @override
   String get customersTotalDebt => 'مجموع الديون';
 
   @override

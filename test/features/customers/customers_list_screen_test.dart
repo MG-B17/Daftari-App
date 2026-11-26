@@ -12,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customers_list_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
+import 'package:daftariapp/features/search/presentation/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -41,35 +42,26 @@ void main() {
         );
         expect(find.byIcon(Icons.mic), findsNothing);
         expect(find.byKey(const ValueKey('customers-search')), findsOneWidget);
+        expect(find.byType(StaggeredListItem), findsWidgets);
+        await tester.tap(find.byKey(const ValueKey('customers-search')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.byType(SearchScreen), findsOneWidget);
         await tester.enterText(
-          find.byKey(const ValueKey('customers-search')),
+          find.byKey(const ValueKey('search-input')),
           '٠١٠١٢٣٤٥٦٧٨',
         );
-        await tester.pumpAndSettle();
-        await tester.ensureVisible(
-          find.byKey(const ValueKey('customers-search')),
-        );
-        await tester.pumpAndSettle();
-        await tester.testTextInput.receiveAction(TextInputAction.done);
-        await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.text('01012345678'),
-          150,
-          scrollable: find
-              .descendant(
-                of: find.byType(CustomScrollView),
-                matching: find.byType(Scrollable),
-              )
-              .first,
-        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
         expect(find.text('01012345678'), findsOneWidget);
         expect(find.byType(StaggeredListItem), findsWidgets);
         expect(find.text('01124567890'), findsNothing);
         await tester.enterText(
-          find.byKey(const ValueKey('customers-search')),
+          find.byKey(const ValueKey('search-input')),
           'no match',
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 350));
         expect(
           find.text(
             locale.languageCode == 'ar'
@@ -92,8 +84,9 @@ void main() {
     router.go(AppRoutes.root);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('dashboard-search')));
-    await tester.pumpAndSettle();
-    expect(find.byType(CustomersListScreen), findsOneWidget);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byType(SearchScreen), findsOneWidget);
     for (final path in [
       '/customers/new',
       '/customers/1',
