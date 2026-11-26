@@ -13,22 +13,37 @@ import '../../domain/usecases/update_customer_usecase.dart';
 import '../../domain/usecases/watch_customer_details_usecase.dart';
 import '../../domain/usecases/pick_contact_usecase.dart';
 
+enum CustomerFormSubmissionStatus { idle, pending, succeeded, failed }
+
 class CustomerFormState extends Equatable {
   const CustomerFormState({
     this.loading = false,
     this.customer,
     this.failure,
-    this.saving = false,
-    this.saved = false,
+    this.submissionStatus = CustomerFormSubmissionStatus.idle,
+    this.submissionId = 0,
+    this.submissionFailure,
   });
+
   final bool loading;
   final CustomerEntity? customer;
   final AppFailure? failure;
-  final bool saving;
-  final bool saved;
+  final CustomerFormSubmissionStatus submissionStatus;
+  final int submissionId;
+  final AppFailure? submissionFailure;
+
+  bool get saving => submissionStatus == CustomerFormSubmissionStatus.pending;
+  bool get saved => submissionStatus == CustomerFormSubmissionStatus.succeeded;
 
   @override
-  List<Object?> get props => [loading, customer, failure, saving, saved];
+  List<Object?> get props => [
+    loading,
+    customer,
+    failure,
+    submissionStatus,
+    submissionId,
+    submissionFailure,
+  ];
 }
 
 class CustomerFormCubit extends Cubit<CustomerFormState> {
@@ -40,6 +55,7 @@ class CustomerFormCubit extends Cubit<CustomerFormState> {
   final PickContactUseCase _pick;
   StreamSubscription<Either<AppFailure, CustomerEntity?>>? _subscription;
   int _generation = 0;
+  int _submissionId = 0;
   String? _id;
 
   Future<void> load(String id) async {
@@ -47,7 +63,7 @@ class CustomerFormCubit extends Cubit<CustomerFormState> {
     _id = id;
     await _subscription?.cancel();
     if (isClosed || generation != _generation) return;
-    emit(const CustomerFormState(loading: true));
+    emit(CustomerFormState(loading: true, submissionId: _submissionId));
     _subscription = _watch(id).listen(
       (result) {
         if (isClosed ||
@@ -58,16 +74,27 @@ class CustomerFormCubit extends Cubit<CustomerFormState> {
         }
         result.fold(
           (failure) => emit(
-            CustomerFormState(failure: failure, customer: state.customer),
+            CustomerFormState(
+              failure: failure,
+              customer: state.customer,
+              submissionId: _submissionId,
+            ),
           ),
-          (customer) => emit(CustomerFormState(customer: customer)),
+          (customer) => emit(
+            CustomerFormState(customer: customer, submissionId: _submissionId),
+          ),
         );
       },
       onError: (Object error) {
-        if (!isClosed && generation == _generation) {
+        if (!isClosed &&
+            generation == _generation &&
+            !state.saved &&
+            !state.saving) {
           emit(
-            const CustomerFormState(
-              failure: AppFailure(AppErrorCode.unexpected),
+            CustomerFormState(
+              customer: state.customer,
+              failure: const AppFailure(AppErrorCode.unexpected),
+              submissionId: _submissionId,
             ),
           );
         }
@@ -82,17 +109,40 @@ class CustomerFormCubit extends Cubit<CustomerFormState> {
     String? phone,
     String? notes,
   }) async {
-    if (state.saving) return;
+    if (state.saving ||
+        state.saved ||
+        (_id != null && state.customer == null)) {
+      return;
+    }
     final generation = _generation;
-    emit(CustomerFormState(customer: state.customer, saving: true));
+    emit(
+      CustomerFormState(
+        customer: state.customer,
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+        submissionId: _submissionId,
+      ),
+    );
     final id = _id;
     if (id == null) {
       final result = await _create(name: name, phone: phone, notes: notes);
       if (isClosed || generation != _generation) return;
+      _submissionId++;
       result.fold(
-        (failure) =>
-            emit(CustomerFormState(customer: state.customer, failure: failure)),
-        (_) => emit(CustomerFormState(customer: state.customer, saved: true)),
+        (failure) => emit(
+          CustomerFormState(
+            customer: state.customer,
+            submissionStatus: CustomerFormSubmissionStatus.failed,
+            submissionId: _submissionId,
+            submissionFailure: failure,
+          ),
+        ),
+        (_) => emit(
+          CustomerFormState(
+            customer: state.customer,
+            submissionStatus: CustomerFormSubmissionStatus.succeeded,
+            submissionId: _submissionId,
+          ),
+        ),
       );
     } else {
       final result = await _update(
@@ -102,14 +152,26 @@ class CustomerFormCubit extends Cubit<CustomerFormState> {
         notes: notes,
       );
       if (isClosed || generation != _generation) return;
+      _submissionId++;
       result.fold(
-        (failure) =>
-            emit(CustomerFormState(customer: state.customer, failure: failure)),
+        (failure) => emit(
+          CustomerFormState(
+            customer: state.customer,
+            submissionStatus: CustomerFormSubmissionStatus.failed,
+            submissionId: _submissionId,
+            submissionFailure: failure,
+          ),
+        ),
         (updated) => emit(
           CustomerFormState(
             customer: state.customer,
-            saved: updated,
-            failure: updated ? null : const AppFailure(AppErrorCode.database),
+            submissionStatus: updated
+                ? CustomerFormSubmissionStatus.succeeded
+                : CustomerFormSubmissionStatus.failed,
+            submissionId: _submissionId,
+            submissionFailure: updated
+                ? null
+                : const AppFailure(AppErrorCode.database),
           ),
         ),
       );

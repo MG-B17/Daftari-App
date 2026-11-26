@@ -49,6 +49,8 @@ class _Repository implements CustomerRepository {
   Either<AppFailure, CustomerEntity> createResult = Right(_alice);
   Either<AppFailure, bool> updateResult = const Right(true);
   Either<AppFailure, PickedContact?> contactResult = const Right(null);
+  Completer<Either<AppFailure, CustomerEntity>>? pendingCreate;
+  Completer<Either<AppFailure, bool>>? pendingUpdate;
   int creates = 0;
   int updates = 0;
   String? updatedId;
@@ -71,6 +73,7 @@ class _Repository implements CustomerRepository {
     String? notes,
   }) async {
     creates++;
+    if (pendingCreate != null) return pendingCreate!.future;
     return createResult;
   }
 
@@ -83,6 +86,7 @@ class _Repository implements CustomerRepository {
   }) async {
     updates++;
     updatedId = id;
+    if (pendingUpdate != null) return pendingUpdate!.future;
     return updateResult;
   }
 
@@ -230,8 +234,13 @@ void main() {
     build: formCubit,
     act: (cubit) => cubit.save(name: 'Alice', phone: '01012345678'),
     expect: () => [
-      const CustomerFormState(saving: true),
-      const CustomerFormState(saved: true),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.succeeded,
+        submissionId: 1,
+      ),
     ],
     verify: (_) => expect(repository.creates, 1),
   );
@@ -241,21 +250,71 @@ void main() {
     build: formCubit,
     act: (cubit) => cubit.save(name: '', phone: 'bad'),
     expect: () => [
-      const CustomerFormState(saving: true),
-      const CustomerFormState(failure: _validationFailure),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.failed,
+        submissionId: 1,
+        submissionFailure: _validationFailure,
+      ),
     ],
     verify: (_) => expect(repository.creates, 0),
   );
 
   blocTest<CustomerFormCubit, CustomerFormState>(
-    'surfaces create failures',
+    'surfaces create failures and increments submissionId on retry',
     setUp: () => repository.createResult = const Left(_databaseFailure),
     build: formCubit,
-    act: (cubit) => cubit.save(name: 'Alice'),
+    act: (cubit) async {
+      await cubit.save(name: 'Alice');
+      await cubit.save(name: 'Alice');
+    },
     expect: () => [
-      const CustomerFormState(saving: true),
-      const CustomerFormState(failure: _databaseFailure),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.failed,
+        submissionId: 1,
+        submissionFailure: _databaseFailure,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+        submissionId: 1,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.failed,
+        submissionId: 2,
+        submissionFailure: _databaseFailure,
+      ),
     ],
+  );
+
+  blocTest<CustomerFormCubit, CustomerFormState>(
+    'ignores duplicate create submissions while pending or after success',
+    setUp: () {
+      repository.pendingCreate =
+          Completer<Either<AppFailure, CustomerEntity>>();
+    },
+    build: formCubit,
+    act: (cubit) async {
+      final first = cubit.save(name: 'Alice');
+      final second = cubit.save(name: 'Alice');
+      repository.pendingCreate!.complete(Right(_alice));
+      await Future.wait([first, second]);
+      await cubit.save(name: 'Alice');
+    },
+    expect: () => [
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      const CustomerFormState(
+        submissionStatus: CustomerFormSubmissionStatus.succeeded,
+        submissionId: 1,
+      ),
+    ],
+    verify: (_) => expect(repository.creates, 1),
   );
 
   blocTest<CustomerFormCubit, CustomerFormState>(
@@ -270,8 +329,15 @@ void main() {
     expect: () => [
       const CustomerFormState(loading: true),
       CustomerFormState(customer: _alice),
-      CustomerFormState(customer: _alice, saving: true),
-      CustomerFormState(customer: _alice, saved: true),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.succeeded,
+        submissionId: 1,
+      ),
     ],
     verify: (_) {
       expect(repository.updates, 1);
@@ -292,8 +358,16 @@ void main() {
     expect: () => [
       const CustomerFormState(loading: true),
       CustomerFormState(customer: _alice),
-      CustomerFormState(customer: _alice, saving: true),
-      CustomerFormState(customer: _alice, failure: _databaseFailure),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.failed,
+        submissionId: 1,
+        submissionFailure: _databaseFailure,
+      ),
     ],
   );
 
@@ -323,11 +397,29 @@ void main() {
     expect: () => [
       const CustomerFormState(loading: true),
       CustomerFormState(customer: _alice),
-      CustomerFormState(customer: _alice, saving: true),
-      CustomerFormState(customer: _alice, failure: _validationFailure),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.pending,
+      ),
+      CustomerFormState(
+        customer: _alice,
+        submissionStatus: CustomerFormSubmissionStatus.failed,
+        submissionId: 1,
+        submissionFailure: _validationFailure,
+      ),
     ],
     verify: (_) => expect(repository.updates, 0),
   );
+
+  test('closing form cubit while save is pending finishes safely', () async {
+    repository.pendingCreate = Completer<Either<AppFailure, CustomerEntity>>();
+    final cubit = formCubit();
+    final saveFuture = cubit.save(name: 'Alice');
+    await cubit.close();
+    repository.pendingCreate!.complete(Right(_alice));
+    await saveFuture;
+    expect(repository.creates, 1);
+  });
 
   for (final result in <Either<AppFailure, PickedContact?>>[
     const Right(_contact),

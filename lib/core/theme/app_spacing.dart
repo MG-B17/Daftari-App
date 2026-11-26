@@ -132,7 +132,6 @@ abstract final class AppSpacing {
   static double get navigationIndicatorStretch => 24.r;
   static double get navigationElevation => 4;
 
-  static double get dashboardMaxWidth => 520.w.clamp(0, 520).toDouble();
   static double get dashboardAvatarRadius => 22.r;
   static double get dashboardActivityIconBox => 40.r;
   static double get dashboardTipIconBox => 44.r;

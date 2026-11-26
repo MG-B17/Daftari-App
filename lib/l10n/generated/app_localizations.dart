@@ -1034,6 +1034,42 @@ abstract class AppLocalizations {
   /// **'This customer has an outstanding balance of {balance}. Delete them? Their ledger history will be preserved.'**
   String customerDeleteBalanceMessage(String balance);
 
+  /// No description provided for @customerCreatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer added'**
+  String get customerCreatedTitle;
+
+  /// No description provided for @customerCreatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The customer has been saved to your ledger.'**
+  String get customerCreatedMessage;
+
+  /// No description provided for @customerUpdatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer updated'**
+  String get customerUpdatedTitle;
+
+  /// No description provided for @customerUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The customer\'s details have been updated.'**
+  String get customerUpdatedMessage;
+
+  /// No description provided for @customerDeletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer deleted'**
+  String get customerDeletedTitle;
+
+  /// No description provided for @customerDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The customer has been removed from your active list while preserving their ledger history.'**
+  String get customerDeletedMessage;
+
   /// No description provided for @transactionNew.
   ///
   /// In en, this message translates to:
@@ -1153,6 +1189,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save the transaction. Check the customer and amount, then try again.'**
   String get transactionSaveError;
+
+  /// No description provided for @transactionDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete the transaction. Please try again.'**
+  String get transactionDeleteError;
+
+  /// No description provided for @transactionCustomerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a customer'**
+  String get transactionCustomerRequired;
+
+  /// No description provided for @transactionAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than zero'**
+  String get transactionAmountRequired;
+
+  /// No description provided for @transactionCreditAddedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit recorded'**
+  String get transactionCreditAddedTitle;
+
+  /// No description provided for @transactionCreditAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The credit entry has been saved to the ledger.'**
+  String get transactionCreditAddedMessage;
+
+  /// No description provided for @transactionPaymentAddedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment recorded'**
+  String get transactionPaymentAddedTitle;
+
+  /// No description provided for @transactionPaymentAddedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment has been saved to the ledger.'**
+  String get transactionPaymentAddedMessage;
+
+  /// No description provided for @transactionUpdatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction updated'**
+  String get transactionUpdatedTitle;
+
+  /// No description provided for @transactionUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction changes have been saved to the ledger.'**
+  String get transactionUpdatedMessage;
+
+  /// No description provided for @transactionDeletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction deleted'**
+  String get transactionDeletedTitle;
+
+  /// No description provided for @transactionDeletedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The transaction has been removed while preserving its audit history.'**
+  String get transactionDeletedMessage;
 
   /// No description provided for @transactionNotFound.
   ///
@@ -1340,11 +1442,53 @@ abstract class AppLocalizations {
   /// **'Could not load the statement. Please try again.'**
   String get statementLoadError;
 
+  /// No description provided for @statementGenerateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not prepare the statement image. Please try again.'**
+  String get statementGenerateError;
+
   /// No description provided for @statementShareError.
   ///
   /// In en, this message translates to:
   /// **'Could not share the statement. Please try again.'**
   String get statementShareError;
+
+  /// No description provided for @statementGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing statement...'**
+  String get statementGenerating;
+
+  /// No description provided for @statementHandingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening share options...'**
+  String get statementHandingOff;
+
+  /// No description provided for @statementShareHandedOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement handed off'**
+  String get statementShareHandedOffTitle;
+
+  /// No description provided for @statementShareHandedOffMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The statement image was handed off to the app you chose. Complete sending it there.'**
+  String get statementShareHandedOffMessage;
+
+  /// No description provided for @statementShareSheetOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement was handed off to the system share sheet.'**
+  String get statementShareSheetOpened;
+
+  /// No description provided for @statementShareCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing cancelled.'**
+  String get statementShareCancelled;
 
   /// No description provided for @statementCopyError.
   ///

@@ -48,14 +48,30 @@ void main() {
     'shares ordered PNG files and origin without text; retains attachments',
     () async {
       const origin = Rect.fromLTWH(1, 2, 3, 4);
-      final result = await service.shareImages(
+      final events = <String>[];
+      final orderedService = StatementShareService(
+        ErrorHandler(AppLogger(output: logs.add)),
+        temporaryDirectory: directory,
+        now: () => now,
+        systemShare: (params) async {
+          events.add('share');
+          shares.add(params);
+          for (final file in params.files!) {
+            expect(await file.readAsBytes(), isNotEmpty);
+          }
+          return ShareResult('PRIVATE raw response', status);
+        },
+      );
+      final result = await orderedService.shareImages(
         pages: pages(),
         sharePositionOrigin: origin,
+        onPrepared: () => events.add('prepared'),
       );
       expect(
         result.getOrElse((_) => throw StateError('failure')),
-        ShareStatementResult.systemShare,
+        ShareStatementResult.handedOff,
       );
+      expect(events, ['prepared', 'share']);
       final params = shares.single;
       expect(params.text, isNull);
       expect(params.sharePositionOrigin, origin);
@@ -110,22 +126,35 @@ void main() {
   test(
     'render failure cleans partial batch and never opens share sheet',
     () async {
+      var prepared = false;
       Stream<Uint8List> broken() async* {
         yield Uint8List.fromList([1]);
         throw StateError('PRIVATE render error');
       }
 
-      expect((await service.shareImages(pages: broken())).isLeft(), isTrue);
+      expect(
+        (await service.shareImages(
+          pages: broken(),
+          onPrepared: () => prepared = true,
+        )).isLeft(),
+        isTrue,
+      );
+      expect(prepared, isFalse);
       expect(shares, isEmpty);
       expect(await directory.list().toList(), isEmpty);
     },
   );
 
   test('empty export fails safely', () async {
+    var prepared = false;
     expect(
-      (await service.shareImages(pages: const Stream.empty())).isLeft(),
+      (await service.shareImages(
+        pages: const Stream.empty(),
+        onPrepared: () => prepared = true,
+      )).isLeft(),
       isTrue,
     );
+    expect(prepared, isFalse);
     expect(shares, isEmpty);
     expect(await directory.list().toList(), isEmpty);
   });

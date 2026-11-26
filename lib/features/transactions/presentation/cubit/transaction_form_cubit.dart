@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/app_exception.dart';
@@ -14,29 +14,44 @@ import '../../domain/usecases/create_transaction_usecase.dart';
 import '../../domain/usecases/edit_transaction_usecase.dart';
 import '../../domain/usecases/get_transaction_by_id_usecase.dart';
 
+enum TransactionFormSubmissionStatus { idle, pending, succeeded, failed }
+
 class TransactionFormState extends Equatable {
   const TransactionFormState({
     this.loading = false,
     this.customers = const [],
     this.transaction,
     this.failure,
-    this.saving = false,
-    this.saved = false,
+    this.submissionStatus = TransactionFormSubmissionStatus.idle,
+    this.submissionId = 0,
+    this.submissionFailure,
+    this.savedType,
   });
+
   final bool loading;
   final List<CustomerEntity> customers;
   final TransactionEntity? transaction;
   final AppFailure? failure;
-  final bool saving;
-  final bool saved;
+  final TransactionFormSubmissionStatus submissionStatus;
+  final int submissionId;
+  final AppFailure? submissionFailure;
+  final TransactionType? savedType;
+
+  bool get saving =>
+      submissionStatus == TransactionFormSubmissionStatus.pending;
+  bool get saved =>
+      submissionStatus == TransactionFormSubmissionStatus.succeeded;
+
   @override
   List<Object?> get props => [
     loading,
     customers,
     transaction,
     failure,
-    saving,
-    saved,
+    submissionStatus,
+    submissionId,
+    submissionFailure,
+    savedType,
   ];
 }
 
@@ -47,6 +62,7 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
     this._create,
     this._edit,
   ) : super(const TransactionFormState(loading: true));
+
   final WatchCustomersUseCase _watchCustomers;
   final GetTransactionByIdUseCase _get;
   final CreateTransactionUseCase _create;
@@ -54,24 +70,41 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
   StreamSubscription<Either<AppFailure, List<CustomerEntity>>>? _subscription;
   String? _id;
   int _generation = 0;
+  int _submissionId = 0;
 
   Future<void> load(String? id) async {
     final generation = ++_generation;
     await _subscription?.cancel();
     if (isClosed || generation != _generation) return;
     _id = id;
+    if (id != null) {
+      emit(
+        TransactionFormState(
+          loading: true,
+          customers: state.customers,
+          submissionId: _submissionId,
+        ),
+      );
+    }
     _subscription = _watchCustomers().listen(
       (result) {
-        if (isClosed || generation != _generation) return;
+        if (isClosed ||
+            generation != _generation ||
+            state.saved ||
+            state.saving) {
+          return;
+        }
         result.fold(
           (failure) => emit(
             TransactionFormState(
               loading: state.loading,
               transaction: state.transaction,
               customers: state.customers,
-              saving: state.saving,
-              saved: state.saved,
               failure: failure,
+              submissionStatus: state.submissionStatus,
+              submissionId: _submissionId,
+              submissionFailure: state.submissionFailure,
+              savedType: state.savedType,
             ),
           ),
           (customers) => emit(
@@ -79,37 +112,53 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
               loading: state.loading,
               transaction: state.transaction,
               customers: customers,
-              saving: state.saving,
-              saved: state.saved,
               failure: state.failure,
+              submissionStatus: state.submissionStatus,
+              submissionId: _submissionId,
+              submissionFailure: state.submissionFailure,
+              savedType: state.savedType,
             ),
           ),
         );
       },
       onError: (Object _) {
-        if (!isClosed && generation == _generation) {
+        if (!isClosed &&
+            generation == _generation &&
+            !state.saved &&
+            !state.saving) {
           emit(
             TransactionFormState(
               loading: false,
               failure: const AppFailure(AppErrorCode.unexpected),
               transaction: state.transaction,
               customers: state.customers,
-              saving: state.saving,
-              saved: state.saved,
+              submissionStatus: state.submissionStatus,
+              submissionId: _submissionId,
+              submissionFailure: state.submissionFailure,
+              savedType: state.savedType,
             ),
           );
         }
       },
     );
     if (id == null) {
-      emit(TransactionFormState(customers: state.customers));
+      emit(
+        TransactionFormState(
+          customers: state.customers,
+          submissionId: _submissionId,
+        ),
+      );
       return;
     }
     final result = await _get(id);
     if (isClosed || generation != _generation) return;
     result.fold(
       (failure) => emit(
-        TransactionFormState(failure: failure, customers: state.customers),
+        TransactionFormState(
+          failure: failure,
+          customers: state.customers,
+          submissionId: _submissionId,
+        ),
       ),
       (transaction) => emit(
         TransactionFormState(
@@ -118,6 +167,7 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
           failure: transaction == null
               ? const AppFailure(AppErrorCode.validation)
               : null,
+          submissionId: _submissionId,
         ),
       ),
     );
@@ -140,11 +190,14 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
         !state.customers.any((c) => c.id == customerId) ||
         parsed == null ||
         parsed <= 0) {
+      _submissionId++;
       emit(
         TransactionFormState(
           customers: state.customers,
           transaction: state.transaction,
-          failure: const AppFailure(AppErrorCode.validation),
+          submissionStatus: TransactionFormSubmissionStatus.failed,
+          submissionId: _submissionId,
+          submissionFailure: const AppFailure(AppErrorCode.validation),
         ),
       );
       return;
@@ -153,7 +206,8 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
       TransactionFormState(
         customers: state.customers,
         transaction: state.transaction,
-        saving: true,
+        submissionStatus: TransactionFormSubmissionStatus.pending,
+        submissionId: _submissionId,
       ),
     );
     final existing = state.transaction;
@@ -173,19 +227,24 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
             note: note,
           );
     if (isClosed || generation != _generation) return;
+    _submissionId++;
     result.fold(
       (failure) => emit(
         TransactionFormState(
           customers: state.customers,
           transaction: state.transaction,
-          failure: failure,
+          submissionStatus: TransactionFormSubmissionStatus.failed,
+          submissionId: _submissionId,
+          submissionFailure: failure,
         ),
       ),
       (_) => emit(
         TransactionFormState(
           customers: state.customers,
           transaction: state.transaction,
-          saved: true,
+          submissionStatus: TransactionFormSubmissionStatus.succeeded,
+          submissionId: _submissionId,
+          savedType: type,
         ),
       ),
     );

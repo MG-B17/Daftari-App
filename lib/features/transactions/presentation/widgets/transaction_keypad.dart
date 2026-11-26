@@ -4,8 +4,14 @@ import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class TransactionKeypad extends StatelessWidget {
-  const TransactionKeypad({super.key, required this.onInput});
+  const TransactionKeypad({
+    super.key,
+    required this.onInput,
+    this.enabled = true,
+  });
+
   final ValueChanged<String> onInput;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -39,7 +45,7 @@ class TransactionKeypad extends StatelessWidget {
                               ? context.appColors.creditColor
                               : context.colorScheme.onSurface,
                         ),
-                        onPressed: () => onInput(key),
+                        onPressed: enabled ? () => onInput(key) : null,
                         child: key == 'back'
                             ? Icon(
                                 Icons.backspace_outlined,

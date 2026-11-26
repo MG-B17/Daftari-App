@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -13,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 class FakeStatementImageRenderer implements StatementImageRenderer {
   final requests = <({CustomerStatementEntity statement, String locale})>[];
   bool throwsError = false;
+  Completer<void>? pendingRender;
 
   @override
   Stream<Uint8List> render(
@@ -20,6 +22,9 @@ class FakeStatementImageRenderer implements StatementImageRenderer {
     required String locale,
   }) async* {
     requests.add((statement: statement, locale: locale));
+    if (pendingRender != null) {
+      await pendingRender!.future;
+    }
     if (throwsError) throw StateError('PRIVATE renderer');
     yield Uint8List.fromList([137, 80, 78, 71]);
   }
@@ -33,6 +38,7 @@ class MemoryStatementShareService extends StatementShareService {
   Future<Either<AppFailure, ShareStatementResult>> shareImages({
     required Stream<Uint8List> pages,
     Rect? sharePositionOrigin,
+    VoidCallback? onPrepared,
   }) async {
     try {
       final files = <XFile>[];
@@ -42,14 +48,15 @@ class MemoryStatementShareService extends StatementShareService {
         files.add(XFile('statement-$pageNumber.png', mimeType: 'image/png'));
       }
       if (files.isEmpty) throw StateError('Empty statement export');
+      onPrepared?.call();
       final result = await handler(
         ShareParams(files: files, sharePositionOrigin: sharePositionOrigin),
       );
-      return Right(
-        result.status == ShareResultStatus.dismissed
-            ? ShareStatementResult.dismissed
-            : ShareStatementResult.systemShare,
-      );
+      return Right(switch (result.status) {
+        ShareResultStatus.success => ShareStatementResult.handedOff,
+        ShareResultStatus.dismissed => ShareStatementResult.dismissed,
+        ShareResultStatus.unavailable => ShareStatementResult.systemShare,
+      });
     } catch (_) {
       return const Left(AppFailure(AppErrorCode.unexpected));
     }

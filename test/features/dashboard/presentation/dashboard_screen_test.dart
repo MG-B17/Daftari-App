@@ -1,26 +1,49 @@
+import 'package:daftariapp/app.dart';
+import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
+import 'package:daftariapp/core/errors/error_handler.dart';
+import 'package:daftariapp/core/routing/app_router.dart';
+import 'package:daftariapp/core/routing/app_routes.dart';
+import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
+import 'package:daftariapp/core/widgets/daftari_loading.dart';
 import 'package:daftariapp/features/dashboard/domain/entities/dashboard_summary_entity.dart';
 import 'package:daftariapp/features/dashboard/domain/entities/debtor_summary_entity.dart';
 import 'package:daftariapp/features/dashboard/domain/entities/recent_activity_entity.dart';
 import 'package:daftariapp/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:daftariapp/features/dashboard/presentation/widgets/dashboard_summary_card.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/dashboard_tip_card.dart';
 import 'package:daftariapp/features/dashboard/presentation/widgets/recent_activity_row.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/recent_activity_section.dart';
 import 'package:daftariapp/features/dashboard/presentation/widgets/top_debtor_row.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/top_debtors_section.dart';
+import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
+import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
+import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
+import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
+import 'package:daftariapp/features/settings/presentation/widgets/settings_section_card.dart';
 import 'package:daftariapp/features/transactions/domain/entities/transaction_entity.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../security_test_setup.dart';
 
 // Controls presentation states without starting repository watches or timers.
 class _DashboardCubit extends Cubit<DashboardState> implements DashboardCubit {
-  _DashboardCubit(super.initialState);
+  _DashboardCubit(super.initialState, {this.setLoadingOnRefresh = true});
 
+  final bool setLoadingOnRefresh;
   int refreshes = 0;
   int resumeChecks = 0;
 
@@ -29,7 +52,9 @@ class _DashboardCubit extends Cubit<DashboardState> implements DashboardCubit {
   @override
   Future<void> refresh() async {
     refreshes++;
-    emit(DashboardState(summary: state.summary));
+    if (setLoadingOnRefresh) {
+      emit(DashboardState(summary: state.summary));
+    }
   }
 
   @override
@@ -68,8 +93,10 @@ void main() {
     _DashboardCubit cubit, {
     Locale locale = const Locale('en'),
     ThemeMode mode = ThemeMode.light,
+    Size size = const Size(400, 900),
+    bool disableAnimations = false,
   }) async {
-    tester.view.physicalSize = const Size(400, 900);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -77,18 +104,29 @@ void main() {
     await tester.pumpWidget(
       ScreenUtilInit(
         designSize: const Size(390, 844),
-        builder: (context, child) => MaterialApp(
-          locale: locale,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: mode,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: BlocProvider<DashboardCubit>.value(
-            value: cubit,
-            child: const DashboardScreen(),
-          ),
-        ),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          Widget app = MaterialApp(
+            locale: locale,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: mode,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: BlocProvider<DashboardCubit>.value(
+              value: cubit,
+              child: const DashboardScreen(),
+            ),
+          );
+          if (disableAnimations) {
+            app = MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: app,
+            );
+          }
+          return app;
+        },
       ),
     );
   }
@@ -164,7 +202,11 @@ void main() {
         (tester) async {
           final cubit = _DashboardCubit(const DashboardState());
           await mount(tester, cubit, locale: locale, mode: mode);
-          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(
+            tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+            DaftariLoadingVariant.screen,
+          );
           expect(find.byType(DashboardSummaryCard), findsNothing);
           cubit.show(const DashboardState(loading: false, failure: failure));
           await tester.pumpAndSettle();
@@ -176,7 +218,11 @@ void main() {
           await tester.tap(find.byKey(const ValueKey('dashboard-retry')));
           await tester.pump();
           expect(cubit.refreshes, 1);
-          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(
+            tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+            DaftariLoadingVariant.screen,
+          );
           cubit.show(DashboardState(loading: false, summary: summary));
           await tester.pumpAndSettle();
           expect(card(tester).totalOwedPiasters, 12345);
@@ -202,7 +248,11 @@ void main() {
     await tester.pump();
     expect(cubit.refreshes, 1);
     expect(card(tester).totalOwedPiasters, 12345);
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+      DaftariLoadingVariant.inline,
+    );
     expect(find.byType(RefreshProgressIndicator), findsOneWidget);
     await tester.runAsync(() async {
       cubit.show(
@@ -280,4 +330,202 @@ void main() {
     expect(cubit.resumeChecks, 1);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'reduced motion uses static fallback for initial and refresh loading',
+    (tester) async {
+      final cubit = _DashboardCubit(const DashboardState());
+      await mount(
+        tester,
+        cubit,
+        locale: const Locale('ar'),
+        disableAnimations: true,
+      );
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(DashboardScreen)),
+      )!;
+      expect(find.byType(Lottie), findsNothing);
+      expect(
+        tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+        DaftariLoadingVariant.screen,
+      );
+      expect(find.byIcon(Icons.hourglass_top_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel(l10n.loading), findsOneWidget);
+
+      cubit.show(DashboardState(loading: true, summary: summary));
+      await tester.pumpAndSettle();
+      expect(find.byType(Lottie), findsNothing);
+      expect(
+        tester.widget<DaftariLoading>(find.byType(DaftariLoading)).variant,
+        DaftariLoadingVariant.inline,
+      );
+      expect(find.byIcon(Icons.hourglass_top_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel(l10n.loading), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  for (final size in const [Size(800, 1280), Size(1280, 800)]) {
+    for (final locale in const [Locale('ar'), Locale('en')]) {
+      testWidgets(
+        'tablet ${size.width.toInt()}x${size.height.toInt()} ${locale.languageCode}: matches Settings usable width and outer margins for populated and empty states',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(sl.reset);
+
+          SharedPreferences.setMockInitialValues({
+            'localeCode': locale.languageCode,
+            'themeMode': ThemeMode.light.name,
+            'onboardingCompleted': true,
+          });
+          final storage = LocalStorageService(
+            await SharedPreferences.getInstance(),
+          );
+          final errorHandler = ErrorHandler(
+            AppLogger(output: (_) {}, enableCrashReporting: false),
+          );
+          final settingsCubit = SettingsCubit(
+            GetSettingsUseCase(SettingsRepositoryImpl(storage)),
+            ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
+            errorHandler,
+          );
+          final themeSwitcher = ThemeSwitcherCubit(storage, errorHandler);
+          final security = await testAppLock();
+          final dashboardCubit = _DashboardCubit(
+            DashboardState(loading: false, summary: summary),
+            setLoadingOnRefresh: false,
+          );
+          await sl.reset();
+          sl.registerFactory<DashboardCubit>(() => dashboardCubit);
+          final router = AppRouter.create(
+            localStorage: storage,
+            appLock: security,
+          );
+
+          await tester.pumpWidget(
+            DaftariApp(
+              router: router,
+              settingsCubit: settingsCubit,
+              themeSwitcherCubit: themeSwitcher,
+              appLockCubit: security,
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          // Measure Settings card width and outer margins at the same window size.
+          router.go(AppRoutes.settings);
+          await tester.pumpAndSettle();
+          expect(find.byType(SettingsScreen), findsOneWidget);
+          final settingsRect = tester.getRect(
+            find.byType(SettingsSectionCard).first,
+          );
+          expect(settingsRect.width, greaterThan(520));
+
+          // Compare populated Home sections against Settings at the same size.
+          router.go(AppRoutes.root);
+          await tester.pumpAndSettle();
+          dashboardCubit.show(DashboardState(loading: false, summary: summary));
+          await tester.pumpAndSettle();
+
+          final summaryRect = tester.getRect(find.byType(DashboardSummaryCard));
+          final debtorsRect = tester.getRect(find.byType(TopDebtorsSection));
+          final activityRect = tester.getRect(
+            find.byType(RecentActivitySection),
+          );
+          final tipRect = tester.getRect(find.byType(DashboardTipCard));
+
+          for (final rect in [
+            summaryRect,
+            debtorsRect,
+            activityRect,
+            tipRect,
+          ]) {
+            expect(rect.left, closeTo(settingsRect.left, 0.1));
+            expect(rect.right, closeTo(settingsRect.right, 0.1));
+            expect(rect.width, closeTo(settingsRect.width, 0.1));
+          }
+
+          // Compare empty Home sections against Settings at the same size.
+          dashboardCubit.show(
+            const DashboardState(
+              loading: false,
+              summary: DashboardSummaryEntity.empty(),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final emptySummaryRect = tester.getRect(
+            find.byType(DashboardSummaryCard),
+          );
+          final emptyDebtorsRect = tester.getRect(
+            find.byType(TopDebtorsSection),
+          );
+          final emptyActivityRect = tester.getRect(
+            find.byType(RecentActivitySection),
+          );
+          final emptyTipRect = tester.getRect(find.byType(DashboardTipCard));
+
+          for (final rect in [
+            emptySummaryRect,
+            emptyDebtorsRect,
+            emptyActivityRect,
+            emptyTipRect,
+          ]) {
+            expect(rect.left, closeTo(settingsRect.left, 0.1));
+            expect(rect.right, closeTo(settingsRect.right, 0.1));
+            expect(rect.width, closeTo(settingsRect.width, 0.1));
+          }
+
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          router.dispose();
+          await settingsCubit.close();
+          await themeSwitcher.close();
+          await security.close();
+          await dashboardCubit.close();
+        },
+      );
+    }
+  }
+
+  for (final size in const [Size(320, 640), Size(390, 844)]) {
+    testWidgets(
+      'phone ${size.width.toInt()}x${size.height.toInt()} RTL renders populated and empty states cleanly',
+      (tester) async {
+        final cubit = _DashboardCubit(
+          DashboardState(loading: false, summary: summary),
+        );
+        await mount(tester, cubit, locale: const Locale('ar'), size: size);
+        await tester.pumpAndSettle();
+
+        final summaryRect = tester.getRect(find.byType(DashboardSummaryCard));
+        expect(summaryRect.left, greaterThan(0));
+        expect(summaryRect.right, lessThan(size.width));
+        expect(summaryRect.left, closeTo(size.width - summaryRect.right, 0.1));
+
+        cubit.show(
+          const DashboardState(
+            loading: false,
+            summary: DashboardSummaryEntity.empty(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('dashboard-no-debtors')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('dashboard-no-activity')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 }

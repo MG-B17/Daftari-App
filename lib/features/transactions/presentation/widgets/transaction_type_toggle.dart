@@ -9,9 +9,12 @@ class TransactionTypeToggle extends StatelessWidget {
     super.key,
     required this.payment,
     required this.onChanged,
+    this.enabled = true,
   });
+
   final bool payment;
   final ValueChanged<bool> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -34,7 +37,7 @@ class TransactionTypeToggle extends StatelessWidget {
                         ? AppButtonVariant.payment
                         : AppButtonVariant.credit)
                   : AppButtonVariant.outlined,
-              onPressed: () => onChanged(option),
+              onPressed: enabled ? () => onChanged(option) : null,
             ),
           ),
       ],

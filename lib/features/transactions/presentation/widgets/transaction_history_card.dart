@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../../core/utils/money_utils.dart';
 import '../../../../core/widgets/app_confirmation_dialog.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../cubit/customer_transactions_cubit.dart';
 
@@ -17,11 +18,13 @@ class TransactionHistoryCard extends StatelessWidget {
     required this.entry,
     required this.balance,
     required this.deleting,
+    this.isDeletingEntry = false,
   });
 
   final TransactionEntity entry;
   final String balance;
   final bool deleting;
+  final bool isDeletingEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -59,39 +62,45 @@ class TransactionHistoryCard extends StatelessWidget {
                   '${credit ? '-' : '+'}${MoneyUtils.formatPiasters(entry.amountPiasters, locale: locale)}',
                   style: TextStyle(color: color),
                 ),
-                PopupMenuButton<String>(
-                  enabled: !deleting,
-                  onSelected: (action) async {
-                    if (action == 'edit') {
-                      context.pushNamed(
-                        AppRoutes.transactionEditName,
-                        pathParameters: {'id': entry.id},
-                      );
-                    } else {
-                      final cubit = context.read<CustomerTransactionsCubit>();
-                      final confirmed = await AppConfirmationDialog.show(
-                        context,
-                        title: l10n.transactionDeleteAction,
-                        message: l10n.transactionDeleteMessage,
-                        confirmLabel: l10n.transactionDeleteAction,
-                        isDestructive: true,
-                      );
-                      if (confirmed && context.mounted) {
-                        await cubit.delete(entry.id);
+                if (isDeletingEntry)
+                  SizedBox.square(
+                    dimension: AppSpacing.controlHeight,
+                    child: const Center(child: DaftariLoading.inline()),
+                  )
+                else
+                  PopupMenuButton<String>(
+                    enabled: !deleting,
+                    onSelected: (action) async {
+                      if (action == 'edit') {
+                        context.pushNamed(
+                          AppRoutes.transactionEditName,
+                          pathParameters: {'id': entry.id},
+                        );
+                      } else {
+                        final cubit = context.read<CustomerTransactionsCubit>();
+                        final confirmed = await AppConfirmationDialog.show(
+                          context,
+                          title: l10n.transactionDeleteAction,
+                          message: l10n.transactionDeleteMessage,
+                          confirmLabel: l10n.transactionDeleteAction,
+                          isDestructive: true,
+                        );
+                        if (confirmed && context.mounted) {
+                          await cubit.delete(entry.id);
+                        }
                       }
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(l10n.transactionEditAction),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(l10n.transactionDeleteAction),
-                    ),
-                  ],
-                ),
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text(l10n.transactionEditAction),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text(l10n.transactionDeleteAction),
+                      ),
+                    ],
+                  ),
               ],
             ),
             Wrap(

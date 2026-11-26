@@ -1,1 +1,1 @@
-enum ShareStatementResult { systemShare, dismissed }
+enum ShareStatementResult { handedOff, systemShare, dismissed }
