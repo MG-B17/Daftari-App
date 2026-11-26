@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,7 @@ import '../../../../../core/theme/app_spacing.dart';
 import '../../../../../core/utils/validators.dart';
 import '../../../../../core/widgets/app_button.dart';
 import '../../../../../core/widgets/app_text_field.dart';
+import '../../../session/presentation/cubit/auth_session_cubit.dart';
 import '../../../session/presentation/cubit/auth_session_state.dart';
 import '../../../widgets/auth_card.dart';
 import '../../../widgets/auth_feedback_mapper.dart';
@@ -39,12 +42,12 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   Future<void> _submit() async {
+    final loginCubit = context.read<LoginCubit?>();
+    final sessionBusy = context.read<AuthSessionCubit?>()?.state.busy ?? false;
+    if ((loginCubit?.state.busy ?? false) || sessionBusy) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await context.read<LoginCubit?>()?.signIn(
-      email: _email.text,
-      password: _password.text,
-    );
+    await loginCubit?.signIn(email: _email.text, password: _password.text);
   }
 
   void _continueOffline() {
@@ -60,9 +63,13 @@ class _LoginFormState extends State<LoginForm> {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
     final cubit = context.read<LoginCubit?>();
-    final busy = context.select<LoginCubit?, bool>(
+    final loginBusy = context.select<LoginCubit?, bool>(
       (cubit) => cubit?.state.busy ?? false,
     );
+    final sessionBusy = context.select<AuthSessionCubit?, bool>(
+      (sessionCubit) => sessionCubit?.state.busy ?? false,
+    );
+    final busy = loginBusy || sessionBusy;
     Widget form = Form(
       key: _formKey,
       child: Column(
@@ -82,6 +89,7 @@ class _LoginFormState extends State<LoginForm> {
                   label: l10n.authEmail,
                   hintText: l10n.authEmailHint,
                   isRequired: true,
+                  enabled: !busy,
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -94,6 +102,7 @@ class _LoginFormState extends State<LoginForm> {
                   label: l10n.authPassword,
                   hintText: l10n.authPasswordHint,
                   isRequired: true,
+                  enabled: !busy,
                   controller: _password,
                   textInputAction: TextInputAction.done,
                   onForgotPassword: () =>
@@ -116,7 +125,9 @@ class _LoginFormState extends State<LoginForm> {
           AuthSwitchPrompt(
             prompt: l10n.authNoAccount,
             action: l10n.authCreateAccount,
-            onTap: () => context.pushReplacement(AppRoutes.authRegister),
+            onTap: busy
+                ? null
+                : () => context.pushReplacement(AppRoutes.authRegister),
           ),
           SizedBox(height: AppSpacing.lg),
           AuthNote(
@@ -124,7 +135,7 @@ class _LoginFormState extends State<LoginForm> {
             message: l10n.authOfflineNote,
           ),
           SizedBox(height: AppSpacing.sm),
-          AuthOfflineFooter(onContinue: _continueOffline),
+          AuthOfflineFooter(onContinue: busy ? null : _continueOffline),
         ],
       ),
     );
@@ -134,7 +145,7 @@ class _LoginFormState extends State<LoginForm> {
             previous.feedbackId != current.feedbackId &&
             current.feedback != AuthFeedback.none,
         listener: (context, state) =>
-            showAuthFeedbackSnackBar(context, state.feedback),
+            unawaited(showAuthFeedbackDialog(context, state.feedback)),
         child: form,
       );
     }

@@ -11,6 +11,7 @@ import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
+import 'package:daftariapp/core/widgets/app_feedback_dialog.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/usecases/send_password_reset_usecase.dart';
 import 'package:daftariapp/features/auth/forgot_password/presentation/cubit/forgot_password_cubit.dart';
 import 'package:daftariapp/features/auth/forgot_password/presentation/screens/forgot_password_screen.dart';
@@ -153,8 +154,10 @@ Finder _routeFormField(String key) => find.descendant(
   matching: find.byType(TextFormField),
 );
 
-Finder _routeSnackBarText(String text) =>
-    find.descendant(of: find.byType(SnackBar), matching: find.text(text));
+Finder _routeDialogText(String text) => find.descendant(
+  of: find.byType(AppFeedbackDialog),
+  matching: find.text(text),
+);
 
 void main() {
   setUp(setupDashboardTests);
@@ -548,10 +551,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final l10n = tester.element(find.byType(Scaffold).first).l10n;
-        expect(
-          _routeSnackBarText(l10n.authErrorAccountMismatch),
-          findsOneWidget,
-        );
+        expect(_routeDialogText(l10n.authErrorAccountMismatch), findsOneWidget);
         expect(backend.linkedUserId, _routeUserA.id);
         expect(backend.currentUser, isNull);
 
@@ -589,16 +589,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(PinLockScreen), findsWidgets);
-        expect(find.byType(SnackBar), findsNothing);
+        expect(find.byType(AppFeedbackDialog), findsNothing);
 
         await lock.verify('2468');
         await tester.pumpAndSettle();
 
         final l10n = tester.element(find.byType(Scaffold).first).l10n;
-        expect(
-          _routeSnackBarText(l10n.authErrorAccountMismatch),
-          findsOneWidget,
-        );
+        expect(_routeDialogText(l10n.authErrorAccountMismatch), findsOneWidget);
         expect(backend.linkedUserId, _routeUserA.id);
         expect(backend.currentUser, isNull);
 
@@ -694,6 +691,9 @@ void main() {
         expect(find.byType(AlertDialog), findsNothing);
         expect(backend.linkLedgerCalls, 1);
         expect(backend.linkedUserId, _routeUserA.id);
+        await tester.tap(find.widgetWithText(AppButton, settingsL10n.ok));
+        await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
         expect(find.byType(SettingsScreen), findsOneWidget);
         expect(find.byType(LoginScreen), findsNothing);
         expect(find.text(settingsL10n.authAccountLinkedTitle), findsOneWidget);
@@ -796,6 +796,8 @@ void main() {
         expect(find.byType(AlertDialog), findsNothing);
         expect(backend.linkLedgerCalls, 1);
         expect(backend.linkedUserId, _routeUserA.id);
+        await tester.tap(find.widgetWithText(AppButton, settingsL10n.ok));
+        await tester.pumpAndSettle();
         expect(find.byType(SettingsScreen), findsOneWidget);
         expect(find.byType(RegisterScreen), findsNothing);
         expect(find.text(settingsL10n.authAccountLinkedTitle), findsOneWidget);
@@ -903,10 +905,7 @@ void main() {
 
         expect(find.byType(UpdatePasswordScreen), findsNothing);
         final l10n = tester.element(find.byType(Scaffold).first).l10n;
-        expect(
-          _routeSnackBarText(l10n.authErrorAccountMismatch),
-          findsOneWidget,
-        );
+        expect(_routeDialogText(l10n.authErrorAccountMismatch), findsOneWidget);
 
         await tester.pumpWidget(const SizedBox());
         await tester.pump(const Duration(milliseconds: 1));
@@ -1174,16 +1173,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(PinLockScreen), findsWidgets);
-        expect(find.byType(SnackBar), findsNothing);
+        expect(find.byType(AppFeedbackDialog), findsNothing);
 
         await lock.verify('2468');
         await tester.pumpAndSettle();
 
         final l10n = tester.element(find.byType(Scaffold).first).l10n;
-        expect(
-          _routeSnackBarText(l10n.authErrorAccountMismatch),
-          findsOneWidget,
-        );
+        expect(_routeDialogText(l10n.authErrorAccountMismatch), findsOneWidget);
         expect(backend.linkedUserId, _routeUserA.id);
         expect(backend.currentUser, isNull);
 
@@ -1225,16 +1221,13 @@ void main() {
         expect(backend.linkedUserId, _routeUserA.id);
         expect(backend.currentUser, isNull);
         expect(find.byType(PinLockScreen), findsWidgets);
-        expect(find.byType(SnackBar), findsNothing);
+        expect(find.byType(AppFeedbackDialog), findsNothing);
 
         await lock.verify('2468');
         await tester.pumpAndSettle();
 
         final l10n = tester.element(find.byType(Scaffold).first).l10n;
-        expect(
-          _routeSnackBarText(l10n.authErrorAccountMismatch),
-          findsOneWidget,
-        );
+        expect(_routeDialogText(l10n.authErrorAccountMismatch), findsOneWidget);
         expect(backend.linkedUserId, _routeUserA.id);
         expect(backend.currentUser, isNull);
 
@@ -1362,7 +1355,10 @@ void main() {
             expect(backend.linkLedgerCalls, 1);
             expect(backend.linkedUserId, _routeUserA.id);
             expect(session.state.status, AuthStatus.authenticated);
-            expect(find.text(l10n.authAccountLinkedTitle), findsOneWidget);
+            expect(
+              _routeDialogText(l10n.authAccountLinkedTitle),
+              findsOneWidget,
+            );
           }
 
           await tester.pumpWidget(const SizedBox());
@@ -1495,7 +1491,10 @@ void main() {
             expect(backend.linkLedgerCalls, 1);
             expect(backend.linkedUserId, _routeUserA.id);
             expect(session.state.status, AuthStatus.authenticated);
-            expect(find.text(l10n.authAccountLinkedTitle), findsOneWidget);
+            expect(
+              _routeDialogText(l10n.authAccountLinkedTitle),
+              findsOneWidget,
+            );
           }
 
           await tester.pumpWidget(const SizedBox());
@@ -1610,7 +1609,10 @@ void main() {
             expect(backend.linkLedgerCalls, 1);
             expect(backend.linkedUserId, _routeUserA.id);
             expect(session.state.status, AuthStatus.authenticated);
-            expect(find.text(l10n.authAccountLinkedTitle), findsOneWidget);
+            expect(
+              _routeDialogText(l10n.authAccountLinkedTitle),
+              findsOneWidget,
+            );
           }
 
           await tester.pumpWidget(const SizedBox());

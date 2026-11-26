@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -33,9 +35,11 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
   }
 
   Future<void> _submit() async {
+    final cubit = context.read<ForgotPasswordCubit?>();
+    if (cubit?.state.busy ?? false) return;
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    await context.read<ForgotPasswordCubit?>()?.sendPasswordReset(_email.text);
+    await cubit?.sendPasswordReset(_email.text);
   }
 
   void _backToLogin() {
@@ -95,6 +99,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
                         label: l10n.authEmail,
                         hintText: l10n.authEmailHint,
                         isRequired: true,
+                        enabled: !state.busy,
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.done,
@@ -115,7 +120,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
                 ),
                 SizedBox(height: AppSpacing.md),
                 TextButton(
-                  onPressed: _backToLogin,
+                  onPressed: state.busy ? null : _backToLogin,
                   child: Text(l10n.authBackToLogin),
                 ),
               ],
@@ -127,7 +132,7 @@ class _ForgotPasswordFormState extends State<ForgotPasswordForm> {
             previous.feedbackId != current.feedbackId &&
             current.feedback != AuthFeedback.none,
         listener: (context, state) =>
-            showAuthFeedbackSnackBar(context, state.feedback),
+            unawaited(showAuthFeedbackDialog(context, state.feedback)),
         child: content,
       );
     }

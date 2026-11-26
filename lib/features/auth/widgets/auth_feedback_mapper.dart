@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/extensions/context_extensions.dart';
 import '../../../core/routing/app_routes.dart';
+import '../../../core/widgets/app_error_dialog.dart';
+import '../../../core/widgets/app_success_dialog.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../security/presentation/cubit/app_lock_cubit.dart';
 import '../../security/presentation/cubit/app_lock_state.dart';
@@ -14,50 +16,116 @@ import '../session/presentation/cubit/auth_session_cubit.dart';
 import '../session/presentation/cubit/auth_session_state.dart';
 import 'ledger_link_confirmation_dialog.dart';
 
-String? authFeedbackMessage(AppLocalizations l10n, AuthFeedback feedback) =>
-    switch (feedback) {
-      AuthFeedback.none => null,
-      AuthFeedback.accountMismatchBlocked => l10n.authErrorAccountMismatch,
-      AuthFeedback.authError => l10n.authErrorAuth,
-      AuthFeedback.networkError => l10n.authErrorNetwork,
-      AuthFeedback.unconfigured => l10n.authErrorUnconfigured,
-      AuthFeedback.genericError => l10n.authErrorGeneric,
-      AuthFeedback.verificationResent => l10n.authResendSent,
-      AuthFeedback.emailNotVerifiedYet => l10n.authEmailNotVerifiedYet,
-      AuthFeedback.passwordResetSent => null,
-      AuthFeedback.passwordUpdated => l10n.authPasswordUpdated,
-      AuthFeedback.signedOut => l10n.authSignedOutSuccess,
-      AuthFeedback.ledgerLinked => l10n.authLinkedSuccess,
-    };
+typedef AuthFeedbackDialogSpec = ({String title, String message, bool isError});
 
-void showAuthFeedbackSnackBar(BuildContext context, AuthFeedback feedback) {
-  final message = authFeedbackMessage(context.l10n, feedback);
-  if (message == null) return;
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+AuthFeedbackDialogSpec? authFeedbackDialogSpec(
+  AppLocalizations l10n,
+  AuthFeedback feedback,
+) => switch (feedback) {
+  AuthFeedback.none || AuthFeedback.passwordResetSent => null,
+  AuthFeedback.signedIn => (
+    title: l10n.authSignedInTitle,
+    message: l10n.authSignedInSuccess,
+    isError: false,
+  ),
+  AuthFeedback.ledgerLinked => (
+    title: l10n.authAccountLinkedTitle,
+    message: l10n.authLinkedSuccess,
+    isError: false,
+  ),
+  AuthFeedback.signedOut => (
+    title: l10n.authSignedOutTitle,
+    message: l10n.authSignedOutSuccess,
+    isError: false,
+  ),
+  AuthFeedback.passwordUpdated => (
+    title: l10n.authPasswordUpdatedTitle,
+    message: l10n.authPasswordUpdated,
+    isError: false,
+  ),
+  AuthFeedback.verificationResent => (
+    title: l10n.authResendSentTitle,
+    message: l10n.authResendSent,
+    isError: false,
+  ),
+  AuthFeedback.emailNotVerifiedYet => (
+    title: l10n.authAccountEmailUnverified,
+    message: l10n.authEmailNotVerifiedYet,
+    isError: true,
+  ),
+  AuthFeedback.accountMismatchBlocked => (
+    title: l10n.errorTitle,
+    message: l10n.authErrorAccountMismatch,
+    isError: true,
+  ),
+  AuthFeedback.authError => (
+    title: l10n.errorTitle,
+    message: l10n.authErrorAuth,
+    isError: true,
+  ),
+  AuthFeedback.networkError => (
+    title: l10n.errorTitle,
+    message: l10n.authErrorNetwork,
+    isError: true,
+  ),
+  AuthFeedback.unconfigured => (
+    title: l10n.errorTitle,
+    message: l10n.authErrorUnconfigured,
+    isError: true,
+  ),
+  AuthFeedback.genericError => (
+    title: l10n.errorTitle,
+    message: l10n.authErrorGeneric,
+    isError: true,
+  ),
+};
+
+Future<void> showAuthFeedbackDialog(
+  BuildContext context,
+  AuthFeedback feedback,
+) async {
+  final spec = authFeedbackDialogSpec(context.l10n, feedback);
+  if (spec == null) return;
+  if (spec.isError) {
+    await AppErrorDialog.show(
+      context,
+      title: spec.title,
+      message: spec.message,
+    );
+  } else {
+    await AppSuccessDialog.show(
+      context,
+      title: spec.title,
+      message: spec.message,
+    );
+  }
 }
 
-/// Shared listener for auth screens that handles feedback snackbars,
+/// Shared listener for auth screens that coordinates feedback dialogs,
 /// first-time ledger link confirmation dialogs, email verification routing,
-/// and returning from auth routes once authenticated.
+/// password recovery completion routing, and returning from auth routes once
+/// authenticated.
 class AuthFlowListener extends StatefulWidget {
   const AuthFlowListener({
     super.key,
     required this.child,
     this.navigateOnVerifyEmail = true,
     this.popOnAuthenticated = true,
+    this.onPasswordUpdatedWithoutSession,
   });
 
   final Widget child;
   final bool navigateOnVerifyEmail;
   final bool popOnAuthenticated;
+  final VoidCallback? onPasswordUpdatedWithoutSession;
 
   @override
   State<AuthFlowListener> createState() => _AuthFlowListenerState();
 }
 
 class _AuthFlowListenerState extends State<AuthFlowListener> {
+  bool _presentingDialog = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,39 +135,80 @@ class _AuthFlowListenerState extends State<AuthFlowListener> {
   bool _canPresent(BuildContext context) {
     final locked = context.read<AppLockCubit?>()?.state.locked ?? false;
     if (locked) return false;
+    if (!TickerMode.of(context)) return false;
     return ModalRoute.of(context)?.isCurrent ?? true;
-  }
-
-  void _maybeShowFeedback(
-    BuildContext context,
-    AuthSessionCubit cubit,
-    AuthSessionState state,
-  ) {
-    if (!_canPresent(context)) return;
-    if (state.feedback == AuthFeedback.none) return;
-    final message = authFeedbackMessage(context.l10n, state.feedback);
-    if (message == null) return;
-    if (!cubit.consumeFeedback(state.feedbackId)) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _handlePendingState() {
     if (!mounted) return;
     final cubit = context.read<AuthSessionCubit?>();
     if (cubit == null) return;
-    final state = cubit.state;
-    if (!_canPresent(context)) return;
-    _maybeShowFeedback(context, cubit, state);
-    if (state.status == AuthStatus.linkConfirmationRequired &&
-        state.user != null) {
-      unawaited(_handleLinkConfirmation(context, cubit, state.user!));
+    unawaited(
+      _handleSessionState(context, cubit, cubit.state, allowNavigation: false),
+    );
+  }
+
+  Future<void> _handleSessionState(
+    BuildContext context,
+    AuthSessionCubit cubit,
+    AuthSessionState state, {
+    required bool allowNavigation,
+  }) async {
+    if (!mounted || _presentingDialog || !_canPresent(context)) return;
+    var showedFeedback = false;
+    var handledPasswordUpdated = false;
+    if (state.feedback != AuthFeedback.none &&
+        authFeedbackDialogSpec(context.l10n, state.feedback) != null &&
+        cubit.consumeFeedback(state.feedbackId)) {
+      showedFeedback = true;
+      handledPasswordUpdated = state.feedback == AuthFeedback.passwordUpdated;
+      _presentingDialog = true;
+      try {
+        await showAuthFeedbackDialog(context, state.feedback);
+      } finally {
+        _presentingDialog = false;
+      }
+      if (!mounted) return;
+    }
+
+    final latest = cubit.state;
+    if (!_canPresent(this.context)) return;
+
+    if (latest.status == AuthStatus.linkConfirmationRequired &&
+        latest.user != null) {
+      await _handleLinkConfirmation(cubit, latest.user!);
+      return;
+    }
+
+    final canNavigate = allowNavigation || showedFeedback;
+    if (canNavigate &&
+        widget.navigateOnVerifyEmail &&
+        latest.status == AuthStatus.emailVerificationRequired) {
+      _navigateToVerifyEmail(this.context, latest.pendingEmail);
+      return;
+    }
+    if (canNavigate && widget.popOnAuthenticated && latest.isAuthenticated) {
+      _exitAuthRoute(this.context);
+      return;
+    }
+    if (handledPasswordUpdated &&
+        widget.onPasswordUpdatedWithoutSession != null &&
+        !latest.isAuthenticated &&
+        latest.status != AuthStatus.linkConfirmationRequired) {
+      widget.onPasswordUpdatedWithoutSession!();
+      return;
+    }
+
+    if (latest.feedback != AuthFeedback.none &&
+        authFeedbackDialogSpec(this.context.l10n, latest.feedback) != null &&
+        cubit.hasUnconsumedFeedback(latest.feedbackId)) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _handlePendingState(),
+      );
     }
   }
 
   Future<void> _handleLinkConfirmation(
-    BuildContext context,
     AuthSessionCubit cubit,
     AuthUser promptedUser,
   ) async {
@@ -107,7 +216,7 @@ class _AuthFlowListenerState extends State<AuthFlowListener> {
     if (!cubit.tryBeginLinkPrompt()) return;
     try {
       final confirmed = await LedgerLinkConfirmationDialog.show(context);
-      if (!context.mounted) return;
+      if (!mounted) return;
       await cubit.confirmLedgerLink(
         confirmed: confirmed,
         expectedUserId: promptedUser.id,
@@ -152,33 +261,16 @@ class _AuthFlowListenerState extends State<AuthFlowListener> {
     if (cubit == null) return widget.child;
     final lockCubit = context.read<AppLockCubit?>();
     Widget listener = BlocListener<AuthSessionCubit, AuthSessionState>(
-      listener: (context, state) {
-        if (!_canPresent(context)) return;
-        if (state.status == AuthStatus.linkConfirmationRequired &&
-            state.user != null) {
-          unawaited(_handleLinkConfirmation(context, cubit, state.user!));
-          return;
-        }
-        if (widget.navigateOnVerifyEmail &&
-            state.status == AuthStatus.emailVerificationRequired) {
-          _navigateToVerifyEmail(context, state.pendingEmail);
-          return;
-        }
-        if (widget.popOnAuthenticated && state.isAuthenticated) {
-          _exitAuthRoute(context);
-        }
-      },
       listenWhen: (previous, current) =>
           previous.status != current.status ||
           (current.status == AuthStatus.linkConfirmationRequired &&
-              previous.user != current.user),
-      child: BlocListener<AuthSessionCubit, AuthSessionState>(
-        listenWhen: (previous, current) =>
-            previous.feedbackId != current.feedbackId &&
-            current.feedback != AuthFeedback.none,
-        listener: (context, state) => _maybeShowFeedback(context, cubit, state),
-        child: widget.child,
+              previous.user != current.user) ||
+          (previous.feedbackId != current.feedbackId &&
+              current.feedback != AuthFeedback.none),
+      listener: (context, state) => unawaited(
+        _handleSessionState(context, cubit, state, allowNavigation: true),
       ),
+      child: widget.child,
     );
     if (lockCubit != null) {
       listener = BlocListener<AppLockCubit, AppLockState>(

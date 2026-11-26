@@ -21,19 +21,26 @@ class UpdatePasswordCubit extends Cubit<UpdatePasswordState> {
     final token = _sessionCoordinator.beginAuthAction(
       userId: _sessionCoordinator.currentUserId,
     );
-    emit(state.copyWith(busy: true, feedback: AuthFeedback.none));
+    emit(
+      state.copyWith(
+        pendingAction: UpdatePasswordPendingAction.update,
+        feedback: AuthFeedback.none,
+      ),
+    );
     try {
       final result = await _updatePassword(newPassword);
       return await result.fold(
         (failure) async {
           if (isClosed) return false;
           if (!_sessionCoordinator.isActionCurrent(token)) {
-            emit(state.copyWith(busy: false));
+            emit(
+              state.copyWith(pendingAction: UpdatePasswordPendingAction.none),
+            );
             return false;
           }
           emit(
             state.copyWith(
-              busy: false,
+              pendingAction: UpdatePasswordPendingAction.none,
               feedback: mapAuthFailureToFeedback(failure),
               feedbackId: state.feedbackId + 1,
             ),
@@ -44,7 +51,11 @@ class UpdatePasswordCubit extends Cubit<UpdatePasswordState> {
           final completed = await _sessionCoordinator.completePasswordRecovery(
             token,
           );
-          if (!isClosed) emit(state.copyWith(busy: false));
+          if (!isClosed) {
+            emit(
+              state.copyWith(pendingAction: UpdatePasswordPendingAction.none),
+            );
+          }
           return completed;
         },
       );
@@ -55,9 +66,16 @@ class UpdatePasswordCubit extends Cubit<UpdatePasswordState> {
 
   Future<bool> cancelRecovery() async {
     if (state.busy) return false;
-    emit(state.copyWith(busy: true, feedback: AuthFeedback.none));
+    emit(
+      state.copyWith(
+        pendingAction: UpdatePasswordPendingAction.cancel,
+        feedback: AuthFeedback.none,
+      ),
+    );
     final cancelled = await _sessionCoordinator.cancelPasswordRecovery();
-    if (!isClosed) emit(state.copyWith(busy: false));
+    if (!isClosed) {
+      emit(state.copyWith(pendingAction: UpdatePasswordPendingAction.none));
+    }
     return cancelled;
   }
 

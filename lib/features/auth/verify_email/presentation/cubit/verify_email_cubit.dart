@@ -20,20 +20,25 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
   Future<void> resendVerificationEmail(String email) async {
     final trimmed = email.trim();
     if (!_ensureConfigured() || state.busy || trimmed.isEmpty) return;
-    emit(state.copyWith(busy: true, feedback: AuthFeedback.none));
+    emit(
+      state.copyWith(
+        pendingAction: VerifyEmailPendingAction.resend,
+        feedback: AuthFeedback.none,
+      ),
+    );
     final result = await _resendVerificationEmail(trimmed);
     if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
-          busy: false,
+          pendingAction: VerifyEmailPendingAction.none,
           feedback: mapAuthFailureToFeedback(failure),
           feedbackId: state.feedbackId + 1,
         ),
       ),
       (_) => emit(
         state.copyWith(
-          busy: false,
+          pendingAction: VerifyEmailPendingAction.none,
           feedback: AuthFeedback.verificationResent,
           feedbackId: state.feedbackId + 1,
         ),
@@ -46,19 +51,24 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
     final token = _sessionCoordinator.beginAuthAction(
       email: email ?? _sessionCoordinator.pendingEmail,
     );
-    emit(state.copyWith(busy: true, feedback: AuthFeedback.none));
+    emit(
+      state.copyWith(
+        pendingAction: VerifyEmailPendingAction.check,
+        feedback: AuthFeedback.none,
+      ),
+    );
     try {
       final result = await _checkEmailVerified();
       result.fold(
         (failure) {
           if (isClosed) return;
           if (!_sessionCoordinator.isActionCurrent(token)) {
-            emit(state.copyWith(busy: false));
+            emit(state.copyWith(pendingAction: VerifyEmailPendingAction.none));
             return;
           }
           emit(
             state.copyWith(
-              busy: false,
+              pendingAction: VerifyEmailPendingAction.none,
               feedback: mapAuthFailureToFeedback(failure),
               feedbackId: state.feedbackId + 1,
             ),
@@ -68,19 +78,23 @@ class VerifyEmailCubit extends Cubit<VerifyEmailState> {
           if (outcome == null) {
             if (isClosed) return;
             if (!_sessionCoordinator.isActionCurrent(token)) {
-              emit(state.copyWith(busy: false));
+              emit(
+                state.copyWith(pendingAction: VerifyEmailPendingAction.none),
+              );
               return;
             }
             emit(
               state.copyWith(
-                busy: false,
+                pendingAction: VerifyEmailPendingAction.none,
                 feedback: AuthFeedback.emailNotVerifiedYet,
                 feedbackId: state.feedbackId + 1,
               ),
             );
             return;
           }
-          if (!isClosed) emit(state.copyWith(busy: false));
+          if (!isClosed) {
+            emit(state.copyWith(pendingAction: VerifyEmailPendingAction.none));
+          }
           _sessionCoordinator.applyAuthOutcome(token, outcome);
         },
       );

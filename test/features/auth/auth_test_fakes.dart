@@ -5,6 +5,8 @@ import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
+import 'package:daftariapp/core/widgets/app_error_dialog.dart';
+import 'package:daftariapp/core/widgets/app_success_dialog.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/repositories/forgot_password_repository.dart';
 import 'package:daftariapp/features/auth/login/domain/repositories/login_repository.dart';
 import 'package:daftariapp/features/auth/session/data/services/supabase_auth_service.dart';
@@ -165,6 +167,13 @@ class FakeAuthBackend
   Future<Either<AppFailure, LedgerLinkStatus>> Function(String userId)?
   onGetLedgerLinkStatus;
   Future<Either<AppFailure, bool>> Function()? onHasLocalData;
+  Future<Either<AppFailure, AuthUser>> Function()? onSignIn;
+  Future<Either<AppFailure, AuthUser>> Function()? onSignUp;
+  Future<Either<AppFailure, void>> Function()? onSignOut;
+  Future<Either<AppFailure, void>> Function()? onSendPasswordReset;
+  Future<Either<AppFailure, void>> Function()? onResendVerification;
+  Future<Either<AppFailure, AuthUser?>> Function()? onGetCurrentUser;
+  Future<Either<AppFailure, void>> Function()? onUpdatePassword;
 
   int signInCalls = 0;
   int signUpCalls = 0;
@@ -181,8 +190,11 @@ class FakeAuthBackend
   Stream<AuthSessionEvent> watchAuthChanges() => events.stream;
 
   @override
-  Future<Either<AppFailure, AuthUser?>> getCurrentUser() async =>
-      currentUserOverride ?? Right(currentUser);
+  Future<Either<AppFailure, AuthUser?>> getCurrentUser() async {
+    final override = onGetCurrentUser;
+    if (override != null) return override();
+    return currentUserOverride ?? Right(currentUser);
+  }
 
   @override
   Future<Either<AppFailure, AuthUser>> signInWithPassword({
@@ -191,7 +203,10 @@ class FakeAuthBackend
   }) async {
     signInCalls++;
     lastArgs = (email, password);
-    final result = signInOverride ?? const Right(testUserA);
+    final override = onSignIn;
+    final result = override != null
+        ? await override()
+        : (signInOverride ?? const Right(testUserA));
     result.match((_) {}, (user) {
       if (user.emailVerified) {
         currentUser = user;
@@ -209,7 +224,10 @@ class FakeAuthBackend
   }) async {
     signUpCalls++;
     lastArgs = (email, password, shopName);
-    final result = signUpOverride ?? const Right(testUnverifiedUser);
+    final override = onSignUp;
+    final result = override != null
+        ? await override()
+        : (signUpOverride ?? const Right(testUnverifiedUser));
     result.match((_) {}, (user) {
       if (user.emailVerified) {
         currentUser = user;
@@ -231,7 +249,9 @@ class FakeAuthBackend
       }
     }
     signOutCalls++;
-    if (signOutResult.isRight()) {
+    final override = onSignOut;
+    final result = override != null ? await override() : signOutResult;
+    if (result.isRight()) {
       currentUser = null;
       currentUserOverride = null;
       if (emitSignedOutEvent && !events.isClosed) {
@@ -239,13 +259,15 @@ class FakeAuthBackend
         await Future<void>.microtask(() {});
       }
     }
-    return signOutResult;
+    return result;
   }
 
   @override
   Future<Either<AppFailure, void>> sendPasswordResetEmail(String email) async {
     resetCalls++;
     lastArgs = email;
+    final override = onSendPasswordReset;
+    if (override != null) return override();
     return resetResult;
   }
 
@@ -253,6 +275,8 @@ class FakeAuthBackend
   Future<Either<AppFailure, void>> resendVerificationEmail(String email) async {
     resendCalls++;
     lastArgs = email;
+    final override = onResendVerification;
+    if (override != null) return override();
     return resendResult;
   }
 
@@ -260,6 +284,8 @@ class FakeAuthBackend
   Future<Either<AppFailure, void>> updatePassword(String newPassword) async {
     updatePasswordCalls++;
     lastArgs = newPassword;
+    final override = onUpdatePassword;
+    if (override != null) return override();
     return updatePasswordResult;
   }
 
@@ -356,8 +382,31 @@ Finder authFormField(String key) => find.descendant(
   matching: find.byType(TextFormField),
 );
 
-Finder authSnackBarText(String text) =>
-    find.descendant(of: find.byType(SnackBar), matching: find.text(text));
+Finder authSuccessDialogText(String text) => find.descendant(
+  of: find.byType(AppSuccessDialog),
+  matching: find.text(text),
+);
+
+Finder authErrorDialogText(String text) =>
+    find.descendant(of: find.byType(AppErrorDialog), matching: find.text(text));
+
+Future<void> dismissAuthSuccessDialog(WidgetTester tester) async {
+  final button = find.descendant(
+    of: find.byType(AppSuccessDialog),
+    matching: find.byType(AppButton),
+  );
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
+Future<void> dismissAuthErrorDialog(WidgetTester tester) async {
+  final button = find.descendant(
+    of: find.byType(AppErrorDialog),
+    matching: find.byType(AppButton),
+  );
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
 
 Future<void> tapAuthButton(WidgetTester tester, String label) async {
   final finder = find.widgetWithText(AppButton, label);

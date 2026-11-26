@@ -23,6 +23,7 @@ enum AuthFeedback {
   emailNotVerifiedYet,
   passwordResetSent,
   passwordUpdated,
+  signedIn,
   signedOut,
   ledgerLinked,
 }

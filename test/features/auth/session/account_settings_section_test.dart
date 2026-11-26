@@ -121,7 +121,7 @@ void main() {
     expect(backend.signOutCalls, 1);
     expect(backend.linkedUserId, _widgetUser.id);
     expect(cubit.state.status, AuthStatus.unauthenticated);
-    expect(authSnackBarText(l10n.authSignedOutSuccess), findsOneWidget);
+    expect(find.text(l10n.authSignedOutSuccess), findsOneWidget);
   });
 
   testWidgets('ledger link confirmation returns the user decision', (

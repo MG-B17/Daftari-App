@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -30,9 +32,17 @@ class VerifyEmailBody extends StatelessWidget {
     final pendingEmail = context.select<AuthSessionCubit?, String?>(
       (sessionCubit) => sessionCubit?.state.pendingEmail,
     );
-    final busy = context.select<VerifyEmailCubit?, bool>(
-      (verifyCubit) => verifyCubit?.state.busy ?? false,
+    final sessionBusy = context.select<AuthSessionCubit?, bool>(
+      (sessionCubit) => sessionCubit?.state.busy ?? false,
     );
+    final pendingAction = context
+        .select<VerifyEmailCubit?, VerifyEmailPendingAction>(
+          (verifyCubit) =>
+              verifyCubit?.state.pendingAction ?? VerifyEmailPendingAction.none,
+        );
+    final isResending = pendingAction == VerifyEmailPendingAction.resend;
+    final isChecking = pendingAction == VerifyEmailPendingAction.check;
+    final busy = isResending || isChecking || sessionBusy;
     final resolvedEmail = (email ?? pendingEmail)?.trim();
     final hasEmail = resolvedEmail != null && resolvedEmail.isNotEmpty;
     Widget content = Column(
@@ -72,8 +82,8 @@ class VerifyEmailBody extends StatelessWidget {
               AppButton(
                 label: l10n.authResendVerification,
                 fullWidth: true,
-                isLoading: busy,
-                onPressed: hasEmail
+                isLoading: isResending,
+                onPressed: hasEmail && !busy
                     ? () => context
                           .read<VerifyEmailCubit?>()
                           ?.resendVerificationEmail(resolvedEmail)
@@ -84,6 +94,7 @@ class VerifyEmailBody extends StatelessWidget {
                 label: l10n.authVerifiedAction,
                 variant: AppButtonVariant.outlined,
                 fullWidth: true,
+                isLoading: isChecking,
                 onPressed: busy
                     ? null
                     : () => context
@@ -95,7 +106,7 @@ class VerifyEmailBody extends StatelessWidget {
         ),
         SizedBox(height: AppSpacing.md),
         TextButton(
-          onPressed: () => _backToLogin(context),
+          onPressed: busy ? null : () => _backToLogin(context),
           child: Text(l10n.authBackToLogin),
         ),
       ],
@@ -106,7 +117,7 @@ class VerifyEmailBody extends StatelessWidget {
             previous.feedbackId != current.feedbackId &&
             current.feedback != AuthFeedback.none,
         listener: (context, state) =>
-            showAuthFeedbackSnackBar(context, state.feedback),
+            unawaited(showAuthFeedbackDialog(context, state.feedback)),
         child: content,
       );
     }
