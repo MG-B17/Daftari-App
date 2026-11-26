@@ -87,7 +87,6 @@ import '../../features/settings/data/repositories/settings_repository_impl.dart'
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_settings_usecase.dart';
 import '../../features/settings/domain/usecases/change_language_usecase.dart';
-import '../../features/settings/domain/usecases/change_theme_usecase.dart';
 import '../../features/statements/data/repositories/statement_repository_impl.dart';
 import '../../features/statements/data/services/statement_share_service.dart';
 import '../../features/statements/domain/repositories/statement_repository.dart';
@@ -114,6 +113,7 @@ import '../services/date_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/session_commit_gate.dart';
 import '../services/widget_image_exporter.dart';
+import '../theme/theme_switcher_cubit.dart';
 import '../utils/app_date_utils.dart';
 
 final sl = GetIt.instance;
@@ -727,9 +727,10 @@ Future<void> configureDependencies() async {
       () => ChangeLanguageUseCase(sl<SettingsRepository>()),
     );
   }
-  if (!sl.isRegistered<ChangeThemeUseCase>()) {
-    sl.registerLazySingleton<ChangeThemeUseCase>(
-      () => ChangeThemeUseCase(sl<SettingsRepository>()),
+  if (!sl.isRegistered<ThemeSwitcherCubit>()) {
+    sl.registerLazySingleton<ThemeSwitcherCubit>(
+      () => ThemeSwitcherCubit(sl<LocalStorageService>(), sl<ErrorHandler>()),
+      dispose: (cubit) => cubit.close(),
     );
   }
   if (!sl.isRegistered<SettingsCubit>()) {
@@ -737,7 +738,6 @@ Future<void> configureDependencies() async {
       () => SettingsCubit(
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
-        sl<ChangeThemeUseCase>(),
         sl<ErrorHandler>(),
       ),
       dispose: (cubit) => cubit.close(),

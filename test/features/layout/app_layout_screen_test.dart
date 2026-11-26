@@ -5,11 +5,11 @@ import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/services/app_logger.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/layout/presentation/widgets/liquid_navigation_bar.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
@@ -38,26 +38,28 @@ void main() {
             await SharedPreferences.getInstance(),
           );
           final repository = SettingsRepositoryImpl(storage);
+          final errorHandler = ErrorHandler(
+            AppLogger(output: (_) {}, enableCrashReporting: false),
+          );
           final cubit = SettingsCubit(
             GetSettingsUseCase(repository),
             ChangeLanguageUseCase(repository),
-            ChangeThemeUseCase(repository),
-            ErrorHandler(
-              AppLogger(output: (_) {}, enableCrashReporting: false),
-            ),
+            errorHandler,
           );
+          final themeSwitcher = ThemeSwitcherCubit(storage, errorHandler);
           final router = AppRouter.create();
           await tester.pumpWidget(
             DaftariApp(
               router: router,
               settingsCubit: cubit,
+              themeSwitcherCubit: themeSwitcher,
               appLockCubit: sl<AppLockCubit>(),
             ),
           );
           await tester.pumpAndSettle();
-          // Set the desired test settings through the production Cubit.
+          // Set the desired test settings through the production Cubits.
           await cubit.setLocaleCode(locale.languageCode);
-          await cubit.setThemeMode(mode);
+          await themeSwitcher.setThemeMode(mode);
           await tester.pumpAndSettle();
           expect(find.byIcon(Icons.home), findsOneWidget);
           expect(find.byIcon(Icons.people_outline), findsWidgets);
@@ -124,6 +126,7 @@ void main() {
           await tester.pump(const Duration(milliseconds: 1));
           router.dispose();
           await cubit.close();
+          await themeSwitcher.close();
         },
       );
     }

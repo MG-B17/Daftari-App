@@ -33,6 +33,12 @@ abstract final class AppSpacing {
   static double get xl => 32.r;
   static double get icon => 24.r;
   static double get stateIcon => 56.r;
+  static double get loadingInlineSize => icon;
+  static double get loadingScreenSize => 96.r;
+  static double get feedbackDialogVisualSize => 120.r;
+  static double get feedbackDialogBadgeSize => 80.r;
+  static double get feedbackDialogIconSize => 44.r;
+  static double get feedbackDialogMaxWidth => 360.w.clamp(280, 400).toDouble();
   static double get controlHeight => 48.r;
   static double get radius => 12.r;
   static BorderRadius get borderRadius => BorderRadius.circular(radius);

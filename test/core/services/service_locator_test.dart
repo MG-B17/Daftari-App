@@ -6,6 +6,7 @@ import 'package:daftariapp/core/services/connectivity_service.dart';
 import 'package:daftariapp/core/services/date_service.dart';
 import 'package:daftariapp/core/services/local_storage_service.dart';
 import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
@@ -22,7 +23,6 @@ import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.d
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
 import 'package:daftariapp/features/statements/domain/repositories/statement_repository.dart';
@@ -70,10 +70,10 @@ void main() {
         sl<ErrorHandler>(),
         sl<GoRouter>(),
         sl<SettingsCubit>(),
+        sl<ThemeSwitcherCubit>(),
         sl<SettingsRepository>(),
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
-        sl<ChangeThemeUseCase>(),
         sl<TransactionRepository>(),
         sl<CreateTransactionUseCase>(),
         sl<EditTransactionUseCase>(),
@@ -112,10 +112,10 @@ void main() {
         sl<ErrorHandler>(),
         sl<GoRouter>(),
         sl<SettingsCubit>(),
+        sl<ThemeSwitcherCubit>(),
         sl<SettingsRepository>(),
         sl<GetSettingsUseCase>(),
         sl<ChangeLanguageUseCase>(),
-        sl<ChangeThemeUseCase>(),
         sl<TransactionRepository>(),
         sl<CreateTransactionUseCase>(),
         sl<EditTransactionUseCase>(),

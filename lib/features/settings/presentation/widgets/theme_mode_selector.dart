@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/animation/app_theme_transition.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../cubit/settings_cubit.dart';
-import '../cubit/settings_state.dart';
+import '../../../../core/theme/theme_switcher_cubit.dart';
+import '../../../../core/theme/theme_switcher_state.dart';
 
 enum _ThemeOption {
   light(ThemeMode.light, Icons.light_mode_outlined),
@@ -23,7 +25,7 @@ class ThemeModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      BlocBuilder<SettingsCubit, SettingsState>(
+      BlocBuilder<ThemeSwitcherCubit, ThemeSwitcherState>(
         buildWhen: (previous, current) =>
             previous.themeMode != current.themeMode,
         builder: (context, state) {
@@ -51,8 +53,10 @@ class ThemeModeSelector extends StatelessWidget {
                             onTap: () {
                               if (state.themeMode == option.mode) return;
                               transition(option.mode);
-                              context.read<SettingsCubit>().setThemeMode(
-                                option.mode,
+                              unawaited(
+                                context.read<ThemeSwitcherCubit>().setThemeMode(
+                                  option.mode,
+                                ),
                               );
                             },
                           ),

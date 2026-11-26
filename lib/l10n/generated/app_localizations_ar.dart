@@ -169,6 +169,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'إعادة المحاولة';
 
   @override
+  String get ok => 'حسناً';
+
+  @override
+  String get feedbackSuccessLabel => 'تم بنجاح';
+
+  @override
+  String get feedbackErrorLabel => 'خطأ';
+
+  @override
   String get confirm => 'تأكيد';
 
   @override

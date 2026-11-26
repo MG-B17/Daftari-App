@@ -170,6 +170,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get ok => 'OK';
+
+  @override
+  String get feedbackSuccessLabel => 'Success';
+
+  @override
+  String get feedbackErrorLabel => 'Error';
+
+  @override
   String get confirm => 'Confirm';
 
   @override

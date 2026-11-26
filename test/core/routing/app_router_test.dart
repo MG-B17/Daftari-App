@@ -1,7 +1,6 @@
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/features/settings/domain/usecases/change_theme_usecase.dart';
 import 'package:daftariapp/app.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
@@ -190,7 +189,6 @@ void main() {
     final cubit = SettingsCubit(
       GetSettingsUseCase(SettingsRepositoryImpl(storage)),
       ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
-      ChangeThemeUseCase(SettingsRepositoryImpl(storage)),
       ErrorHandler(AppLogger(output: (_) {}, enableCrashReporting: false)),
     );
     final router = AppRouter.create(localStorage: storage);

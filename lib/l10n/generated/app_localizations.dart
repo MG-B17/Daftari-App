@@ -392,6 +392,24 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @feedbackSuccessLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Success'**
+  String get feedbackSuccessLabel;
+
+  /// No description provided for @feedbackErrorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get feedbackErrorLabel;
+
   /// No description provided for @confirm.
   ///
   /// In en, this message translates to:

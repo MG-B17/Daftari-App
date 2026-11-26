@@ -63,6 +63,7 @@ dependencies:
   flutter_svg: ^2.4.0
   flutter_animate: ^4.5.2
   flutter_native_contact_picker: ^0.0.13
+  lottie: ^3.8.2
 
 dev_dependencies:
   flutter_test:
@@ -95,6 +96,11 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/svgs/
+    - assets/lottie/loading.json
+    - assets/lottie/success animation.json
+    - assets/lottie/ERROR Animation.json
+    - assets/lottie/Debt_Paid_Status_Animation_v1.json
+    - assets/lottie/Transaction_Added_Ledger_Entry_v1.json
   fonts:
     - family: Cairo
       fonts:
