@@ -2,7 +2,7 @@ import 'package:daftariapp/app.dart';
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
 import 'package:daftariapp/core/widgets/app_confirmation_dialog.dart';

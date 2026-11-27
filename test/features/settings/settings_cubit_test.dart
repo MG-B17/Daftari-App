@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
@@ -109,4 +111,106 @@ void main() {
     ],
     verify: (_) => verify(() => handler.handle(any())).called(1),
   );
+
+  blocTest<SettingsCubit, SettingsState>(
+    'repeated locale failure clears and re-emits hasError',
+    build: () {
+      when(() => storage.setLocaleCode('en'))
+          .thenThrow(const StorageException());
+      return SettingsCubit(
+        GetSettingsUseCase(SettingsRepositoryImpl(storage)),
+        ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
+        handler,
+      );
+    },
+    act: (cubit) async {
+      await cubit.setLocaleCode('en');
+      await cubit.setLocaleCode('en');
+    },
+    expect: () => const [
+      SettingsState(localeCode: 'en', hasError: false),
+      SettingsState(localeCode: 'ar', hasError: true),
+      SettingsState(localeCode: 'en', hasError: false),
+      SettingsState(localeCode: 'ar', hasError: true),
+    ],
+    verify: (_) => verify(() => handler.handle(any())).called(2),
+  );
+
+  test(
+    'stale locale failure does not overwrite a newer successful selection',
+    () async {
+      final firstWrite = Completer<void>();
+      when(() => storage.setLocaleCode('en'))
+          .thenAnswer((_) => firstWrite.future);
+      when(() => storage.setLocaleCode('ar')).thenAnswer((_) async {});
+
+      final cubit = SettingsCubit(
+        GetSettingsUseCase(SettingsRepositoryImpl(storage)),
+        ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
+        handler,
+      );
+      final firstCall = cubit.setLocaleCode('en');
+      await cubit.setLocaleCode('ar');
+      expect(cubit.state, const SettingsState(localeCode: 'ar'));
+
+      firstWrite.completeError(const StorageException());
+      await firstCall;
+
+      expect(
+        cubit.state,
+        const SettingsState(localeCode: 'ar', hasError: false),
+      );
+      verify(() => handler.handle(any())).called(1);
+      await cubit.close();
+    },
+  );
+
+  test('P15-06: overlapping language writes preserve earlier persisted locale when later write fails', () async {
+    var persistedLocale = 'ar';
+    final enWrite = Completer<void>();
+    final arWrite = Completer<void>();
+
+    when(() => storage.localeCode).thenAnswer((_) => persistedLocale);
+    when(() => storage.setLocaleCode('en')).thenAnswer((_) async {
+      await enWrite.future;
+      persistedLocale = 'en';
+    });
+    when(() => storage.setLocaleCode('ar')).thenAnswer((_) async {
+      await arWrite.future;
+      persistedLocale = 'ar';
+    });
+
+    final repo = SettingsRepositoryImpl(storage);
+    final cubit = SettingsCubit(
+      GetSettingsUseCase(repo),
+      ChangeLanguageUseCase(repo),
+      handler,
+    );
+    expect(cubit.state.localeCode, 'ar');
+
+    final enCall = cubit.setLocaleCode('en');
+    expect(cubit.state, const SettingsState(localeCode: 'en'));
+
+    final arCall = cubit.setLocaleCode('ar');
+    expect(cubit.state, const SettingsState(localeCode: 'ar'));
+
+    enWrite.complete();
+    await enCall;
+    expect(cubit.state, const SettingsState(localeCode: 'ar'));
+
+    arWrite.completeError(const StorageException());
+    await arCall;
+
+    final reloaded = SettingsCubit(
+      GetSettingsUseCase(repo),
+      ChangeLanguageUseCase(repo),
+      handler,
+    );
+    expect(reloaded.state.localeCode, 'en');
+    expect(cubit.state, const SettingsState(localeCode: 'en', hasError: true));
+    expect(cubit.state.localeCode, reloaded.state.localeCode);
+    verify(() => handler.handle(any())).called(1);
+    await reloaded.close();
+    await cubit.close();
+  });
 }

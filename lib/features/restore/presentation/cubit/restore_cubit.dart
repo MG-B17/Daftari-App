@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/restore_entities.dart';
 import '../../domain/repositories/restore_repository.dart';
 import 'restore_state.dart';
@@ -20,23 +21,49 @@ class RestoreCubit extends Cubit<RestoreViewState> {
 
   final RestoreRepository _repository;
   final FutureOr<void> Function()? _onRestoreCompleted;
-  bool _isCancellingInterrupted = false;
+  int _feedbackSequence = 0;
+  int _consumedFeedbackId = 0;
+
+  bool consumeFeedback(int feedbackId) {
+    if (feedbackId <= _consumedFeedbackId) return false;
+    _consumedFeedbackId = feedbackId;
+    return true;
+  }
 
   /// Loads or refreshes the current restore eligibility, local ledger summary,
   /// interrupted transfer state, and server-confirmed cloud snapshot preview.
-  Future<void> loadPreview() async {
+  Future<void> loadPreview() => _loadPreviewInternal();
+
+  Future<void> _loadPreviewInternal({
+    RestoreFeedback feedback = RestoreFeedback.none,
+    bool allowWhenCancelling = false,
+  }) async {
     if (isClosed) return;
+    final busyWithoutCancel =
+        state.phase == RestorePhase.loading ||
+        state.phase == RestorePhase.executing;
+    if (busyWithoutCancel ||
+        (!allowWhenCancelling && state.isCancellingInterrupted)) {
+      return;
+    }
+
     emit(
       state.copyWith(
         phase: RestorePhase.loading,
         primaryConfirmed: false,
         replacementConfirmed: false,
+        isCancellingInterrupted: false,
         refreshReason: () => null,
+        feedback: RestoreFeedback.none,
       ),
     );
 
     final result = await _repository.inspectRestore();
     if (isClosed) return;
+
+    final nextFeedbackId = feedback != RestoreFeedback.none
+        ? ++_feedbackSequence
+        : state.feedbackId;
 
     result.fold(
       (_) => emit(
@@ -44,19 +71,32 @@ class RestoreCubit extends Cubit<RestoreViewState> {
           phase: RestorePhase.error,
           primaryConfirmed: false,
           replacementConfirmed: false,
+          isCancellingInterrupted: false,
+          feedback: feedback,
+          feedbackId: nextFeedbackId,
         ),
       ),
-      _applyInspectionResult,
+      (inspection) => _applyInspectionResult(
+        inspection,
+        feedback: feedback,
+        feedbackId: nextFeedbackId,
+      ),
     );
   }
 
-  void _applyInspectionResult(RestoreInspectionResult result) {
+  void _applyInspectionResult(
+    RestoreInspectionResult result, {
+    required RestoreFeedback feedback,
+    required int feedbackId,
+  }) {
     switch (result) {
       case RestoreInspectionSignedOut():
         emit(
           RestoreViewState(
             phase: RestorePhase.signedOut,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionEmailUnverified(:final email, :final shopName):
@@ -70,6 +110,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
               isEmailVerified: false,
             ),
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionAccountMismatch(:final account, :final localLedger):
@@ -79,6 +121,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             account: account,
             localLedger: localLedger,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionOffline(
@@ -94,6 +138,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             pendingTransfer: pendingTransfer,
             cloudPreview: pendingTransfer?.cloudPreview,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionMissingBackup(:final account, :final localLedger):
@@ -103,6 +149,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             account: account,
             localLedger: localLedger,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionInterruptedTransfer(
@@ -118,6 +166,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             pendingTransfer: pendingTransfer,
             cloudPreview: pendingTransfer.cloudPreview,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
       case RestoreInspectionReady(
@@ -132,6 +182,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             localLedger: localLedger,
             cloudPreview: cloudPreview,
             isPreview: state.isPreview,
+            feedback: feedback,
+            feedbackId: feedbackId,
           ),
         );
     }
@@ -140,7 +192,9 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   /// Enters the primary confirmation step (combined restore + takeover on a new
   /// phone, or restore confirmation on the existing active phone).
   void requestRestoreConfirmation() {
-    if (isClosed || state.phase != RestorePhase.previewReady) return;
+    if (isClosed || state.phase != RestorePhase.previewReady || state.isBusy) {
+      return;
+    }
     if (state.account == null ||
         state.localLedger == null ||
         state.cloudPreview == null) {
@@ -152,6 +206,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
         primaryConfirmed: false,
         replacementConfirmed: false,
         refreshReason: () => null,
+        feedback: RestoreFeedback.none,
       ),
     );
   }
@@ -159,7 +214,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   /// Cancels either the primary or second replacement confirmation, leaving the
   /// local ledger and device authority untouched.
   void cancelConfirmation() {
-    if (isClosed) return;
+    if (isClosed || state.isBusy) return;
     if (state.phase != RestorePhase.confirmingPrimary &&
         state.phase != RestorePhase.confirmingReplacement) {
       return;
@@ -169,6 +224,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
         phase: RestorePhase.previewReady,
         primaryConfirmed: false,
         replacementConfirmed: false,
+        feedback: RestoreFeedback.none,
       ),
     );
   }
@@ -181,7 +237,11 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   /// this advances to the second explicit replacement confirmation without
   /// executing the restore yet.
   Future<void> confirmPrimary() async {
-    if (isClosed || state.phase != RestorePhase.confirmingPrimary) return;
+    if (isClosed ||
+        state.phase != RestorePhase.confirmingPrimary ||
+        state.isBusy) {
+      return;
+    }
 
     if (state.requiresReplacement) {
       emit(
@@ -189,6 +249,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
           phase: RestorePhase.confirmingReplacement,
           primaryConfirmed: true,
           replacementConfirmed: false,
+          feedback: RestoreFeedback.none,
         ),
       );
       return;
@@ -197,6 +258,7 @@ class RestoreCubit extends Cubit<RestoreViewState> {
     final consentedState = state.copyWith(
       primaryConfirmed: true,
       replacementConfirmed: false,
+      feedback: RestoreFeedback.none,
     );
     await _executeConsentedRestore(consentedState);
   }
@@ -206,12 +268,14 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   Future<void> confirmReplacement() async {
     if (isClosed ||
         state.phase != RestorePhase.confirmingReplacement ||
-        !state.primaryConfirmed) {
+        !state.primaryConfirmed ||
+        state.isBusy) {
       return;
     }
     final consentedState = state.copyWith(
       primaryConfirmed: true,
       replacementConfirmed: true,
+      feedback: RestoreFeedback.none,
     );
     await _executeConsentedRestore(consentedState);
   }
@@ -224,25 +288,46 @@ class RestoreCubit extends Cubit<RestoreViewState> {
           phase: RestorePhase.previewReady,
           primaryConfirmed: false,
           replacementConfirmed: false,
+          feedback: RestoreFeedback.none,
         ),
       );
       return;
     }
 
-    emit(consentedState.copyWith(phase: RestorePhase.executing));
+    emit(
+      consentedState.copyWith(
+        phase: RestorePhase.executing,
+        feedback: RestoreFeedback.none,
+      ),
+    );
 
-    final result = await _repository.executeRestore(consent: token);
-    if (isClosed) return;
+    try {
+      final result = await _repository.executeRestore(consent: token);
+      if (isClosed) return;
 
-    await result.fold((_) async {
+      await result.fold((failure) async {
+        emit(
+          consentedState.copyWith(
+            phase: RestorePhase.error,
+            primaryConfirmed: false,
+            replacementConfirmed: false,
+            feedback: _mapFailureFeedback(failure.errorCode),
+            feedbackId: ++_feedbackSequence,
+          ),
+        );
+      }, _applyExecutionResult);
+    } catch (_) {
+      if (isClosed) return;
       emit(
         consentedState.copyWith(
           phase: RestorePhase.error,
           primaryConfirmed: false,
           replacementConfirmed: false,
+          feedback: RestoreFeedback.failed,
+          feedbackId: ++_feedbackSequence,
         ),
       );
-    }, _applyExecutionResult);
+    }
   }
 
   /// Resumes a previously interrupted restore/device transfer using the same
@@ -250,41 +335,79 @@ class RestoreCubit extends Cubit<RestoreViewState> {
   Future<void> resumeInterruptedTransfer() async {
     if (isClosed ||
         state.phase != RestorePhase.interruptedRecovery ||
-        _isCancellingInterrupted) {
+        state.isBusy) {
       return;
     }
     final inFlight = state.pendingTransfer;
     if (inFlight == null) return;
 
-    emit(state.copyWith(phase: RestorePhase.executing));
+    emit(
+      state.copyWith(
+        phase: RestorePhase.executing,
+        feedback: RestoreFeedback.none,
+      ),
+    );
 
-    final result = await _repository.resumePendingTransfer(inFlight);
-    if (isClosed) return;
+    try {
+      final result = await _repository.resumePendingTransfer(inFlight);
+      if (isClosed) return;
 
-    await result.fold((_) async {
-      emit(state.copyWith(phase: RestorePhase.interruptedRecovery));
-    }, _applyExecutionResult);
+      await result.fold((failure) async {
+        emit(
+          state.copyWith(
+            phase: RestorePhase.interruptedRecovery,
+            feedback: _mapFailureFeedback(failure.errorCode),
+            feedbackId: ++_feedbackSequence,
+          ),
+        );
+      }, _applyExecutionResult);
+    } catch (_) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          phase: RestorePhase.interruptedRecovery,
+          feedback: RestoreFeedback.failed,
+          feedbackId: ++_feedbackSequence,
+        ),
+      );
+    }
   }
 
   /// Cancels a pre-takeover interrupted transfer and refreshes the preview.
   Future<void> cancelInterruptedTransfer() async {
     if (isClosed ||
         state.phase != RestorePhase.interruptedRecovery ||
-        _isCancellingInterrupted) {
+        state.isBusy) {
       return;
     }
     final inFlight = state.pendingTransfer;
     if (inFlight == null || !inFlight.canCancelBeforeServerTakeover) return;
 
-    _isCancellingInterrupted = true;
+    emit(
+      state.copyWith(
+        isCancellingInterrupted: true,
+        feedback: RestoreFeedback.none,
+      ),
+    );
     try {
       final result = await _repository.discardPendingTransfer(
         inFlight.requestId,
       );
       if (isClosed) return;
-      await result.fold((_) => loadPreview(), (_) => loadPreview());
-    } finally {
-      _isCancellingInterrupted = false;
+      final failureFeedback = result.fold<RestoreFeedback>(
+        (failure) => _mapFailureFeedback(failure.errorCode),
+        (_) => RestoreFeedback.none,
+      );
+      await _loadPreviewInternal(
+        feedback: failureFeedback,
+        allowWhenCancelling: true,
+      );
+    } catch (_) {
+      if (isClosed) return;
+      await _loadPreviewInternal(
+        feedback: RestoreFeedback.failed,
+        allowWhenCancelling: true,
+      );
     }
   }
 
@@ -296,6 +419,12 @@ class RestoreCubit extends Cubit<RestoreViewState> {
         :final localLedger,
         :final authorityTransferred,
       ):
+        try {
+          await _onRestoreCompleted?.call();
+        } catch (_) {
+          // Best-effort backup state refresh after restore already committed.
+        }
+        if (isClosed) return;
         emit(
           state.copyWith(
             phase: RestorePhase.completed,
@@ -307,9 +436,12 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             primaryConfirmed: false,
             replacementConfirmed: false,
             refreshReason: () => null,
+            feedback: authorityTransferred
+                ? RestoreFeedback.completedTransferred
+                : RestoreFeedback.completedSameDevice,
+            feedbackId: ++_feedbackSequence,
           ),
         );
-        await _onRestoreCompleted?.call();
       case RestoreExecutionCloudVersionChanged(
         :final account,
         :final localLedger,
@@ -326,6 +458,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             replacementConfirmed: false,
             refreshReason: () =>
                 RestoreRefreshReason.cloudVersionOrDeviceChanged,
+            feedback: RestoreFeedback.cloudVersionChanged,
+            feedbackId: ++_feedbackSequence,
           ),
         );
       case RestoreExecutionLocalLedgerChanged(
@@ -343,6 +477,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             primaryConfirmed: false,
             replacementConfirmed: false,
             refreshReason: () => RestoreRefreshReason.localLedgerChanged,
+            feedback: RestoreFeedback.localLedgerChanged,
+            feedbackId: ++_feedbackSequence,
           ),
         );
       case RestoreExecutionBlockedAccountMismatch(
@@ -358,6 +494,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             primaryConfirmed: false,
             replacementConfirmed: false,
             refreshReason: () => null,
+            feedback: RestoreFeedback.accountMismatch,
+            feedbackId: ++_feedbackSequence,
           ),
         );
       case RestoreExecutionOffline(
@@ -374,6 +512,8 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             primaryConfirmed: false,
             replacementConfirmed: false,
             refreshReason: () => null,
+            feedback: RestoreFeedback.offline,
+            feedbackId: ++_feedbackSequence,
           ),
         );
       case RestoreExecutionInterrupted(
@@ -391,8 +531,21 @@ class RestoreCubit extends Cubit<RestoreViewState> {
             primaryConfirmed: false,
             replacementConfirmed: false,
             refreshReason: () => null,
+            feedback: RestoreFeedback.interrupted,
+            feedbackId: ++_feedbackSequence,
           ),
         );
     }
   }
+
+  static RestoreFeedback _mapFailureFeedback(AppErrorCode code) =>
+      switch (code) {
+        AppErrorCode.network => RestoreFeedback.offline,
+        AppErrorCode.auth => RestoreFeedback.authError,
+        AppErrorCode.database ||
+        AppErrorCode.storage ||
+        AppErrorCode.contactPicker ||
+        AppErrorCode.validation ||
+        AppErrorCode.unexpected => RestoreFeedback.failed,
+      };
 }

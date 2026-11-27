@@ -407,4 +407,81 @@ void main() {
     expect(cubit.state.entries, isEmpty);
     expect(cubit.state.deleteSubmissionId, 2);
   });
+
+  test('P15-08: customer updates emitted during a pending save reconcile when the save fails', () async {
+    final customersRepo = _ControlledCustomerRepo();
+    final txRepo = _ControlledTransactionRepo();
+    addTearDown(customersRepo.dispose);
+    addTearDown(txRepo.dispose);
+    final cubit = TransactionFormCubit(
+      WatchCustomersUseCase(customersRepo),
+      GetTransactionByIdUseCase(txRepo),
+      CreateTransactionUseCase(txRepo),
+      EditTransactionUseCase(txRepo),
+    );
+    addTearDown(cubit.close);
+
+    final customerA = CustomerEntity(
+      id: 'c1',
+      name: 'Inactive During Save',
+      phone: null,
+      notes: null,
+      balancePiasters: 0,
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    );
+    final customerB = CustomerEntity(
+      id: 'c2',
+      name: 'Remaining Active',
+      phone: null,
+      notes: null,
+      balancePiasters: 0,
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    );
+
+    await cubit.load(null);
+    customersRepo.controller.add(Right([customerA, customerB]));
+    await Future<void>.delayed(Duration.zero);
+
+    final pending = Completer<Either<AppFailure, TransactionEntity>>();
+    txRepo.pendingCreate = pending;
+
+    final saveFuture = cubit.save(
+      customerId: customerA.id,
+      type: TransactionType.credit,
+      amount: '50',
+      date: DateTime(2026, 1, 1),
+    );
+    expect(cubit.state.saving, isTrue);
+
+    // Customer A becomes inactive while save is pending.
+    customersRepo.controller.add(Right([customerB]));
+    await Future<void>.delayed(Duration.zero);
+
+    // Fail the save -> customer list reconciles without another stream event.
+    pending.complete(const Left(AppFailure(AppErrorCode.database)));
+    await saveFuture;
+
+    expect(cubit.state.saving, isFalse);
+    expect(
+      cubit.state.submissionStatus,
+      TransactionFormSubmissionStatus.failed,
+    );
+    expect(cubit.state.customers.map((c) => c.id).toList(), [customerB.id]);
+
+    // Retrying with the now-inactive customer fails validation without invoking create again.
+    txRepo.pendingCreate = null;
+    await cubit.save(
+      customerId: customerA.id,
+      type: TransactionType.credit,
+      amount: '50',
+      date: DateTime(2026, 1, 1),
+    );
+    expect(txRepo.createCalls, 1);
+    expect(
+      cubit.state.submissionFailure,
+      const AppFailure(AppErrorCode.validation),
+    );
+  });
 }

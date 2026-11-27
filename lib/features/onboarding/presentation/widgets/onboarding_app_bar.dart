@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
@@ -33,10 +33,11 @@ class OnboardingAppBar extends StatelessWidget {
           ),
           BlocBuilder<OnboardingCubit, OnboardingState>(
             buildWhen: (previous, current) =>
-                previous.isSaving != current.isSaving,
+                previous.isSaving != current.isSaving ||
+                previous.isCompleted != current.isCompleted,
             builder: (context, state) => TextButton(
               key: const ValueKey('onboarding-skip'),
-              onPressed: state.isSaving
+              onPressed: state.isSaving || state.isCompleted
                   ? null
                   : context.read<OnboardingCubit>().completeOnboarding,
               child: Text(l10n.onboardingSkip),

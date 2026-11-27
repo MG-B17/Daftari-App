@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../constants/app_constants.dart';
+import '../../constants/app_constants.dart';
 
 abstract final class AppTypography {
   static TextTheme get textTheme => TextTheme(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'app_colors.dart';
+import '../colors/app_colors.dart';
 
 /// All design-space sizing lives here, not in feature widgets.
 abstract final class AppSpacing {

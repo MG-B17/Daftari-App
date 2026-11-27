@@ -1,4 +1,4 @@
-import '../../../../core/services/local_storage_service.dart';
+import '../../../../core/services/loacl_storage/local_storage_service.dart';
 import '../../domain/repositories/settings_repository.dart';
 
 /// [SettingsRepository] backed by [LocalStorageService].

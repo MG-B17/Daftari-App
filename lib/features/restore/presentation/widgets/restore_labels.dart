@@ -10,6 +10,7 @@ import '../../../auth/session/presentation/cubit/auth_session_cubit.dart';
 import '../../../auth/session/presentation/cubit/auth_session_state.dart';
 import '../cubit/restore_cubit.dart';
 import '../cubit/restore_state.dart';
+import 'restore_feedback_listener.dart';
 
 extension RestoreDateFormatting on DateTime {
   String confirmedAtLabel(BuildContext context) {
@@ -40,13 +41,15 @@ class RestoreViewStateBuilder extends StatelessWidget {
     if (state case final fixed?) return builder(context, fixed);
     final restoreCubit = context.read<RestoreCubit?>();
     if (restoreCubit != null) {
-      return BlocBuilder<RestoreCubit, RestoreViewState>(
-        builder: (context, view) {
-          if (view.phase == RestorePhase.initial) {
-            unawaited(context.read<RestoreCubit>().loadPreview());
-          }
-          return builder(context, view);
-        },
+      return RestoreFeedbackListener(
+        child: BlocBuilder<RestoreCubit, RestoreViewState>(
+          builder: (context, view) {
+            if (view.phase == RestorePhase.initial) {
+              unawaited(context.read<RestoreCubit>().loadPreview());
+            }
+            return builder(context, view);
+          },
+        ),
       );
     }
     final authCubit = context.read<AuthSessionCubit?>();

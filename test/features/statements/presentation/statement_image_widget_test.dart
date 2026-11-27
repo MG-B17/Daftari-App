@@ -1,8 +1,8 @@
 import 'dart:ui' as ui;
 
-import 'package:daftariapp/core/services/widget_image_exporter.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
-import 'package:daftariapp/core/theme/app_spacing.dart';
+import 'package:daftariapp/core/services/image_exporter/widget_image_exporter.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
+import 'package:daftariapp/core/theme/spacing/app_spacing.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
 import 'package:daftariapp/features/customers/domain/entities/customer_entity.dart';
 import 'package:daftariapp/features/statements/domain/entities/customer_statement_entity.dart';

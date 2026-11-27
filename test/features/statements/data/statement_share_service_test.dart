@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
 import 'package:daftariapp/features/statements/domain/entities/share_statement_result.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -1,6 +1,6 @@
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
-import 'package:daftariapp/core/services/date_service.dart';
+import 'package:daftariapp/core/services/date/date_service.dart';
 import 'package:daftariapp/features/security/domain/entities/pin_verify_result.dart';
 import 'package:daftariapp/features/security/domain/entities/security_settings.dart';
 import 'package:daftariapp/features/security/domain/policies/pin_lockout_policy.dart';
@@ -26,10 +26,15 @@ class TestSecurityRepository implements SecurityRepository {
   bool fail = false;
   int attempts = 0;
   int verificationCalls = 0;
+  int setupCalls = 0;
+  int biometricToggleCalls = 0;
   int osCalls = 0;
+  bool setBiometricResult = true;
   DateTime? deadline;
   AutoLockTimeout timeout = AutoLockTimeout.immediate;
   Future<void>? verificationBarrier;
+  Future<void>? setupBarrier;
+  Future<void>? biometricBarrier;
 
   Either<AppFailure, T> result<T>(T value) =>
       fail ? const Left(AppFailure(AppErrorCode.storage)) : Right(value);
@@ -46,7 +51,9 @@ class TestSecurityRepository implements SecurityRepository {
       result(PinLockoutState(failedAttempts: attempts, lockoutUntil: deadline));
   @override
   Future<Either<AppFailure, void>> setupPin(String value) async {
-    pin = value;
+    setupCalls++;
+    await setupBarrier;
+    if (!fail) pin = value;
     return result(null);
   }
 
@@ -124,8 +131,12 @@ class TestSecurityRepository implements SecurityRepository {
 
   @override
   Future<Either<AppFailure, bool>> setBiometricEnabled(bool enabled) async {
-    biometricEnabled = enabled;
-    return result(true);
+    biometricToggleCalls++;
+    await biometricBarrier;
+    if (!fail && setBiometricResult) {
+      biometricEnabled = enabled;
+    }
+    return result(setBiometricResult);
   }
 
   @override

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/theme_switcher_cubit.dart';
-import '../../../../core/theme/theme_switcher_state.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
+import '../../../../core/theme/theme_controller/theme_switcher_cubit.dart';
+import '../../../../core/theme/theme_controller/theme_switcher_state.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
@@ -20,9 +20,11 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   void _showStorageError(BuildContext context, Object _) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsStorageError)),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.settingsStorageError)),
+        );
 
   @override
   Widget build(BuildContext context) => MultiBlocListener(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../domain/entities/pin_flow_mode.dart';
 import '../cubit/app_lock_cubit.dart';
 import '../cubit/app_lock_state.dart';
@@ -30,7 +30,11 @@ class PinLockBody extends StatelessWidget {
             mode == PinFlowMode.unlock
                 ? l10n.securityResetTitle
                 : l10n.securitySetupTitle,
-          PinStep.complete => l10n.securityComplete,
+          PinStep.complete => switch (mode) {
+            PinFlowMode.setup => l10n.securityPinSetupSuccessTitle,
+            PinFlowMode.disable => l10n.securityPinDisabledTitle,
+            _ => l10n.securityComplete,
+          },
           PinStep.verify => switch (mode) {
             PinFlowMode.change => l10n.securityChangeTitle,
             PinFlowMode.disable => l10n.securityDisableTitle,
@@ -40,7 +44,12 @@ class PinLockBody extends StatelessWidget {
         final subtitle = switch (state.step) {
           PinStep.confirm => l10n.securityConfirmSubtitle,
           PinStep.create => l10n.securitySetupSubtitle,
-          PinStep.complete => l10n.securityCompleteDescription,
+          PinStep.complete => switch (mode) {
+            PinFlowMode.setup => l10n.securityPinSetupSuccessMessage,
+            PinFlowMode.change => l10n.securityPinChangedMessage,
+            PinFlowMode.disable => l10n.securityPinDisabledMessage,
+            _ => l10n.securityCompleteDescription,
+          },
           PinStep.verify =>
             mode == PinFlowMode.unlock
                 ? l10n.securityUnlockSubtitle
@@ -52,7 +61,8 @@ class PinLockBody extends StatelessWidget {
             ? l10n.securityPinError
             : switch (security.message) {
                 SecurityMessage.incorrect => l10n.securityPinError,
-                SecurityMessage.unavailable => l10n.securityAuthUnavailable,
+                SecurityMessage.unavailable when mode == PinFlowMode.unlock =>
+                  l10n.securityAuthUnavailable,
                 _ => null,
               };
         return SafeArea(

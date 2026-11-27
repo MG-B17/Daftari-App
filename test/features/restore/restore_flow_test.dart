@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
-import 'package:daftariapp/core/services/date_service.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/date/date_service.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
+import 'package:daftariapp/core/widgets/app_button.dart';
+import 'package:daftariapp/core/widgets/app_error_dialog.dart';
+import 'package:daftariapp/core/widgets/app_success_dialog.dart';
+import 'package:daftariapp/core/widgets/daftari_loading.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_user.dart';
 import 'package:daftariapp/features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'package:daftariapp/features/backup/presentation/models/backup_view_state.dart';
@@ -29,7 +35,7 @@ import 'package:daftariapp/features/settings/domain/usecases/change_language_use
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -151,6 +157,11 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.pump();
   await tester.tap(finder);
   await tester.pump();
+}
+
+Future<void> _dismissDialog(WidgetTester tester, AppLocalizations l10n) async {
+  await tester.tap(find.text(l10n.ok));
+  await tester.pumpAndSettle();
 }
 
 class _LockedSecurityRepository implements SecurityRepository {
@@ -689,6 +700,17 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-primary-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AppSuccessDialog),
+              matching: find.text(l10n.restoreCompletedTransferredMessage),
+            ),
+            findsOneWidget,
+          );
+          await _dismissDialog(tester, l10n);
 
           expect(
             find.byKey(const ValueKey('restore-state-completed')),
@@ -760,6 +782,17 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-primary-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AppSuccessDialog),
+              matching: find.text(l10n.restoreCompletedSameDeviceMessage),
+            ),
+            findsOneWidget,
+          );
+          await _dismissDialog(tester, l10n);
 
           expect(
             find.byKey(const ValueKey('restore-state-completed')),
@@ -950,6 +983,11 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-replacement-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          await _dismissDialog(tester, l10n);
 
           expect(repo.executeCalls, 1);
           expect(repo.completedRestoreCount, 1);
@@ -1121,9 +1159,20 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-replacement-confirm')),
           );
+          await tester.pumpAndSettle();
 
           // Prior consent is invalidated: local ledger is NOT replaced and preview refreshes.
           final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+          expect(find.byType(AppErrorDialog), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AppErrorDialog),
+              matching: find.text(l10n.restoreLocalLedgerChangedNotice),
+            ),
+            findsOneWidget,
+          );
+          await _dismissDialog(tester, l10n);
+
           expect(repo.completedRestoreCount, 0);
           expect(repo.localLedger.customerCount, 3);
           expect(repo.localLedger.transactionCount, 7);
@@ -1153,6 +1202,10 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-replacement-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          await _dismissDialog(tester, l10n);
 
           expect(
             find.byKey(const ValueKey('restore-state-completed')),
@@ -1203,8 +1256,19 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-primary-confirm')),
           );
+          await tester.pumpAndSettle();
 
           final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+          expect(find.byType(AppErrorDialog), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AppErrorDialog),
+              matching: find.text(l10n.restoreCloudVersionChangedNotice),
+            ),
+            findsOneWidget,
+          );
+          await _dismissDialog(tester, l10n);
+
           expect(repo.completedRestoreCount, 0);
           expect(repo.localLedger.isEmpty, isTrue);
           expect(
@@ -1227,6 +1291,10 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-primary-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          await _dismissDialog(tester, l10n);
 
           expect(
             find.byKey(const ValueKey('restore-state-completed')),
@@ -1278,6 +1346,11 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-replacement-confirm')),
           );
+          await tester.pumpAndSettle();
+
+          final firstL10n = tester.element(find.byType(RestoreScreen)).l10n;
+          expect(find.byType(AppErrorDialog), findsOneWidget);
+          await _dismissDialog(tester, firstL10n);
 
           // Interrupted after server takeover commit: local ledger is still intact,
           // uploads are blocked, and recovery UI is shown.
@@ -1320,6 +1393,10 @@ void main() {
             tester,
             find.byKey(const ValueKey('restore-resume-transfer')),
           );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          await _dismissDialog(tester, l10n);
 
           expect(
             find.byKey(const ValueKey('restore-state-completed')),
@@ -1364,6 +1441,11 @@ void main() {
           tester,
           find.byKey(const ValueKey('restore-primary-confirm')),
         );
+        await tester.pumpAndSettle();
+
+        final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+        expect(find.byType(AppErrorDialog), findsOneWidget);
+        await _dismissDialog(tester, l10n);
 
         expect(
           find.byKey(const ValueKey('restore-state-interrupted')),
@@ -1378,7 +1460,10 @@ void main() {
           tester,
           find.byKey(const ValueKey('restore-cancel-interrupted')),
         );
+        await tester.pumpAndSettle();
 
+        expect(find.byType(AppErrorDialog), findsNothing);
+        expect(find.byType(AppSuccessDialog), findsNothing);
         expect(repo.discardCalls, 1);
         expect(repo.areUploadsBlocked, isFalse);
         expect(repo.localLedger, originalLocal);
@@ -1522,5 +1607,532 @@ void main() {
         );
       }
     }
+  });
+
+  group('Task 11 — shared feedback, progress visibility, cancellation, failure and duplicate taps', () {
+    testWidgets(
+      'preview loading uses DaftariLoading screen variant without CircularProgressIndicator',
+      (tester) async {
+        final inspectBarrier = Completer<void>();
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _emptyLocalLedger(),
+          cloudPreview: _cloudSnapshot(),
+        )..onBeforeInspect = () => inspectBarrier.future;
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        await _pumpRestore(
+          tester,
+          const RestoreScreen(),
+          locale: 'en',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+
+        expect(
+          find.byKey(const ValueKey('restore-loading-indicator')),
+          findsOneWidget,
+        );
+        expect(find.byType(DaftariLoading), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+
+        // Duplicate loadPreview while loading is ignored.
+        unawaited(cubit.loadPreview());
+        expect(repo.inspectCalls, 1);
+
+        inspectBarrier.complete();
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('restore-cloud-preview-card')),
+          findsOneWidget,
+        );
+        expect(find.byType(AppSuccessDialog), findsNothing);
+        expect(find.byType(AppErrorDialog), findsNothing);
+      },
+    );
+
+    for (final locale in ['ar', 'en']) {
+      testWidgets(
+        'keeps progress visible during restore/takeover, blocks duplicate taps, and reports success only after completion in $locale',
+        (tester) async {
+          final executeBarrier = Completer<void>();
+          final postCompleteBarrier = Completer<void>();
+          final repo = FakeRestoreRepository(
+            account: _accountA,
+            localLedger: _emptyLocalLedger(deviceId: 'device-new'),
+            cloudPreview: _cloudSnapshot(activeDeviceId: 'device-old'),
+          )..onBeforeExecuteRestore = () => executeBarrier.future;
+          final cubit = RestoreCubit(
+            repository: repo,
+            onRestoreCompleted: () => postCompleteBarrier.future,
+          );
+          addTearDown(cubit.close);
+
+          await _pumpRestore(
+            tester,
+            const RestoreScreen(),
+            locale: locale,
+            providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+          );
+          await tester.pumpAndSettle();
+
+          final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+          await _tapVisible(
+            tester,
+            find.byKey(const ValueKey('restore-start-button')),
+          );
+          await _tapVisible(
+            tester,
+            find.byKey(const ValueKey('restore-primary-confirm')),
+          );
+
+          // While executing: progress is visible, no CircularProgressIndicator,
+          // no premature success dialog, and duplicate actions are ignored.
+          expect(cubit.state.phase, RestorePhase.executing);
+          expect(
+            find.byKey(const ValueKey('restore-executing-progress')),
+            findsOneWidget,
+          );
+          expect(find.byType(DaftariLoading), findsOneWidget);
+          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(find.byType(AppSuccessDialog), findsNothing);
+          final executingButton = tester.widget<AppButton>(
+            find.byKey(const ValueKey('restore-start-button')),
+          );
+          expect(executingButton.isLoading, isTrue);
+          expect(executingButton.onPressed, isNull);
+
+          unawaited(cubit.confirmPrimary());
+          cubit.requestRestoreConfirmation();
+          unawaited(cubit.loadPreview());
+          expect(repo.executeCalls, 1);
+          expect(repo.inspectCalls, 1);
+
+          // Even after repository finishes, success waits for onRestoreCompleted.
+          executeBarrier.complete();
+          await tester.pump();
+          expect(cubit.state.phase, RestorePhase.executing);
+          expect(find.byType(AppSuccessDialog), findsNothing);
+
+          postCompleteBarrier.complete();
+          await tester.pumpAndSettle();
+
+          expect(cubit.state.phase, RestorePhase.completed);
+          expect(find.byType(AppSuccessDialog), findsOneWidget);
+          expect(
+            find.descendant(
+              of: find.byType(AppSuccessDialog),
+              matching: find.text(l10n.restoreCompletedTitle),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: find.byType(AppSuccessDialog),
+              matching: find.text(l10n.restoreCompletedTransferredMessage),
+            ),
+            findsOneWidget,
+          );
+
+          await _dismissDialog(tester, l10n);
+          expect(find.byType(AppSuccessDialog), findsNothing);
+          expect(
+            find.byKey(const ValueKey('restore-state-completed')),
+            findsOneWidget,
+          );
+        },
+      );
+    }
+
+    testWidgets(
+      'duplicate taps on populated-ledger replacement confirmation execute restore once',
+      (tester) async {
+        final executeBarrier = Completer<void>();
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _populatedLocalLedger(deviceId: 'device-new'),
+          cloudPreview: _cloudSnapshot(activeDeviceId: 'device-old'),
+        )..onBeforeExecuteRestore = () => executeBarrier.future;
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        await _pumpRestore(
+          tester,
+          const RestoreScreen(),
+          locale: 'en',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+        await tester.pumpAndSettle();
+
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        unawaited(cubit.confirmPrimary());
+        expect(cubit.state.phase, RestorePhase.confirmingReplacement);
+        expect(repo.executeCalls, 0);
+
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-replacement-confirm')),
+        );
+        unawaited(cubit.confirmReplacement());
+        expect(cubit.state.phase, RestorePhase.executing);
+        expect(repo.executeCalls, 1);
+
+        executeBarrier.complete();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppSuccessDialog), findsOneWidget);
+        expect(repo.executeCalls, 1);
+        expect(repo.completedRestoreCount, 1);
+      },
+    );
+
+    testWidgets(
+      'execution failures show localized AppErrorDialog once and subsequent retry + restore succeeds',
+      (tester) async {
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _emptyLocalLedger(deviceId: 'device-new'),
+          cloudPreview: _cloudSnapshot(activeDeviceId: 'device-old'),
+        );
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        await _pumpRestore(
+          tester,
+          const RestoreScreen(),
+          locale: 'en',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+        await tester.pumpAndSettle();
+
+        final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+
+        // Fail with unexpected error.
+        repo.nextFailure = const AppFailure(AppErrorCode.unexpected);
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppErrorDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AppErrorDialog),
+            matching: find.text(l10n.restoreFailedTitle),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(AppErrorDialog),
+            matching: find.text(l10n.restoreFailedMessage),
+          ),
+          findsOneWidget,
+        );
+        await _dismissDialog(tester, l10n);
+        expect(find.byType(AppErrorDialog), findsNothing);
+        expect(
+          find.byKey(const ValueKey('restore-state-error')),
+          findsOneWidget,
+        );
+
+        // Retry preview, then fail with auth error.
+        await _tapVisible(tester, find.byKey(const ValueKey('restore-retry')));
+        await tester.pumpAndSettle();
+
+        repo.nextFailure = const AppFailure(AppErrorCode.auth);
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppErrorDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AppErrorDialog),
+            matching: find.text(l10n.restoreAuthErrorMessage),
+          ),
+          findsOneWidget,
+        );
+        await _dismissDialog(tester, l10n);
+
+        // Retry preview and succeed -> verifies monotonic feedbackId still presents success once.
+        await _tapVisible(tester, find.byKey(const ValueKey('restore-retry')));
+        await tester.pumpAndSettle();
+
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppSuccessDialog), findsOneWidget);
+        await _dismissDialog(tester, l10n);
+        expect(repo.completedRestoreCount, 1);
+      },
+    );
+
+    testWidgets(
+      'interrupted transfer shows pending progress on resume and cancel, disables duplicate taps, and reports failures',
+      (tester) async {
+        final preview = _cloudSnapshot(activeDeviceId: 'device-old');
+        final pending = PendingRestoreTransfer(
+          requestId: 'req-interrupted-1',
+          ownerUserId: _accountA.userId,
+          targetDeviceId: 'device-new',
+          expectedVersion: preview.version,
+          expectedActiveDeviceId: preview.activeDeviceId,
+          confirmedAt: preview.confirmedAt,
+          requiresTakeover: true,
+          requiresReplacement: false,
+          consentedLocalRevisionStamp: 'rev-0',
+          stage: RestoreTransferStage.takeoverPending,
+          cloudPreview: preview,
+        );
+        final resumeBarrier = Completer<void>();
+        final discardBarrier = Completer<void>();
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _emptyLocalLedger(deviceId: 'device-new'),
+          cloudPreview: preview,
+          pendingTransfer: pending,
+        );
+        repo.onBeforeResumeTransfer = () => resumeBarrier.future;
+        repo.onBeforeDiscardTransfer = () => discardBarrier.future;
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        await _pumpRestore(
+          tester,
+          const RestoreScreen(),
+          locale: 'en',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+        await tester.pumpAndSettle();
+
+        final l10n = tester.element(find.byType(RestoreScreen)).l10n;
+
+        // Fail resume with network error after observing progress.
+        repo.nextFailure = const AppFailure(AppErrorCode.network);
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-resume-transfer')),
+        );
+
+        expect(
+          find.byKey(const ValueKey('restore-state-interrupted')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('restore-executing-progress')),
+          findsOneWidget,
+        );
+        expect(find.byType(DaftariLoading), findsOneWidget);
+        expect(
+          tester
+              .widget<AppButton>(
+                find.byKey(const ValueKey('restore-resume-transfer')),
+              )
+              .isLoading,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<AppButton>(
+                find.byKey(const ValueKey('restore-cancel-interrupted')),
+              )
+              .onPressed,
+          isNull,
+        );
+
+        // Duplicate resume and concurrent cancel are ignored while executing.
+        unawaited(cubit.resumeInterruptedTransfer());
+        unawaited(cubit.cancelInterruptedTransfer());
+        expect(repo.resumeCalls, 1);
+        expect(repo.discardCalls, 0);
+
+        resumeBarrier.complete();
+        await tester.pumpAndSettle();
+
+        expect(cubit.state.phase, RestorePhase.interruptedRecovery);
+        expect(find.byType(AppErrorDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AppErrorDialog),
+            matching: find.text(l10n.restoreOfflineTitle),
+          ),
+          findsOneWidget,
+        );
+        await _dismissDialog(tester, l10n);
+
+        // Cancel pre-takeover transfer: shows loading on cancel, disables resume,
+        // ignores duplicate cancel, and reports failure when discard fails.
+        repo.nextFailure = const AppFailure(AppErrorCode.network);
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-cancel-interrupted')),
+        );
+
+        expect(cubit.state.isCancellingInterrupted, isTrue);
+        expect(
+          tester
+              .widget<AppButton>(
+                find.byKey(const ValueKey('restore-cancel-interrupted')),
+              )
+              .isLoading,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<AppButton>(
+                find.byKey(const ValueKey('restore-resume-transfer')),
+              )
+              .onPressed,
+          isNull,
+        );
+
+        unawaited(cubit.cancelInterruptedTransfer());
+        unawaited(cubit.resumeInterruptedTransfer());
+        expect(repo.discardCalls, 1);
+        expect(repo.resumeCalls, 1);
+
+        discardBarrier.complete();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppErrorDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AppErrorDialog),
+            matching: find.text(l10n.restoreOfflineTitle),
+          ),
+          findsOneWidget,
+        );
+        await _dismissDialog(tester, l10n);
+      },
+    );
+
+    testWidgets(
+      'navigating away while restore is pending does not throw or present dialog on previous route',
+      (tester) async {
+        final executeBarrier = Completer<void>();
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _emptyLocalLedger(deviceId: 'device-new'),
+          cloudPreview: _cloudSnapshot(activeDeviceId: 'device-old'),
+        )..onBeforeExecuteRestore = () => executeBarrier.future;
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        await _pumpRestore(
+          tester,
+          BackupScreen(
+            state: BackupViewState(
+              status: BackupStatus.upToDate,
+              pendingChanges: 0,
+              lastConfirmedAt: _confirmedAt,
+              accountEmail: _accountA.email,
+              accountShopName: _accountA.shopName,
+            ),
+          ),
+          locale: 'en',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+
+        await tester.tap(find.byKey(const ValueKey('backup-restore')));
+        await tester.pumpAndSettle();
+
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        expect(cubit.state.phase, RestorePhase.executing);
+
+        // Navigate back while restore is still executing.
+        Navigator.of(tester.element(find.byType(RestoreScreen))).pop();
+        await tester.pumpAndSettle();
+        expect(find.byType(BackupScreen), findsOneWidget);
+        expect(find.byType(RestoreScreen), findsNothing);
+
+        executeBarrier.complete();
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.byType(AppSuccessDialog), findsNothing);
+        expect(find.byType(AppErrorDialog), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'reduced motion renders screen loader and terminal success dialog without animation exceptions',
+      (tester) async {
+        final inspectBarrier = Completer<void>();
+        final repo = FakeRestoreRepository(
+          account: _accountA,
+          localLedger: _emptyLocalLedger(deviceId: 'device-new'),
+          cloudPreview: _cloudSnapshot(activeDeviceId: 'device-old'),
+        )..onBeforeInspect = () => inspectBarrier.future;
+        final cubit = RestoreCubit(repository: repo);
+        addTearDown(cubit.close);
+
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+
+        await _pumpRestore(
+          tester,
+          const RestoreScreen(),
+          locale: 'ar',
+          providers: [BlocProvider<RestoreCubit>.value(value: cubit)],
+        );
+
+        expect(find.byType(DaftariLoading), findsOneWidget);
+        expect(find.byIcon(Icons.hourglass_top_rounded), findsOneWidget);
+
+        inspectBarrier.complete();
+        await tester.pumpAndSettle();
+
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-start-button')),
+        );
+        await _tapVisible(
+          tester,
+          find.byKey(const ValueKey('restore-primary-confirm')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AppSuccessDialog), findsOneWidget);
+        expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

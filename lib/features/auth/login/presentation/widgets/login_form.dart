@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/extensions/context_extensions.dart';
 import '../../../../../core/routing/app_routes.dart';
-import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../../core/utils/validators.dart';
 import '../../../../../core/widgets/app_button.dart';
 import '../../../../../core/widgets/app_text_field.dart';

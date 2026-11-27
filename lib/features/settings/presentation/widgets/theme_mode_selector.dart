@@ -5,9 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/animation/app_theme_transition.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/theme_switcher_cubit.dart';
-import '../../../../core/theme/theme_switcher_state.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
+import '../../../../core/theme/theme_controller/theme_switcher_cubit.dart';
+import '../../../../core/theme/theme_controller/theme_switcher_state.dart';
 
 enum _ThemeOption {
   light(ThemeMode.light, Icons.light_mode_outlined),
@@ -52,7 +52,9 @@ class ThemeModeSelector extends StatelessWidget {
                             isSelected: state.themeMode == option.mode,
                             onTap: () {
                               if (state.themeMode == option.mode) return;
-                              transition(option.mode);
+                              if (!MediaQuery.disableAnimationsOf(context)) {
+                                transition(option.mode);
+                              }
                               unawaited(
                                 context.read<ThemeSwitcherCubit>().setThemeMode(
                                   option.mode,

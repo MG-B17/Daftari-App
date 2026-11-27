@@ -5,8 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import '../../../settings/presentation/widgets/settings_icon_box.dart';
 import '../cubit/restore_cubit.dart';
 import '../cubit/restore_state.dart';
@@ -28,13 +29,8 @@ class RestoreBodySection extends StatelessWidget {
     switch (state.phase) {
       case RestorePhase.initial:
       case RestorePhase.loading:
-        return Center(
-          child: Padding(
-            padding: AppSpacing.pagePadding,
-            child: const CircularProgressIndicator(
-              key: ValueKey('restore-loading-indicator'),
-            ),
-          ),
+        return const DaftariLoading.screen(
+          key: ValueKey('restore-loading-indicator'),
         );
       case RestorePhase.signedOut:
         return RestoreNoticeCard(
@@ -69,7 +65,7 @@ class RestoreBodySection extends StatelessWidget {
             label: l10n.retry,
             icon: Icons.refresh_rounded,
             fullWidth: true,
-            onPressed: cubit == null
+            onPressed: cubit == null || state.isBusy
                 ? null
                 : () => unawaited(cubit.loadPreview()),
           ),
@@ -86,7 +82,7 @@ class RestoreBodySection extends StatelessWidget {
             icon: Icons.refresh_rounded,
             variant: AppButtonVariant.outlined,
             fullWidth: true,
-            onPressed: cubit == null
+            onPressed: cubit == null || state.isBusy
                 ? null
                 : () => unawaited(cubit.loadPreview()),
           ),
@@ -103,7 +99,7 @@ class RestoreBodySection extends StatelessWidget {
             label: l10n.retry,
             icon: Icons.refresh_rounded,
             fullWidth: true,
-            onPressed: cubit == null
+            onPressed: cubit == null || state.isBusy
                 ? null
                 : () => unawaited(cubit.loadPreview()),
           ),
@@ -115,8 +111,11 @@ class RestoreBodySection extends StatelessWidget {
       case RestorePhase.previewReady:
       case RestorePhase.confirmingPrimary:
       case RestorePhase.confirmingReplacement:
-      case RestorePhase.executing:
         return RestorePreviewAndConsentSection(state: state);
+      case RestorePhase.executing:
+        return state.pendingTransfer != null
+            ? RestoreInterruptedTransferCard(state: state)
+            : RestorePreviewAndConsentSection(state: state);
     }
   }
 }
@@ -132,6 +131,9 @@ class RestoreInterruptedTransferCard extends StatelessWidget {
     final cubit = context.read<RestoreCubit?>();
     final transfer = state.pendingTransfer;
     final cloud = transfer?.cloudPreview ?? state.cloudPreview;
+    final isExecuting = state.phase == RestorePhase.executing;
+    final isCancelling = state.isCancellingInterrupted;
+    final isBusy = state.isBusy;
 
     return Container(
       key: const ValueKey('restore-state-interrupted'),
@@ -148,6 +150,12 @@ class RestoreInterruptedTransferCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (isExecuting) ...[
+            const LinearProgressIndicator(
+              key: ValueKey('restore-executing-progress'),
+            ),
+            SizedBox(height: AppSpacing.compact),
+          ],
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -193,7 +201,8 @@ class RestoreInterruptedTransferCard extends StatelessWidget {
             label: l10n.restoreResumeAction,
             icon: Icons.play_arrow_rounded,
             fullWidth: true,
-            onPressed: cubit == null
+            isLoading: isExecuting,
+            onPressed: cubit == null || isBusy
                 ? null
                 : () => unawaited(cubit.resumeInterruptedTransfer()),
           ),
@@ -204,7 +213,8 @@ class RestoreInterruptedTransferCard extends StatelessWidget {
               label: l10n.cancel,
               variant: AppButtonVariant.outlined,
               fullWidth: true,
-              onPressed: cubit == null
+              isLoading: isCancelling,
+              onPressed: cubit == null || isBusy
                   ? null
                   : () => unawaited(cubit.cancelInterruptedTransfer()),
             ),

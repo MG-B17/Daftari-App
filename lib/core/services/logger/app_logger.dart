@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../errors/app_exception.dart';
+import '../../errors/app_exception.dart';
 
 enum AppLogEvent { appStarted, preferencesUpdated, connectivityChanged }
 

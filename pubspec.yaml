@@ -85,7 +85,6 @@ dev_dependencies:
   bloc_test: ^10.0.0
   mocktail: ^1.0.5
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -103,6 +102,7 @@ flutter:
     - assets/lottie/Debt_Paid_Status_Animation_v1.json
     - assets/lottie/Transaction_Added_Ledger_Entry_v1.json
     - assets/lottie/Not Found.json
+    - assets/lottie/splash_icon.json
   fonts:
     - family: Cairo
       fonts:

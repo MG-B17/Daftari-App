@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../theme/app_color_scheme.dart';
+import '../theme/colors/app_color_scheme.dart';
 import '../utils/money_utils.dart';
 
 extension ContextExtensions on BuildContext {

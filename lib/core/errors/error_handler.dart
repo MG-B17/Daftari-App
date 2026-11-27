@@ -1,4 +1,4 @@
-import '../services/app_logger.dart';
+import '../services/logger/app_logger.dart';
 import 'app_exception.dart';
 import 'app_failure.dart';
 

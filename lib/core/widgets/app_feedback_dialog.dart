@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
-import '../theme/app_spacing.dart';
+import '../theme/spacing/app_spacing.dart';
 
 class AppFeedbackDialog extends StatelessWidget {
   const AppFeedbackDialog({

@@ -1,5 +1,5 @@
 import 'package:daftariapp/core/errors/app_exception.dart';
-import 'package:daftariapp/core/services/contact_picker_service.dart';
+import 'package:daftariapp/core/services/contact_picker/contact_picker_service.dart';
 import 'package:daftariapp/features/customers/domain/entities/picked_contact.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';

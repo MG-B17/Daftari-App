@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../../../../core/errors/app_exception.dart';
-import '../../../../../core/services/session_commit_gate.dart';
+import '../../../../../core/services/session_commit_gate/session_commit_gate.dart';
 import '../../domain/entities/auth_session_event.dart';
 import '../../domain/entities/auth_user.dart';
 import 'supabase_bootstrap.dart';

@@ -1,3 +1,4 @@
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:daftariapp/app.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
@@ -6,9 +7,10 @@ import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
-import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
+import 'package:daftariapp/core/theme/app_theme.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
@@ -332,4 +334,76 @@ void main() {
     await themeSwitcherCubit.close();
     await security.close();
   });
+
+  testWidgets(
+    'P15-09: reduced motion applies new theme colors immediately without reveal or capture, while motion-enabled runs reveal',
+    (tester) async {
+      final harness = await _pumpAppOnSettings(
+        tester,
+        initialPrefs: {'themeMode': 'light'},
+      );
+      await _scrollTo(tester, find.byKey(const ValueKey('theme-dark')));
+
+      // Enable reduced motion.
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures.allOn;
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('theme-dark')));
+      await tester.pump();
+
+      var settingsContext = tester.element(find.byType(SettingsScreen));
+      final model = ThemeModelInheritedNotifier.of(settingsContext);
+      expect(Theme.of(settingsContext).brightness, Brightness.dark);
+      expect(
+        Theme.of(settingsContext).scaffoldBackgroundColor,
+        AppTheme.dark.scaffoldBackgroundColor,
+      );
+      expect(model.controller.isAnimating, isFalse);
+      expect(model.image, isNull);
+      expect(
+        find.byKey(const ValueKey('ThemeSwitchingAreaFirstChild')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('ThemeSwitchingAreaSecondChild')),
+        findsNothing,
+      );
+
+      // Re-enable motion and verify the existing animated reveal transition runs.
+      tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+      await tester.pump();
+
+      await tester.tap(find.byKey(const ValueKey('theme-light')));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(model.image, isNotNull);
+      expect(model.controller.isAnimating, isTrue);
+      expect(
+        find.byKey(const ValueKey('ThemeSwitchingAreaFirstChild')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('ThemeSwitchingAreaSecondChild')),
+        findsOneWidget,
+      );
+
+      await tester.pumpAndSettle();
+      settingsContext = tester.element(find.byType(SettingsScreen));
+      expect(Theme.of(settingsContext).brightness, Brightness.light);
+      expect(
+        Theme.of(settingsContext).scaffoldBackgroundColor,
+        AppTheme.light.scaffoldBackgroundColor,
+      );
+
+      await _disposeHarness(tester, harness);
+    },
+  );
 }

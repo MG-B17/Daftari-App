@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons;
 
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../core/theme/colors/app_colors.dart';
+import '../../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../../core/utils/app_date_utils.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/customer_statement_entity.dart';

@@ -1,13 +1,15 @@
+import 'dart:io';
+
 import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/di/di.dart' as core_di;
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
-import 'package:daftariapp/core/services/connectivity_service.dart';
-import 'package:daftariapp/core/services/date_service.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
-import 'package:daftariapp/core/services/session_commit_gate.dart';
-import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
+import 'package:daftariapp/core/services/connectivity/connectivity_service.dart';
+import 'package:daftariapp/core/services/date/date_service.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
+import 'package:daftariapp/core/services/session_commit_gate/session_commit_gate.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_cubit.dart';
 import 'package:daftariapp/features/auth/di/auth_di.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/repositories/forgot_password_repository.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/usecases/send_password_reset_usecase.dart';
@@ -36,6 +38,7 @@ import 'package:daftariapp/features/auth/verify_email/domain/usecases/resend_ver
 import 'package:daftariapp/features/auth/verify_email/presentation/cubit/verify_email_cubit.dart';
 import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/data/services/backup_device_storage.dart';
+import 'package:daftariapp/features/backup/di/backup_di.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_cloud_publisher.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_local_store.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_run_lock.dart';
@@ -43,6 +46,12 @@ import 'package:daftariapp/features/backup/domain/repositories/backup_scheduler.
 import 'package:daftariapp/features/backup/domain/usecases/run_backup_usecase.dart';
 import 'package:daftariapp/features/backup/domain/usecases/update_backup_schedule_usecase.dart';
 import 'package:daftariapp/features/backup/presentation/cubit/backup_cubit.dart';
+import 'package:daftariapp/features/restore/data/services/restore_transfer_storage.dart';
+import 'package:daftariapp/features/restore/di/restore_di.dart';
+import 'package:daftariapp/features/restore/domain/repositories/restore_cloud_service.dart';
+import 'package:daftariapp/features/restore/domain/repositories/restore_local_store.dart';
+import 'package:daftariapp/features/restore/domain/repositories/restore_repository.dart';
+import 'package:daftariapp/features/restore/presentation/cubit/restore_cubit.dart';
 import 'package:daftariapp/features/customers/di/customers_di.dart';
 import 'package:daftariapp/features/customers/domain/repositories/customer_repository.dart';
 import 'package:daftariapp/features/customers/domain/usecases/create_customer_usecase.dart';
@@ -58,11 +67,12 @@ import 'package:daftariapp/features/dashboard/di/dashboard_di.dart';
 import 'package:daftariapp/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:daftariapp/features/dashboard/domain/usecases/watch_dashboard_summary_usecase.dart';
 import 'package:daftariapp/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:daftariapp/features/settings/di/settings_di.dart';
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/domain/repositories/settings_repository.dart';
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
-import 'package:daftariapp/core/services/widget_image_exporter.dart';
+import 'package:daftariapp/core/services/image_exporter/widget_image_exporter.dart';
 import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
 import 'package:daftariapp/features/statements/di/statements_di.dart';
 import 'package:daftariapp/features/statements/domain/entities/statement_date_range.dart';
@@ -87,11 +97,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:daftariapp/features/security/data/services/secure_storage_service.dart';
 import 'package:daftariapp/features/security/data/services/biometric_auth_service.dart';
+import 'package:daftariapp/features/security/di/security_di.dart';
 import 'package:daftariapp/features/security/domain/repositories/security_repository.dart';
+import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:daftariapp/features/search/domain/repositories/search_repository.dart';
 import 'package:daftariapp/features/search/domain/usecases/watch_search_customers_usecase.dart';
 import 'package:daftariapp/features/search/presentation/cubit/search_cubit.dart';
+import 'package:daftariapp/features/layout/di/layout_di.dart';
+import 'package:daftariapp/features/onboarding/di/onboarding_di.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import 'package:daftariapp/features/splash/di/splash_di.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -158,6 +173,10 @@ void main() {
         sl<RunBackupUseCase>(),
         sl<UpdateBackupScheduleUseCase>(),
         sl<BackupCubit>(),
+        sl<RestoreTransferStorage>(),
+        sl<RestoreLocalStore>(),
+        sl<RestoreCloudService>(),
+        sl<RestoreRepository>(),
       ];
       await configureDependencies();
       final repeated = <Object>[
@@ -209,6 +228,10 @@ void main() {
         sl<RunBackupUseCase>(),
         sl<UpdateBackupScheduleUseCase>(),
         sl<BackupCubit>(),
+        sl<RestoreTransferStorage>(),
+        sl<RestoreLocalStore>(),
+        sl<RestoreCloudService>(),
+        sl<RestoreRepository>(),
       ];
       for (var i = 0; i < instances.length; i++) {
         expect(repeated[i], same(instances[i]));
@@ -511,4 +534,172 @@ void main() {
       expect(firstUpdate, isNot(same(secondUpdate)));
     },
   );
+
+  test('security DI registers lazy singletons via core di', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    sl.registerSingleton<AppDatabase>(database);
+    await core_di.configureDependencies();
+
+    final localAuth = sl<LocalAuthentication>();
+    final secureStorage = sl<SecureStorageService>();
+    final biometricAuth = sl<BiometricAuthService>();
+    final repository = sl<SecurityRepository>();
+    final appLock = sl<AppLockCubit>();
+
+    registerSecurityDependencies(sl);
+    expect(sl<LocalAuthentication>(), same(localAuth));
+    expect(sl<SecureStorageService>(), same(secureStorage));
+    expect(sl<BiometricAuthService>(), same(biometricAuth));
+    expect(sl<SecurityRepository>(), same(repository));
+    expect(sl<AppLockCubit>(), same(appLock));
+    expect(appLock.state.initialized, isTrue);
+  });
+
+  test('backup DI registers lazy singletons via core di', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    sl.registerSingleton<AppDatabase>(database);
+    await core_di.configureDependencies();
+
+    final platformBridge = sl<AndroidBackupPlatformBridge>();
+    final runLock = sl<BackupRunLock>();
+    final scheduler = sl<BackupScheduler>();
+    final deviceStorage = sl<BackupDeviceStorage>();
+    final localStore = sl<BackupLocalStore>();
+    final cloudPublisher = sl<BackupCloudPublisher>();
+    final runBackup = sl<RunBackupUseCase>();
+    final updateSchedule = sl<UpdateBackupScheduleUseCase>();
+    final backupCubit = sl<BackupCubit>();
+
+    registerBackupDependencies(sl);
+    expect(sl<AndroidBackupPlatformBridge>(), same(platformBridge));
+    expect(sl<BackupRunLock>(), same(runLock));
+    expect(sl<BackupScheduler>(), same(scheduler));
+    expect(runLock, same(platformBridge));
+    expect(scheduler, same(platformBridge));
+    expect(sl<BackupDeviceStorage>(), same(deviceStorage));
+    expect(sl<BackupLocalStore>(), same(localStore));
+    expect(sl<BackupCloudPublisher>(), same(cloudPublisher));
+    expect(sl<RunBackupUseCase>(), same(runBackup));
+    expect(sl<UpdateBackupScheduleUseCase>(), same(updateSchedule));
+    expect(sl<BackupCubit>(), same(backupCubit));
+  });
+
+  test(
+    'restore DI registers lazy singletons and factory cubit via core di',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      final transferStorage = sl<RestoreTransferStorage>();
+      final localStore = sl<RestoreLocalStore>();
+      final cloudService = sl<RestoreCloudService>();
+      final repository = sl<RestoreRepository>();
+      final backupLocalStore = sl<BackupLocalStore>();
+
+      registerRestoreDependencies(sl);
+      expect(sl<RestoreTransferStorage>(), same(transferStorage));
+      expect(sl<RestoreLocalStore>(), same(localStore));
+      expect(sl<RestoreCloudService>(), same(cloudService));
+      expect(sl<RestoreRepository>(), same(repository));
+      expect(sl<BackupLocalStore>(), same(backupLocalStore));
+
+      final first = sl<RestoreCubit>();
+      final second = sl<RestoreCubit>();
+      addTearDown(first.close);
+      addTearDown(second.close);
+      expect(first, isNot(same(second)));
+    },
+  );
+
+  test('settings DI registers lazy singletons via core di', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    sl.registerSingleton<AppDatabase>(database);
+    await core_di.configureDependencies();
+
+    final repository = sl<SettingsRepository>();
+    final getSettings = sl<GetSettingsUseCase>();
+    final changeLanguage = sl<ChangeLanguageUseCase>();
+    final settingsCubit = sl<SettingsCubit>();
+    final themeSwitcher = sl<ThemeSwitcherCubit>();
+
+    registerSettingsDependencies(sl);
+    expect(sl<SettingsRepository>(), same(repository));
+    expect(sl<GetSettingsUseCase>(), same(getSettings));
+    expect(sl<ChangeLanguageUseCase>(), same(changeLanguage));
+    expect(sl<SettingsCubit>(), same(settingsCubit));
+    expect(sl<ThemeSwitcherCubit>(), same(themeSwitcher));
+
+    await sl.reset();
+    expect(settingsCubit.isClosed, isTrue);
+  });
+
+  test('onboarding DI registers factory cubit via core di', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    sl.registerSingleton<AppDatabase>(database);
+    await core_di.configureDependencies();
+
+    registerOnboardingDependencies(sl);
+    final first = sl<OnboardingCubit>();
+    final second = sl<OnboardingCubit>();
+    addTearDown(first.close);
+    addTearDown(second.close);
+    expect(first, isNot(same(second)));
+    first.nextPage();
+    expect(second.state.pageIndex, 0);
+  });
+
+  test(
+    'layout DI entry point is wired via core di with zero registrations',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      expect(() => registerLayoutDependencies(sl), returnsNormally);
+    },
+  );
+
+  test(
+    'splash DI entry point is wired via core di with zero registrations',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      sl.registerSingleton<AppDatabase>(database);
+      await core_di.configureDependencies();
+
+      expect(() => registerSplashDependencies(sl), returnsNormally);
+    },
+  );
+
+  test('every feature directory has a DI file wired in core di', () {
+    final featuresDir = Directory('lib/features');
+    final featureNames =
+        featuresDir
+            .listSync()
+            .whereType<Directory>()
+            .map((dir) => dir.path.split(Platform.pathSeparator).last)
+            .toList()
+          ..sort();
+    final coreDiSource = File('lib/core/di/di.dart').readAsStringSync();
+    for (final feature in featureNames) {
+      final diFile = File('lib/features/$feature/di/${feature}_di.dart');
+      expect(
+        diFile.existsSync(),
+        isTrue,
+        reason: 'Missing DI file for feature "$feature"',
+      );
+      expect(
+        coreDiSource,
+        contains('../../features/$feature/di/${feature}_di.dart'),
+        reason: 'Core DI does not wire feature "$feature"',
+      );
+    }
+  });
 }

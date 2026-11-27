@@ -35,7 +35,10 @@ class FakeRestoreRepository implements RestoreRepository {
   RestoreTransferStage? interruptNextExecutionAtStage;
 
   AppFailure? nextFailure;
+  Future<void> Function()? onBeforeInspect;
   Future<void> Function()? onBeforeExecuteRestore;
+  Future<void> Function()? onBeforeResumeTransfer;
+  Future<void> Function()? onBeforeDiscardTransfer;
 
   int inspectCalls = 0;
   int executeCalls = 0;
@@ -133,6 +136,9 @@ class FakeRestoreRepository implements RestoreRepository {
   @override
   Future<Either<AppFailure, RestoreInspectionResult>> inspectRestore() async {
     inspectCalls++;
+    if (onBeforeInspect case final hook?) {
+      await hook();
+    }
     if (nextFailure case final failure?) {
       nextFailure = null;
       return Left(failure);
@@ -336,6 +342,9 @@ class FakeRestoreRepository implements RestoreRepository {
     PendingRestoreTransfer transfer,
   ) async {
     resumeCalls++;
+    if (onBeforeResumeTransfer case final hook?) {
+      await hook();
+    }
     if (nextFailure case final failure?) {
       nextFailure = null;
       return Left(failure);
@@ -409,6 +418,9 @@ class FakeRestoreRepository implements RestoreRepository {
     String requestId,
   ) async {
     discardCalls++;
+    if (onBeforeDiscardTransfer case final hook?) {
+      await hook();
+    }
     if (nextFailure case final failure?) {
       nextFailure = null;
       return Left(failure);

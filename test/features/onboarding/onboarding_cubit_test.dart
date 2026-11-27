@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_state.dart';
 import 'package:flutter_test/flutter_test.dart';

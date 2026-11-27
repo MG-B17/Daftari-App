@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/services/date_service.dart';
+import '../../../../core/errors/app_exception.dart';
+import '../../../../core/services/date/date_service.dart';
 import '../../../auth/session/domain/entities/auth_user.dart';
 import '../../../auth/session/presentation/cubit/auth_session_state.dart';
 import '../../domain/entities/backup_eligibility.dart';
@@ -92,8 +93,19 @@ class BackupCubit extends Cubit<BackupViewState> {
   bool _scheduledRunning = false;
   bool _lastAttemptFailed = false;
   bool _pendingScheduleSync = false;
+  int _consumedManualFeedbackId = 0;
+  BackupManualFeedback? _pendingManualFeedback;
   Future<void>? _refreshLoop;
   bool _refreshRequested = false;
+
+  bool hasUnconsumedManualFeedback(int feedbackId) =>
+      feedbackId > _consumedManualFeedbackId;
+
+  bool consumeManualFeedback(int feedbackId) {
+    if (feedbackId <= _consumedManualFeedbackId) return false;
+    _consumedManualFeedbackId = feedbackId;
+    return true;
+  }
 
   Future<void> initialize() => _initializing ??= _initialize();
 
@@ -245,6 +257,12 @@ class BackupCubit extends Cubit<BackupViewState> {
         eligibility.isMatchingLinkedAccount &&
         eligibility.hasDeviceId &&
         !eligibility.isActiveDevice;
+    final pendingFeedback = _pendingManualFeedback;
+    _pendingManualFeedback = null;
+    final nextManualFeedback = pendingFeedback ?? state.manualFeedback;
+    final nextManualFeedbackId = pendingFeedback != null
+        ? state.manualFeedbackId + 1
+        : state.manualFeedbackId;
 
     emit(
       BackupViewState(
@@ -257,6 +275,8 @@ class BackupCubit extends Cubit<BackupViewState> {
         isPreview: false,
         isEligibleForManualBackup: canBackUpNow,
         isInactiveDevice: isInactiveDevice,
+        manualFeedback: nextManualFeedback,
+        manualFeedbackId: nextManualFeedbackId,
       ),
     );
   }
@@ -286,34 +306,41 @@ class BackupCubit extends Cubit<BackupViewState> {
   /// Runs a manual **Back up now** operation through the shared
   /// [RunBackupUseCase].
   Future<void> backUpNow() async {
-    if (isClosed) return;
-    if (_manualRunning || await _isRemoteLocked()) {
-      await refresh();
-      return;
-    }
-
+    if (isClosed || _manualRunning) return;
     _manualRunning = true;
-    _lastAttemptFailed = false;
+    _pendingManualFeedback = null;
     emit(
       state.copyWith(
         status: BackupStatus.running,
         isEligibleForManualBackup: false,
+        manualFeedback: BackupManualFeedback.none,
       ),
     );
 
     try {
+      if (_scheduledRunning || await _isRemoteLocked()) {
+        if (isClosed) return;
+        _pendingManualFeedback = BackupManualFeedback.alreadyRunning;
+        return;
+      }
+      if (isClosed) return;
+      _lastAttemptFailed = false;
+
       final result = await _runBackup(trigger: BackupTrigger.manual);
       if (isClosed) return;
       await result.fold(
-        (_) async {
+        (failure) async {
           _lastAttemptFailed = true;
+          _pendingManualFeedback = _mapFailureFeedback(failure.errorCode);
         },
         (runResult) async {
           switch (runResult) {
             case BackupRunConfirmed(:final scheduleState):
               _lastAttemptFailed = false;
+              _pendingManualFeedback = BackupManualFeedback.confirmed;
               await _syncScheduleSafely(scheduleState, now: _dateService.now());
-            case BackupRunSkipped():
+            case BackupRunSkipped(:final reason):
+              _pendingManualFeedback = _mapSkippedFeedback(reason);
               final workerDecision = BackupWorkerPolicy.decide(result);
               if (workerDecision.shouldCancelSchedule) {
                 await _cancelScheduleSafely();
@@ -321,6 +348,9 @@ class BackupCubit extends Cubit<BackupViewState> {
           }
         },
       );
+    } catch (_) {
+      _lastAttemptFailed = true;
+      _pendingManualFeedback = BackupManualFeedback.failed;
     } finally {
       _manualRunning = false;
       if (!isClosed) {
@@ -454,6 +484,38 @@ class BackupCubit extends Cubit<BackupViewState> {
     if (pendingChanges > 0) return BackupStatus.pending;
     return BackupStatus.upToDate;
   }
+
+  static BackupManualFeedback _mapFailureFeedback(AppErrorCode code) =>
+      switch (code) {
+        AppErrorCode.network => BackupManualFeedback.offline,
+        AppErrorCode.auth => BackupManualFeedback.authError,
+        AppErrorCode.database ||
+        AppErrorCode.storage ||
+        AppErrorCode.contactPicker ||
+        AppErrorCode.validation ||
+        AppErrorCode.unexpected => BackupManualFeedback.failed,
+      };
+
+  static BackupManualFeedback _mapSkippedFeedback(
+    BackupIneligibilityReason reason,
+  ) => switch (reason) {
+    BackupIneligibilityReason.noPendingChanges =>
+      BackupManualFeedback.nothingToUpload,
+    BackupIneligibilityReason.alreadyRunning =>
+      BackupManualFeedback.alreadyRunning,
+    BackupIneligibilityReason.offline => BackupManualFeedback.offline,
+    BackupIneligibilityReason.signedOut => BackupManualFeedback.signedOut,
+    BackupIneligibilityReason.emailNotVerified =>
+      BackupManualFeedback.emailNotVerified,
+    BackupIneligibilityReason.ledgerUnlinked =>
+      BackupManualFeedback.ledgerUnlinked,
+    BackupIneligibilityReason.accountMismatch =>
+      BackupManualFeedback.accountMismatch,
+    BackupIneligibilityReason.inactiveDevice =>
+      BackupManualFeedback.inactiveDevice,
+    BackupIneligibilityReason.noScheduleConfigured ||
+    BackupIneligibilityReason.notDueYet => BackupManualFeedback.failed,
+  };
 
   @override
   Future<void> close() async {

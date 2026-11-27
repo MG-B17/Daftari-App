@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/app_failure.dart';
-import '../../../../core/services/date_service.dart';
+import '../../../../core/services/date/date_service.dart';
 import '../../domain/entities/pin_verify_result.dart';
 import '../../domain/entities/security_settings.dart';
 import '../../domain/repositories/security_repository.dart';
@@ -22,8 +22,15 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
   DateTime? _backgroundAt;
   bool _osPrompt = false;
   int _epoch = 0;
+  int _consumedFeedbackId = 0;
   Future<void>? _initializing;
   final ValueNotifier<int> _routing = ValueNotifier(0);
+
+  bool consumeFeedback(int feedbackId) {
+    if (feedbackId <= _consumedFeedbackId) return false;
+    _consumedFeedbackId = feedbackId;
+    return true;
+  }
 
   @override
   void addListener(VoidCallback listener) => _routing.addListener(listener);
@@ -97,13 +104,20 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
   }
 
   void _failClosed() => emit(
-    state.copyWith(locked: true, busy: false, message: SecurityMessage.storage),
+    state.copyWith(
+      locked: true,
+      busy: false,
+      message: SecurityMessage.storage,
+      feedback: SecurityFeedback.none,
+    ),
   );
 
   Future<bool> _operate(
     Future<Either<AppFailure, bool>> Function() operation, {
     bool unlock = false,
     bool osPrompt = false,
+    SecurityFeedback? successFeedback,
+    SecurityFeedback? unavailableFeedback,
   }) async {
     if (state.busy ||
         !state.initialized ||
@@ -112,7 +126,13 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
     }
     final epoch = _epoch;
     _osPrompt = osPrompt;
-    emit(state.copyWith(busy: true, message: SecurityMessage.none));
+    emit(
+      state.copyWith(
+        busy: true,
+        message: SecurityMessage.none,
+        feedback: SecurityFeedback.none,
+      ),
+    );
     try {
       final result = await operation();
       if (isClosed) return false;
@@ -124,15 +144,25 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
       final refreshed = await _refresh();
       if (isClosed || !refreshed) return false;
       final current = epoch == _epoch;
+      final nextLocked = !current
+          ? state.settings.isPinEnabled || state.locked
+          : success && unlock
+          ? false
+          : state.locked;
+      final nextFeedback = !current || nextLocked
+          ? SecurityFeedback.none
+          : success
+          ? (successFeedback ?? SecurityFeedback.none)
+          : (unavailableFeedback ?? SecurityFeedback.none);
       emit(
         state.copyWith(
           busy: false,
-          locked: !current
-              ? state.settings.isPinEnabled || state.locked
-              : success && unlock
-              ? false
-              : state.locked,
+          locked: nextLocked,
           message: success ? SecurityMessage.none : SecurityMessage.unavailable,
+          feedback: nextFeedback,
+          feedbackId: nextFeedback == SecurityFeedback.none
+              ? state.feedbackId
+              : state.feedbackId + 1,
         ),
       );
       return success && current;
@@ -202,6 +232,8 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
   Future<bool> setBiometric(bool enabled) => _operate(
     () => _repository.setBiometricEnabled(enabled),
     osPrompt: enabled,
+    successFeedback: enabled ? SecurityFeedback.biometricEnabled : null,
+    unavailableFeedback: SecurityFeedback.biometricUnavailable,
   );
 
   Future<bool> setAutoLock(AutoLockTimeout timeout) => _operate(
@@ -212,7 +244,13 @@ class AppLockCubit extends Cubit<AppLockState> implements Listenable {
   void lock() {
     _epoch++;
     _repository.cancelPinReset();
-    emit(state.copyWith(locked: true, inputRevision: state.inputRevision + 1));
+    emit(
+      state.copyWith(
+        locked: true,
+        inputRevision: state.inputRevision + 1,
+        feedback: SecurityFeedback.none,
+      ),
+    );
   }
 
   void lifecycle(AppLifecycleState lifecycle) {

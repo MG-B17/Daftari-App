@@ -296,6 +296,48 @@ abstract class AppLocalizations {
   /// **'Your security settings have been saved.'**
   String get securityCompleteDescription;
 
+  /// No description provided for @securityPinSetupSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN enabled'**
+  String get securityPinSetupSuccessTitle;
+
+  /// No description provided for @securityPinSetupSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ledger is now protected with a 4-digit PIN.'**
+  String get securityPinSetupSuccessMessage;
+
+  /// No description provided for @securityPinChangedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your app PIN has been updated.'**
+  String get securityPinChangedMessage;
+
+  /// No description provided for @securityPinDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN turned off'**
+  String get securityPinDisabledTitle;
+
+  /// No description provided for @securityPinDisabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'App PIN protection has been removed.'**
+  String get securityPinDisabledMessage;
+
+  /// No description provided for @securityBiometricEnabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric unlock enabled'**
+  String get securityBiometricEnabledTitle;
+
+  /// No description provided for @securityBiometricEnabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You can now unlock Daftari with biometrics.'**
+  String get securityBiometricEnabledMessage;
+
   /// No description provided for @securityStorageError.
   ///
   /// In en, this message translates to:
@@ -2366,6 +2408,66 @@ abstract class AppLocalizations {
   /// **'Preview only — backup isn\'t available yet.'**
   String get backupMockNotice;
 
+  /// No description provided for @backupManualSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup complete'**
+  String get backupManualSuccessTitle;
+
+  /// No description provided for @backupManualSuccessMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your ledger changes have been backed up to the cloud.'**
+  String get backupManualSuccessMessage;
+
+  /// No description provided for @backupManualNothingToUploadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new to back up'**
+  String get backupManualNothingToUploadTitle;
+
+  /// No description provided for @backupManualNothingToUploadMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no new changes to upload right now.'**
+  String get backupManualNothingToUploadMessage;
+
+  /// No description provided for @backupManualAlreadyRunningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup in progress'**
+  String get backupManualAlreadyRunningTitle;
+
+  /// No description provided for @backupManualAlreadyRunningMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Another backup is already running. Wait for it to finish and try again.'**
+  String get backupManualAlreadyRunningMessage;
+
+  /// No description provided for @backupManualOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect. Check your internet connection and try again.'**
+  String get backupManualOfflineMessage;
+
+  /// No description provided for @backupManualEmailUnverifiedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email address before backing up your ledger.'**
+  String get backupManualEmailUnverifiedMessage;
+
+  /// No description provided for @backupManualLedgerUnlinkedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Link this ledger to your account before backing up.'**
+  String get backupManualLedgerUnlinkedMessage;
+
+  /// No description provided for @backupManualAuthErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account session could not be verified. Sign in again and try backing up.'**
+  String get backupManualAuthErrorMessage;
+
   /// No description provided for @backupRestoreAction.
   ///
   /// In en, this message translates to:
@@ -2659,6 +2761,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to backup settings'**
   String get restoreDoneAction;
+
+  /// No description provided for @restoreFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed'**
+  String get restoreFailedTitle;
+
+  /// No description provided for @restoreFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The cloud restore did not finish. Your local ledger was not partially changed. Please try again.'**
+  String get restoreFailedMessage;
+
+  /// No description provided for @restoreAuthErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account session could not be verified. Sign in again and try restoring.'**
+  String get restoreAuthErrorMessage;
+
+  /// No description provided for @restoreRefreshRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation required again'**
+  String get restoreRefreshRequiredTitle;
 }
 
 class _AppLocalizationsDelegate

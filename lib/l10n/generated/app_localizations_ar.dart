@@ -114,6 +114,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get securityCompleteDescription => 'تم حفظ إعدادات الأمان.';
 
   @override
+  String get securityPinSetupSuccessTitle => 'تم تفعيل رمز القفل';
+
+  @override
+  String get securityPinSetupSuccessMessage =>
+      'أصبح دفترك محميًا الآن برمز قفل من 4 أرقام.';
+
+  @override
+  String get securityPinChangedMessage => 'تم تحديث رمز قفل التطبيق بنجاح.';
+
+  @override
+  String get securityPinDisabledTitle => 'تم إيقاف رمز القفل';
+
+  @override
+  String get securityPinDisabledMessage => 'تمت إزالة حماية رمز قفل التطبيق.';
+
+  @override
+  String get securityBiometricEnabledTitle => 'تم تفعيل الفتح بالبصمة';
+
+  @override
+  String get securityBiometricEnabledMessage =>
+      'يمكنك الآن فتح دفتري باستخدام البصمة.';
+
+  @override
   String get securityStorageError =>
       'تعذرت قراءة بيانات الأمان أو حفظها بأمان. الوصول مقفل. أعد تشغيل التطبيق وحاول مجددًا. لم يُحذف دفتر الديون.';
 
@@ -1247,6 +1270,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupMockNotice => 'معاينة فقط — النسخ الاحتياطي غير متاح بعد.';
 
   @override
+  String get backupManualSuccessTitle => 'اكتمل النسخ الاحتياطي';
+
+  @override
+  String get backupManualSuccessMessage =>
+      'تم حفظ تغييرات دفترك في النسخة السحابية بنجاح.';
+
+  @override
+  String get backupManualNothingToUploadTitle => 'لا توجد تغييرات جديدة للنسخ';
+
+  @override
+  String get backupManualNothingToUploadMessage =>
+      'لا توجد تغييرات جديدة لرفعها الآن.';
+
+  @override
+  String get backupManualAlreadyRunningTitle => 'النسخ الاحتياطي قيد التشغيل';
+
+  @override
+  String get backupManualAlreadyRunningMessage =>
+      'توجد عملية نسخ احتياطي أخرى قيد التشغيل بالفعل. انتظر حتى تنتهي ثم حاول مرة أخرى.';
+
+  @override
+  String get backupManualOfflineMessage =>
+      'تعذر الاتصال. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.';
+
+  @override
+  String get backupManualEmailUnverifiedMessage =>
+      'أكد بريدك الإلكتروني قبل نسخ دفترك احتياطيًا.';
+
+  @override
+  String get backupManualLedgerUnlinkedMessage =>
+      'اربط هذا الدفتر بحسابك قبل النسخ الاحتياطي.';
+
+  @override
+  String get backupManualAuthErrorMessage =>
+      'تعذر التحقق من جلسة حسابك. سجّل الدخول مرة أخرى ثم حاول النسخ الاحتياطي.';
+
+  @override
   String get backupRestoreAction => 'استعادة البيانات السحابية';
 
   @override
@@ -1455,4 +1515,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get restoreDoneAction => 'العودة لإعدادات النسخ الاحتياطي';
+
+  @override
+  String get restoreFailedTitle => 'فشلت الاستعادة';
+
+  @override
+  String get restoreFailedMessage =>
+      'لم تكتمل الاستعادة السحابية. لم يتم تغيير دفترك المحلي جزئيًا. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get restoreAuthErrorMessage =>
+      'تعذر التحقق من جلسة حسابك. سجّل الدخول مرة أخرى ثم حاول الاستعادة.';
+
+  @override
+  String get restoreRefreshRequiredTitle => 'يلزم التأكيد مرة أخرى';
 }

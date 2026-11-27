@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/errors/error_handler.dart';
-import '../../../core/services/session_commit_gate.dart';
+import '../../../core/services/session_commit_gate/session_commit_gate.dart';
 import '../forgot_password/data/repositories/forgot_password_repository_impl.dart';
 import '../forgot_password/domain/repositories/forgot_password_repository.dart';
 import '../forgot_password/domain/usecases/send_password_reset_usecase.dart';

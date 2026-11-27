@@ -1,8 +1,8 @@
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
-import 'package:daftariapp/core/theme/app_color_scheme.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
-import 'package:daftariapp/core/theme/app_gradients.dart';
+import 'package:daftariapp/core/theme/colors/app_color_scheme.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
+import 'package:daftariapp/core/theme/gradients/app_gradients.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

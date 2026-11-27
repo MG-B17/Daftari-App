@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/app_routes.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../auth/widgets/auth_feedback_mapper.dart';
 import '../cubit/onboarding_cubit.dart';
 import '../cubit/onboarding_state.dart';
@@ -22,14 +22,18 @@ class OnboardingScreen extends StatelessWidget {
     popOnAuthenticated: false,
     child: BlocListener<OnboardingCubit, OnboardingState>(
       listenWhen: (previous, current) =>
-          current.isCompleted || previous.hasError != current.hasError,
+          (!previous.isCompleted && current.isCompleted) ||
+          (!previous.hasError && current.hasError),
       listener: (context, state) {
         if (state.isCompleted) {
+          ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
           context.go(AppRoutes.root);
         } else if (state.hasError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.onboardingStorageError)),
-          );
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(context.l10n.onboardingStorageError)),
+            );
         }
       },
       child: Scaffold(

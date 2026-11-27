@@ -4,6 +4,8 @@ import '../../domain/entities/security_settings.dart';
 
 enum SecurityMessage { none, incorrect, mismatch, unavailable, storage }
 
+enum SecurityFeedback { none, biometricEnabled, biometricUnavailable }
+
 final class AppLockState extends Equatable {
   const AppLockState({
     this.initialized = false,
@@ -16,6 +18,8 @@ final class AppLockState extends Equatable {
     this.cooldownSeconds = 0,
     this.message = SecurityMessage.none,
     this.inputRevision = 0,
+    this.feedback = SecurityFeedback.none,
+    this.feedbackId = 0,
   });
 
   final bool initialized;
@@ -28,6 +32,8 @@ final class AppLockState extends Equatable {
   final int cooldownSeconds;
   final SecurityMessage message;
   final int inputRevision;
+  final SecurityFeedback feedback;
+  final int feedbackId;
 
   AppLockState copyWith({
     bool? initialized,
@@ -40,6 +46,8 @@ final class AppLockState extends Equatable {
     int? cooldownSeconds,
     SecurityMessage? message,
     int? inputRevision,
+    SecurityFeedback? feedback,
+    int? feedbackId,
   }) => AppLockState(
     initialized: initialized ?? this.initialized,
     locked: locked ?? this.locked,
@@ -51,6 +59,8 @@ final class AppLockState extends Equatable {
     cooldownSeconds: cooldownSeconds ?? this.cooldownSeconds,
     message: message ?? this.message,
     inputRevision: inputRevision ?? this.inputRevision,
+    feedback: feedback ?? this.feedback,
+    feedbackId: feedbackId ?? this.feedbackId,
   );
 
   @override
@@ -65,5 +75,7 @@ final class AppLockState extends Equatable {
     cooldownSeconds,
     message,
     inputRevision,
+    feedback,
+    feedbackId,
   ];
 }

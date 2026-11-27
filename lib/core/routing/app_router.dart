@@ -38,7 +38,7 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/statements/presentation/screens/statement_screen.dart';
 import '../../features/statements/presentation/cubit/statement_cubit.dart';
 import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
-import '../services/local_storage_service.dart';
+import '../services/loacl_storage/local_storage_service.dart';
 import '../animation/screen_transition_animation/fade_transition_page.dart';
 import '../animation/screen_transition_animation/scale_transition_page.dart';
 import '../animation/screen_transition_animation/slide_right_transition_page.dart';
@@ -162,16 +162,23 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.splash,
         name: AppRoutes.splashName,
-        pageBuilder: (context, state) => FadeTransitionPage(
-          key: state.pageKey,
-          child: SplashScreen(
-            onFinished: () => context.go(
-              localStorage != null && !localStorage.onboardingCompleted
-                  ? AppRoutes.onboarding
-                  : AppRoutes.root,
-            ),
-          ),
-        ),
+        pageBuilder: (context, state) {
+          void finishSplash() => context.go(
+            localStorage != null && !localStorage.onboardingCompleted
+                ? AppRoutes.onboarding
+                : AppRoutes.root,
+          );
+          final child = appLock == null
+              ? SplashScreen(onFinished: finishSplash)
+              : ListenableBuilder(
+                  listenable: appLock,
+                  builder: (context, _) => SplashScreen(
+                    hold: !appLock.state.initialized,
+                    onFinished: finishSplash,
+                  ),
+                );
+          return FadeTransitionPage(key: state.pageKey, child: child);
+        },
       ),
       GoRoute(
         path: AppRoutes.onboarding,
@@ -245,8 +252,10 @@ abstract final class AppRouter {
         ),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppLayoutScreen(navigationShell: navigationShell),
+        pageBuilder: (context, state, navigationShell) => FadeTransitionPage(
+          key: state.pageKey,
+          child: AppLayoutScreen(navigationShell: navigationShell),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [

@@ -2,7 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/errors/error_handler.dart';
-import '../../../core/services/contact_picker_service.dart';
+import '../../../core/services/contact_picker/contact_picker_service.dart';
 import '../data/repositories/customer_repository_impl.dart';
 import '../domain/repositories/customer_repository.dart';
 import '../domain/usecases/create_customer_usecase.dart';

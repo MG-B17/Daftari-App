@@ -115,6 +115,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your security settings have been saved.';
 
   @override
+  String get securityPinSetupSuccessTitle => 'PIN enabled';
+
+  @override
+  String get securityPinSetupSuccessMessage =>
+      'Your ledger is now protected with a 4-digit PIN.';
+
+  @override
+  String get securityPinChangedMessage => 'Your app PIN has been updated.';
+
+  @override
+  String get securityPinDisabledTitle => 'PIN turned off';
+
+  @override
+  String get securityPinDisabledMessage =>
+      'App PIN protection has been removed.';
+
+  @override
+  String get securityBiometricEnabledTitle => 'Biometric unlock enabled';
+
+  @override
+  String get securityBiometricEnabledMessage =>
+      'You can now unlock Daftari with biometrics.';
+
+  @override
   String get securityStorageError =>
       'Security data could not be read or saved safely. Access is locked. Restart the app and try again. Your ledger has not been deleted.';
 
@@ -1264,6 +1288,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupMockNotice => 'Preview only — backup isn\'t available yet.';
 
   @override
+  String get backupManualSuccessTitle => 'Backup complete';
+
+  @override
+  String get backupManualSuccessMessage =>
+      'Your ledger changes have been backed up to the cloud.';
+
+  @override
+  String get backupManualNothingToUploadTitle => 'Nothing new to back up';
+
+  @override
+  String get backupManualNothingToUploadMessage =>
+      'There are no new changes to upload right now.';
+
+  @override
+  String get backupManualAlreadyRunningTitle => 'Backup in progress';
+
+  @override
+  String get backupManualAlreadyRunningMessage =>
+      'Another backup is already running. Wait for it to finish and try again.';
+
+  @override
+  String get backupManualOfflineMessage =>
+      'Could not connect. Check your internet connection and try again.';
+
+  @override
+  String get backupManualEmailUnverifiedMessage =>
+      'Verify your email address before backing up your ledger.';
+
+  @override
+  String get backupManualLedgerUnlinkedMessage =>
+      'Link this ledger to your account before backing up.';
+
+  @override
+  String get backupManualAuthErrorMessage =>
+      'Your account session could not be verified. Sign in again and try backing up.';
+
+  @override
   String get backupRestoreAction => 'Restore cloud backup';
 
   @override
@@ -1463,4 +1524,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restoreDoneAction => 'Back to backup settings';
+
+  @override
+  String get restoreFailedTitle => 'Restore failed';
+
+  @override
+  String get restoreFailedMessage =>
+      'The cloud restore did not finish. Your local ledger was not partially changed. Please try again.';
+
+  @override
+  String get restoreAuthErrorMessage =>
+      'Your account session could not be verified. Sign in again and try restoring.';
+
+  @override
+  String get restoreRefreshRequiredTitle => 'Confirmation required again';
 }

@@ -44,9 +44,21 @@ class AppThemeSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ThemeSwitcher.switcher(
     builder: (context, switcher) => builder(context, (mode) {
-      switcher.changeTheme(
-        theme: AppTheme.resolve(mode, MediaQuery.platformBrightnessOf(context)),
+      if (MediaQuery.disableAnimationsOf(context)) return;
+      final currentTheme = Theme.of(context);
+      final nextTheme = AppTheme.resolve(
+        mode,
+        MediaQuery.platformBrightnessOf(context),
       );
+      switcher.changeTheme(theme: nextTheme);
+      final model = context
+          .getInheritedWidgetOfExactType<ThemeModelInheritedNotifier>()
+          ?.notifier;
+      if (model != null &&
+          model.oldTheme == model.theme &&
+          currentTheme != nextTheme) {
+        model.oldTheme = currentTheme;
+      }
     }),
   );
 }

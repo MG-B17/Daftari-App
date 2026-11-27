@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_spacing.dart';
+import '../../../../../core/theme/colors/app_colors.dart';
+import '../../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../../core/utils/app_date_utils.dart';
 import '../../../../../core/utils/money_utils.dart';
 import '../../../../../l10n/generated/app_localizations.dart';

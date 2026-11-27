@@ -1,6 +1,6 @@
 import 'package:daftariapp/core/constants/app_constants.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
-import 'package:daftariapp/core/theme/app_spacing.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
+import 'package:daftariapp/core/theme/spacing/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';

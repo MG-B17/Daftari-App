@@ -4,9 +4,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
-import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
-import 'package:daftariapp/core/theme/theme_switcher_state.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_state.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -203,4 +203,47 @@ void main() {
       await cubit.close();
     },
   );
+
+  test('P15-06: overlapping writes preserve earlier persisted mode when later write fails', () async {
+    var persistedMode = ThemeMode.system;
+    final darkWrite = Completer<void>();
+    final lightWrite = Completer<void>();
+
+    when(() => storage.themeMode).thenAnswer((_) => persistedMode);
+    when(() => storage.setThemeMode(ThemeMode.dark)).thenAnswer((_) async {
+      await darkWrite.future;
+      persistedMode = ThemeMode.dark;
+    });
+    when(() => storage.setThemeMode(ThemeMode.light)).thenAnswer((_) async {
+      await lightWrite.future;
+      persistedMode = ThemeMode.light;
+    });
+
+    final cubit = ThemeSwitcherCubit(storage, handler);
+    expect(cubit.state.themeMode, ThemeMode.system);
+
+    final darkCall = cubit.setThemeMode(ThemeMode.dark);
+    expect(cubit.state, const ThemeSwitcherState(themeMode: ThemeMode.dark));
+
+    final lightCall = cubit.setThemeMode(ThemeMode.light);
+    expect(cubit.state, const ThemeSwitcherState(themeMode: ThemeMode.light));
+
+    darkWrite.complete();
+    await darkCall;
+    expect(cubit.state, const ThemeSwitcherState(themeMode: ThemeMode.light));
+
+    lightWrite.completeError(const StorageException());
+    await lightCall;
+
+    final reloaded = ThemeSwitcherCubit(storage, handler);
+    expect(reloaded.state.themeMode, ThemeMode.dark);
+    expect(
+      cubit.state,
+      const ThemeSwitcherState(themeMode: ThemeMode.dark, hasError: true),
+    );
+    expect(cubit.state.themeMode, reloaded.state.themeMode);
+    verify(() => handler.handle(any())).called(1);
+    await reloaded.close();
+    await cubit.close();
+  });
 }
