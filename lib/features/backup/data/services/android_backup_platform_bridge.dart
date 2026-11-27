@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/services/session_commit_gate.dart';
+import '../../../../core/services/session_commit_gate/session_commit_gate.dart';
 import '../../domain/entities/backup_schedule.dart';
 import '../../domain/policies/backup_schedule_policy.dart';
 import '../../domain/repositories/backup_run_lock.dart';

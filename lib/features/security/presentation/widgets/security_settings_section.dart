@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/routing/app_routes.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
+import '../../../../core/widgets/app_error_dialog.dart';
+import '../../../../core/widgets/app_success_dialog.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import '../../../settings/presentation/widgets/settings_section_card.dart';
 import '../../../settings/presentation/widgets/settings_icon_box.dart';
 import '../../domain/entities/pin_flow_mode.dart';
@@ -12,14 +17,62 @@ import '../../domain/entities/security_settings.dart';
 import '../cubit/app_lock_cubit.dart';
 import '../cubit/app_lock_state.dart';
 
-class SecuritySettingsSection extends StatelessWidget {
+class SecuritySettingsSection extends StatefulWidget {
   const SecuritySettingsSection({super.key});
+
+  @override
+  State<SecuritySettingsSection> createState() =>
+      _SecuritySettingsSectionState();
+}
+
+class _SecuritySettingsSectionState extends State<SecuritySettingsSection> {
+  bool _presentingDialog = false;
 
   void _openPin(BuildContext context, PinFlowMode mode) =>
       context.push<bool>('${AppRoutes.settingsPin}?mode=${mode.name}');
 
+  bool _canPresent(BuildContext context, AppLockState state) {
+    if (state.locked) return false;
+    if (!TickerMode.of(context)) return false;
+    return ModalRoute.of(context)?.isCurrent ?? true;
+  }
+
+  Future<void> _handleFeedback(BuildContext context, AppLockState state) async {
+    if (!mounted || _presentingDialog || !_canPresent(context, state)) return;
+    final cubit = context.read<AppLockCubit>();
+    if (!cubit.consumeFeedback(state.feedbackId)) return;
+
+    final l10n = context.l10n;
+    _presentingDialog = true;
+    try {
+      switch (state.feedback) {
+        case SecurityFeedback.biometricEnabled:
+          await AppSuccessDialog.show(
+            context,
+            title: l10n.securityBiometricEnabledTitle,
+            message: l10n.securityBiometricEnabledMessage,
+          );
+        case SecurityFeedback.biometricUnavailable:
+          await AppErrorDialog.show(
+            context,
+            message: l10n.securityAuthUnavailable,
+          );
+        case SecurityFeedback.none:
+          return;
+      }
+    } finally {
+      _presentingDialog = false;
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => BlocBuilder<AppLockCubit, AppLockState>(
+  Widget build(
+    BuildContext context,
+  ) => BlocConsumer<AppLockCubit, AppLockState>(
+    listenWhen: (previous, next) =>
+        previous.feedbackId != next.feedbackId &&
+        next.feedback != SecurityFeedback.none,
+    listener: (context, state) => unawaited(_handleFeedback(context, state)),
     builder: (context, state) {
       final l10n = context.l10n;
       final cubit = context.read<AppLockCubit>();
@@ -31,9 +84,11 @@ class SecuritySettingsSection extends StatelessWidget {
           color: context.appColors.cardPaperSurface,
           child: Column(
             children: [
-              if (state.busy) const LinearProgressIndicator(),
-              if (state.message == SecurityMessage.unavailable)
-                Text(l10n.securityAuthUnavailable),
+              if (state.busy)
+                Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: const Center(child: DaftariLoading.inline()),
+                ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 secondary: const SettingsIconBox(icon: Icons.pin_outlined),

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/animation/staggered_list_item.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/widgets/app_error_state.dart';
 import '../../../../core/widgets/daftari_loading.dart';
 import '../../../customers/presentation/customer_error_message.dart';

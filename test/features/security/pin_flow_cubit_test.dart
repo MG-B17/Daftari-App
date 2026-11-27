@@ -87,4 +87,52 @@ void main() {
       expect(flow.state.count, 0);
     },
   );
+
+  test('explicit setup, change and disable emit one-shot terminal outcomes while unlock stays silent', () async {
+    await digits('9876');
+    await digits('9876');
+    expect(flow.state.step, PinStep.complete);
+    expect(flow.state.outcome, PinFlowOutcome.setupSuccess);
+    expect(flow.state.outcomeId, 1);
+    expect(flow.enabled, isFalse);
+    expect(flow.consumeOutcome(1), isTrue);
+    expect(flow.consumeOutcome(1), isFalse);
+
+    await flow.close();
+    flow = PinFlowCubit(lock, PinFlowMode.change);
+    await digits('9876');
+    await digits('2468');
+    await digits('2468');
+    expect(flow.state.step, PinStep.complete);
+    expect(flow.state.outcome, PinFlowOutcome.changeSuccess);
+    expect(flow.state.outcomeId, 1);
+
+    await flow.close();
+    flow = PinFlowCubit(lock, PinFlowMode.disable);
+    await digits('2468');
+    expect(flow.state.step, PinStep.complete);
+    expect(flow.state.outcome, PinFlowOutcome.disableSuccess);
+    expect(flow.state.outcomeId, 1);
+
+    await flow.close();
+    repository.pin = '2468';
+    lock.lock();
+    flow = PinFlowCubit(lock, PinFlowMode.unlock);
+    await digits('2468');
+    expect(flow.state.step, PinStep.complete);
+    expect(flow.state.outcome, PinFlowOutcome.none);
+    expect(flow.state.outcomeId, 0);
+  });
+
+  test(
+    'storage failure during setup locks fail-closed without dialog outcome',
+    () async {
+      repository.fail = true;
+      await digits('9876');
+      await digits('9876');
+      expect(lock.state.locked, isTrue);
+      expect(flow.state.outcome, PinFlowOutcome.none);
+      expect(flow.state.outcomeId, 0);
+    },
+  );
 }

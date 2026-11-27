@@ -12,6 +12,8 @@ import 'package:daftariapp/core/widgets/app_confirmation_dialog.dart';
 import 'package:daftariapp/core/widgets/app_error_dialog.dart';
 import 'package:daftariapp/core/widgets/app_success_dialog.dart';
 import 'package:daftariapp/core/widgets/daftari_loading.dart';
+import 'package:daftariapp/features/customers/domain/entities/customer_entity.dart';
+import 'package:daftariapp/features/customers/domain/repositories/customer_repository.dart';
 import 'package:daftariapp/features/customers/domain/usecases/watch_customers_usecase.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
 import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -34,6 +36,23 @@ import 'package:fpdart/fpdart.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../customer_test_setup.dart';
+
+class _ControlledCustomerRepository implements CustomerRepository {
+  final controller =
+      StreamController<Either<AppFailure, List<CustomerEntity>>>.broadcast();
+
+  @override
+  Stream<Either<AppFailure, List<CustomerEntity>>> watchCustomers({
+    String query = '',
+    CustomerFilter filter = CustomerFilter.all,
+    CustomerSort sort = CustomerSort.nameAsc,
+  }) => controller.stream;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  Future<void> dispose() => controller.close();
+}
 
 class _ControlledTransactionRepository implements TransactionRepository {
   final entries =
@@ -708,4 +727,122 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
     router.dispose();
   });
+
+  testWidgets(
+    'P15-08: failed save keeps draft and reconciles customer picker and retry validation when selected customer becomes inactive during save',
+    (tester) async {
+      final customersRepo = _ControlledCustomerRepository();
+      final txRepo = _ControlledTransactionRepository();
+      addTearDown(customersRepo.dispose);
+      addTearDown(txRepo.dispose);
+
+      final customerA = CustomerEntity(
+        id: 'cust-a',
+        name: 'Removed Customer',
+        phone: null,
+        notes: null,
+        balancePiasters: 0,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+      );
+      final customerB = CustomerEntity(
+        id: 'cust-b',
+        name: 'Active Customer',
+        phone: null,
+        notes: null,
+        balancePiasters: 0,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+      );
+
+      await sl.unregister<TransactionFormCubit>();
+      sl.registerFactory<TransactionFormCubit>(
+        () => TransactionFormCubit(
+          WatchCustomersUseCase(customersRepo),
+          GetTransactionByIdUseCase(txRepo),
+          CreateTransactionUseCase(txRepo),
+          EditTransactionUseCase(txRepo),
+        ),
+      );
+
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final router = AppRouter.create();
+      await tester.pumpWidget(
+        DaftariApp(router: router, locale: const Locale('en')),
+      );
+      await tester.pumpAndSettle();
+      router.go('/transactions/new?customerId=${customerA.id}&type=payment');
+      await tester.pumpAndSettle();
+
+      customersRepo.controller.add(Right([customerA, customerB]));
+      await tester.pumpAndSettle();
+      expect(find.text('Removed Customer'), findsOneWidget);
+
+      await tester.tap(find.text('+200'));
+      await tester.pump();
+      await tester.ensureVisible(find.byType(TextField));
+      await tester.enterText(find.byType(TextField), 'Preserved note');
+      await tester.pump();
+
+      final pendingSave = Completer<Either<AppFailure, TransactionEntity>>();
+      txRepo.pendingCreate = pendingSave;
+
+      await tester.tap(find.byKey(const ValueKey('transaction-save')));
+      await tester.pump();
+      expect(txRepo.createCalls, 1);
+
+      // Emit a customer list without the selected customer while the save is pending.
+      customersRepo.controller.add(Right([customerB]));
+      await tester.pump();
+
+      // Fail the save and dismiss the error dialog.
+      pendingSave.complete(const Left(AppFailure(AppErrorCode.database)));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppErrorDialog), findsOneWidget);
+      await _dismissDialog(tester);
+      expect(find.byType(AppErrorDialog), findsNothing);
+
+      // Amount and note survive while the removed customer is no longer selected.
+      expect(
+        tester
+            .widget<TransactionAmountCard>(find.byType(TransactionAmountCard))
+            .amount,
+        '200',
+      );
+      expect(find.text('Preserved note'), findsOneWidget);
+      expect(find.text('Removed Customer'), findsNothing);
+
+      // Picker reflects the last emitted list without needing a second stream event.
+      final pickerButton = find.descendant(
+        of: find.byType(TransactionCustomerCard),
+        matching: find.byType(TextButton),
+      );
+      await tester.ensureVisible(pickerButton);
+      await tester.pumpAndSettle();
+      await tester.tap(pickerButton);
+      await tester.pumpAndSettle();
+      expect(find.text('Active Customer'), findsOneWidget);
+      expect(find.text('Removed Customer'), findsNothing);
+      Navigator.of(tester.element(find.text('Active Customer'))).pop();
+      await tester.pumpAndSettle();
+
+      // Retrying Save immediately fails customer validation without calling create again.
+      txRepo.pendingCreate = null;
+      await tester.tap(find.byKey(const ValueKey('transaction-save')));
+      await tester.pumpAndSettle();
+      expect(txRepo.createCalls, 1);
+      expect(
+        find.byKey(const ValueKey('transaction-customer-error')),
+        findsOneWidget,
+      );
+      expect(find.byType(AppErrorDialog), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      router.dispose();
+    },
+  );
 }

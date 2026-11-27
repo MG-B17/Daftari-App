@@ -71,9 +71,13 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
   String? _id;
   int _generation = 0;
   int _submissionId = 0;
+  List<CustomerEntity>? _bufferedCustomers;
+  AppFailure? _bufferedCustomersFailure;
 
   Future<void> load(String? id) async {
     final generation = ++_generation;
+    _bufferedCustomers = null;
+    _bufferedCustomersFailure = null;
     await _subscription?.cancel();
     if (isClosed || generation != _generation) return;
     _id = id;
@@ -88,10 +92,16 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
     }
     _subscription = _watchCustomers().listen(
       (result) {
-        if (isClosed ||
-            generation != _generation ||
-            state.saved ||
-            state.saving) {
+        if (isClosed || generation != _generation || state.saved) {
+          return;
+        }
+        if (state.saving) {
+          result.fold((failure) => _bufferedCustomersFailure = failure, (
+            customers,
+          ) {
+            _bufferedCustomers = customers;
+            _bufferedCustomersFailure = null;
+          });
           return;
         }
         result.fold(
@@ -122,23 +132,25 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
         );
       },
       onError: (Object _) {
-        if (!isClosed &&
-            generation == _generation &&
-            !state.saved &&
-            !state.saving) {
-          emit(
-            TransactionFormState(
-              loading: false,
-              failure: const AppFailure(AppErrorCode.unexpected),
-              transaction: state.transaction,
-              customers: state.customers,
-              submissionStatus: state.submissionStatus,
-              submissionId: _submissionId,
-              submissionFailure: state.submissionFailure,
-              savedType: state.savedType,
-            ),
-          );
+        if (isClosed || generation != _generation || state.saved) {
+          return;
         }
+        if (state.saving) {
+          _bufferedCustomersFailure = const AppFailure(AppErrorCode.unexpected);
+          return;
+        }
+        emit(
+          TransactionFormState(
+            loading: false,
+            failure: const AppFailure(AppErrorCode.unexpected),
+            transaction: state.transaction,
+            customers: state.customers,
+            submissionStatus: state.submissionStatus,
+            submissionId: _submissionId,
+            submissionFailure: state.submissionFailure,
+            savedType: state.savedType,
+          ),
+        );
       },
     );
     if (id == null) {
@@ -202,6 +214,8 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
       );
       return;
     }
+    _bufferedCustomers = null;
+    _bufferedCustomersFailure = null;
     emit(
       TransactionFormState(
         customers: state.customers,
@@ -227,12 +241,17 @@ class TransactionFormCubit extends Cubit<TransactionFormState> {
             note: note,
           );
     if (isClosed || generation != _generation) return;
+    final bufferedCustomers = _bufferedCustomers;
+    final bufferedFailure = _bufferedCustomersFailure;
+    _bufferedCustomers = null;
+    _bufferedCustomersFailure = null;
     _submissionId++;
     result.fold(
       (failure) => emit(
         TransactionFormState(
-          customers: state.customers,
+          customers: bufferedCustomers ?? state.customers,
           transaction: state.transaction,
+          failure: bufferedFailure ?? state.failure,
           submissionStatus: TransactionFormSubmissionStatus.failed,
           submissionId: _submissionId,
           submissionFailure: failure,

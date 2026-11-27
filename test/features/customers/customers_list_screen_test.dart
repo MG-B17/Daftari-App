@@ -7,7 +7,7 @@ import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/database/app_database.dart';
-import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_cubit.dart';
 import 'package:daftariapp/core/widgets/daftari_loading.dart';
 import 'package:daftariapp/features/customers/domain/repositories/customer_repository.dart';
 import 'package:daftariapp/features/customers/domain/usecases/pick_contact_usecase.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../cubit/onboarding_state.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -32,6 +32,9 @@ class _PageIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colorScheme;
+    final indicatorDuration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
     final label = context.l10n.onboardingPageLabel(
       pageIndex + 1,
       OnboardingState.pageCount,
@@ -49,7 +52,7 @@ class _PageIndicator extends StatelessWidget {
               children: List.generate(
                 OnboardingState.pageCount,
                 (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: indicatorDuration,
                   width: index == pageIndex
                       ? AppSpacing.indicatorActiveWidth
                       : AppSpacing.indicatorDot,

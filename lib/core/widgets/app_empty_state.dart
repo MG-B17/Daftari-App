@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
-import '../theme/app_spacing.dart';
+import '../theme/spacing/app_spacing.dart';
 
 class AppEmptyState extends StatelessWidget {
   const AppEmptyState({

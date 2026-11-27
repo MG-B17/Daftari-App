@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../cubit/onboarding_cubit.dart';
@@ -14,6 +14,10 @@ class OnboardingNextButton extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: AppSpacing.introNextButtonPadding,
     child: BlocBuilder<OnboardingCubit, OnboardingState>(
+      buildWhen: (previous, current) =>
+          previous.isLastPage != current.isLastPage ||
+          previous.isSaving != current.isSaving ||
+          previous.isCompleted != current.isCompleted,
       builder: (context, state) {
         final l10n = context.l10n;
         final cubit = context.read<OnboardingCubit>();
@@ -23,7 +27,9 @@ class OnboardingNextButton extends StatelessWidget {
           icon: state.isLastPage ? null : Icons.arrow_forward_rounded,
           fullWidth: true,
           isLoading: state.isSaving,
-          onPressed: state.isLastPage
+          onPressed: state.isCompleted
+              ? null
+              : state.isLastPage
               ? cubit.completeOnboarding
               : cubit.nextPage,
         );

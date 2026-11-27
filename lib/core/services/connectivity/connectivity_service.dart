@@ -1,6 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-import '../errors/app_exception.dart';
+import '../../errors/app_exception.dart';
 
 /// Reports available network interfaces, not guaranteed internet reachability.
 class ConnectivityService {

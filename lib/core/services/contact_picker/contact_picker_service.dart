@@ -2,9 +2,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart';
 import 'package:flutter_native_contact_picker/model/contact.dart';
 
-import '../../features/customers/domain/entities/picked_contact.dart';
-import '../errors/app_exception.dart';
-import '../extensions/string_extensions.dart';
+import '../../../features/customers/domain/entities/picked_contact.dart';
+import '../../errors/app_exception.dart';
+import '../../extensions/string_extensions.dart';
 
 class ContactPickerService {
   ContactPickerService({Future<Contact?> Function()? pickContact})

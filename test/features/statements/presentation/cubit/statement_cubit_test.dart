@@ -5,7 +5,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
 import 'package:daftariapp/features/statements/data/services/statement_share_service.dart';
 import 'package:daftariapp/features/statements/domain/entities/customer_statement_entity.dart';

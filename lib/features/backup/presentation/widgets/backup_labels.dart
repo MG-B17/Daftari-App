@@ -3,12 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/extensions/string_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../auth/session/presentation/cubit/auth_session_cubit.dart';
 import '../../../auth/session/presentation/cubit/auth_session_state.dart';
 import '../cubit/backup_cubit.dart';
 import '../models/backup_view_state.dart';
+import 'backup_feedback_listener.dart';
 
 extension BackupStatusLabels on BackupStatus {
   String label(BuildContext context) => switch (this) {
@@ -92,7 +93,9 @@ class BackupViewStateBuilder extends StatelessWidget {
     if (state case final fixed?) return builder(context, fixed);
     final backupCubit = context.read<BackupCubit?>();
     if (backupCubit != null) {
-      return BlocBuilder<BackupCubit, BackupViewState>(builder: builder);
+      return BackupFeedbackListener(
+        child: BlocBuilder<BackupCubit, BackupViewState>(builder: builder),
+      );
     }
     final authCubit = context.read<AuthSessionCubit?>();
     if (authCubit == null) {

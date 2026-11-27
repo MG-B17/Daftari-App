@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/routing/app_routes.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../../core/utils/money_utils.dart';
 import '../../../../core/widgets/app_error_dialog.dart';

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../domain/entities/restore_entities.dart';
 import '../cubit/restore_cubit.dart';
@@ -83,7 +83,7 @@ class RestorePrimaryConfirmationCard extends StatelessWidget {
             label: confirmLabel,
             icon: Icons.check_circle_outline_rounded,
             fullWidth: true,
-            onPressed: cubit == null
+            onPressed: cubit == null || state.isBusy
                 ? null
                 : () => unawaited(cubit.confirmPrimary()),
           ),
@@ -93,7 +93,7 @@ class RestorePrimaryConfirmationCard extends StatelessWidget {
             label: l10n.cancel,
             variant: AppButtonVariant.outlined,
             fullWidth: true,
-            onPressed: cubit?.cancelConfirmation,
+            onPressed: state.isBusy ? null : cubit?.cancelConfirmation,
           ),
         ],
       ),
@@ -204,7 +204,7 @@ class RestoreReplacementConfirmationCard extends StatelessWidget {
             variant: AppButtonVariant.danger,
             icon: Icons.published_with_changes_rounded,
             fullWidth: true,
-            onPressed: cubit == null
+            onPressed: cubit == null || state.isBusy
                 ? null
                 : () => unawaited(cubit.confirmReplacement()),
           ),
@@ -214,7 +214,7 @@ class RestoreReplacementConfirmationCard extends StatelessWidget {
             label: l10n.cancel,
             variant: AppButtonVariant.outlined,
             fullWidth: true,
-            onPressed: cubit?.cancelConfirmation,
+            onPressed: state.isBusy ? null : cubit?.cancelConfirmation,
           ),
         ],
       ),

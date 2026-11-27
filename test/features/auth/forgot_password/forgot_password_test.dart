@@ -4,7 +4,7 @@ import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
 import 'package:daftariapp/features/auth/forgot_password/data/repositories/forgot_password_repository_impl.dart';
 import 'package:daftariapp/features/auth/forgot_password/domain/usecases/send_password_reset_usecase.dart';

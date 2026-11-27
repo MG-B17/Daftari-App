@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_gradients.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/gradients/app_gradients.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 
 class OnboardingPageContent extends StatelessWidget {
   const OnboardingPageContent({

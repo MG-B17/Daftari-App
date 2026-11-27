@@ -8,18 +8,31 @@ import 'app_lock_state.dart';
 
 enum PinStep { verify, create, confirm, complete }
 
+enum PinFlowOutcome {
+  none,
+  setupSuccess,
+  changeSuccess,
+  disableSuccess,
+  failed,
+}
+
 final class PinFlowState extends Equatable {
   const PinFlowState({
     required this.step,
     this.count = 0,
     this.mismatch = false,
+    this.outcome = PinFlowOutcome.none,
+    this.outcomeId = 0,
   });
+
   final PinStep step;
   final int count;
   final bool mismatch;
+  final PinFlowOutcome outcome;
+  final int outcomeId;
 
   @override
-  List<Object> get props => [step, count, mismatch];
+  List<Object> get props => [step, count, mismatch, outcome, outcomeId];
 }
 
 class PinFlowCubit extends Cubit<PinFlowState> {
@@ -37,8 +50,16 @@ class PinFlowCubit extends Cubit<PinFlowState> {
   String? _current;
   bool _recovering = false;
   int _generation = 0;
+  int _consumedOutcomeId = 0;
+
+  bool consumeOutcome(int outcomeId) {
+    if (outcomeId <= _consumedOutcomeId) return false;
+    _consumedOutcomeId = outcomeId;
+    return true;
+  }
 
   bool get enabled =>
+      state.step != PinStep.complete &&
       !lock.state.busy &&
       !lock.state.obscured &&
       lock.state.message != SecurityMessage.storage &&
@@ -52,14 +73,20 @@ class PinFlowCubit extends Cubit<PinFlowState> {
     }
     _digits += digit;
     if (_digits.length < PinLockoutPolicy.pinLength) {
-      emit(PinFlowState(step: state.step, count: _digits.length));
+      emit(
+        PinFlowState(
+          step: state.step,
+          count: _digits.length,
+          outcomeId: state.outcomeId,
+        ),
+      );
       return;
     }
     final pin = _digits;
     _digits = '';
     final generation = _generation;
     final step = state.step;
-    emit(PinFlowState(step: step));
+    emit(PinFlowState(step: step, outcomeId: state.outcomeId));
     switch (step) {
       case PinStep.verify:
         final success = mode == PinFlowMode.disable
@@ -68,18 +95,45 @@ class PinFlowCubit extends Cubit<PinFlowState> {
         if (isClosed || generation != _generation) return;
         if (success && mode == PinFlowMode.change) {
           _current = pin;
-          emit(const PinFlowState(step: PinStep.create));
+          emit(PinFlowState(step: PinStep.create, outcomeId: state.outcomeId));
         } else if (success) {
-          emit(const PinFlowState(step: PinStep.complete));
+          final outcome = mode == PinFlowMode.disable
+              ? PinFlowOutcome.disableSuccess
+              : PinFlowOutcome.none;
+          emit(
+            PinFlowState(
+              step: PinStep.complete,
+              outcome: outcome,
+              outcomeId: outcome == PinFlowOutcome.none
+                  ? state.outcomeId
+                  : state.outcomeId + 1,
+            ),
+          );
+        } else if (mode == PinFlowMode.disable &&
+            !lock.state.locked &&
+            lock.state.message == SecurityMessage.unavailable) {
+          emit(
+            PinFlowState(
+              step: PinStep.verify,
+              outcome: PinFlowOutcome.failed,
+              outcomeId: state.outcomeId + 1,
+            ),
+          );
         }
       case PinStep.create:
         _confirmation = pin;
-        emit(const PinFlowState(step: PinStep.confirm));
+        emit(PinFlowState(step: PinStep.confirm, outcomeId: state.outcomeId));
       case PinStep.confirm:
         final expected = _confirmation;
         _confirmation = null;
         if (pin != expected) {
-          emit(const PinFlowState(step: PinStep.create, mismatch: true));
+          emit(
+            PinFlowState(
+              step: PinStep.create,
+              mismatch: true,
+              outcomeId: state.outcomeId,
+            ),
+          );
           return;
         }
         final success = _recovering
@@ -89,15 +143,40 @@ class PinFlowCubit extends Cubit<PinFlowState> {
             : await lock.setup(pin);
         _current = null;
         if (isClosed || generation != _generation) return;
-        emit(
-          PinFlowState(
-            step: success
-                ? PinStep.complete
-                : mode == PinFlowMode.change
-                ? PinStep.verify
-                : PinStep.create,
-          ),
-        );
+        if (success) {
+          final outcome = _recovering || mode == PinFlowMode.unlock
+              ? PinFlowOutcome.none
+              : mode == PinFlowMode.change
+              ? PinFlowOutcome.changeSuccess
+              : PinFlowOutcome.setupSuccess;
+          emit(
+            PinFlowState(
+              step: PinStep.complete,
+              outcome: outcome,
+              outcomeId: outcome == PinFlowOutcome.none
+                  ? state.outcomeId
+                  : state.outcomeId + 1,
+            ),
+          );
+        } else {
+          final nextStep = mode == PinFlowMode.change
+              ? PinStep.verify
+              : PinStep.create;
+          final reportError =
+              !_recovering &&
+              mode != PinFlowMode.unlock &&
+              !lock.state.locked &&
+              lock.state.message != SecurityMessage.storage;
+          emit(
+            PinFlowState(
+              step: nextStep,
+              outcome: reportError
+                  ? PinFlowOutcome.failed
+                  : PinFlowOutcome.none,
+              outcomeId: reportError ? state.outcomeId + 1 : state.outcomeId,
+            ),
+          );
+        }
       case PinStep.complete:
         break;
     }
@@ -106,13 +185,19 @@ class PinFlowCubit extends Cubit<PinFlowState> {
   void erase() {
     if (!enabled || _digits.isEmpty) return;
     _digits = _digits.substring(0, _digits.length - 1);
-    emit(PinFlowState(step: state.step, count: _digits.length));
+    emit(
+      PinFlowState(
+        step: state.step,
+        count: _digits.length,
+        outcomeId: state.outcomeId,
+      ),
+    );
   }
 
   void clear() {
     if (!enabled) return;
     _digits = '';
-    emit(PinFlowState(step: state.step));
+    emit(PinFlowState(step: state.step, outcomeId: state.outcomeId));
   }
 
   void resetInput() {
@@ -125,6 +210,7 @@ class PinFlowCubit extends Cubit<PinFlowState> {
     emit(
       PinFlowState(
         step: mode == PinFlowMode.setup ? PinStep.create : PinStep.verify,
+        outcomeId: state.outcomeId,
       ),
     );
   }
@@ -138,7 +224,7 @@ class PinFlowCubit extends Cubit<PinFlowState> {
     _current = null;
     _confirmation = null;
     _recovering = true;
-    emit(const PinFlowState(step: PinStep.create));
+    emit(PinFlowState(step: PinStep.create, outcomeId: state.outcomeId));
   }
 
   @override

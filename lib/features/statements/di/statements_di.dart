@@ -2,8 +2,8 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/errors/error_handler.dart';
-import '../../../core/services/date_service.dart';
-import '../../../core/services/widget_image_exporter.dart';
+import '../../../core/services/date/date_service.dart';
+import '../../../core/services/image_exporter/widget_image_exporter.dart';
 import '../data/repositories/statement_repository_impl.dart';
 import '../data/services/statement_share_service.dart';
 import '../domain/repositories/statement_repository.dart';

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import 'pin_dots_indicator.dart';
 
 /// Dots, helper text, progress, cooldown and error feedback for the PIN flow.
@@ -31,8 +32,17 @@ class PinStatusSection extends StatelessWidget {
           Text(l10n.securityPinHelper, style: context.textTheme.bodySmall),
           if (busy) ...[
             SizedBox(height: AppSpacing.md),
-            const CircularProgressIndicator(),
-            Text(l10n.loading),
+            Semantics(
+              liveRegion: true,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ExcludeSemantics(child: DaftariLoading.inline()),
+                  SizedBox(height: AppSpacing.xs),
+                  Text(l10n.loading),
+                ],
+              ),
+            ),
           ],
           if (cooldownSeconds > 0) Text(l10n.securityCooldown(cooldownSeconds)),
           if (message != null)

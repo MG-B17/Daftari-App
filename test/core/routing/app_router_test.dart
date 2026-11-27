@@ -2,13 +2,16 @@ import 'package:daftariapp/features/settings/data/repositories/settings_reposito
 import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecase.dart';
 import 'package:daftariapp/features/settings/domain/usecases/change_language_usecase.dart';
 import 'package:daftariapp/app.dart';
+import 'package:daftariapp/core/animation/screen_transition_animation/fade_transition_page.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
 import 'package:daftariapp/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:daftariapp/features/search/presentation/screens/search_screen.dart';
+import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
+import 'package:daftariapp/features/security/presentation/screens/pin_lock_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
 import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
 import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -24,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 
 import '../../customer_test_setup.dart';
+import '../../security_test_setup.dart';
 
 void main() {
   setUp(() async => setupCustomerTests());
@@ -224,4 +228,105 @@ void main() {
     router.dispose();
     await cubit.close();
   });
+
+  testWidgets('returning-user startup fades from splash into the shell route', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'onboardingCompleted': true});
+    final storage = LocalStorageService(await SharedPreferences.getInstance());
+    final router = AppRouter.create(localStorage: storage);
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(DaftariApp(router: router));
+    await tester.pump();
+    expect(find.byType(SplashScreen), findsOneWidget);
+
+    await tester.pump(SplashScreen.displayDuration);
+    await tester.pump(const Duration(milliseconds: 100));
+    final navigator = tester.widget<Navigator>(find.byType(Navigator).first);
+    expect(navigator.pages.last, isA<FadeTransitionPage<dynamic>>());
+
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
+    expect(find.byType(DashboardScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  for (final completed in [false, true]) {
+    testWidgets(
+      'PIN-protected startup opens lock immediately and unlocks to onboardingCompleted=$completed destination',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({
+          'onboardingCompleted': completed,
+        });
+        final storage = LocalStorageService(
+          await SharedPreferences.getInstance(),
+        );
+        final lock = await testAppLock(
+          repository: TestSecurityRepository(pin: '2468'),
+        );
+        final router = AppRouter.create(localStorage: storage, appLock: lock);
+        addTearDown(() async {
+          router.dispose();
+          await lock.close();
+        });
+
+        await tester.pumpWidget(DaftariApp(router: router, appLockCubit: lock));
+        await tester.pumpAndSettle();
+
+        expect(router.routeInformationProvider.value.uri.path, AppRoutes.lock);
+        expect(find.byType(PinLockScreen), findsOneWidget);
+        expect(find.byType(SplashScreen), findsNothing);
+        expect(find.byType(DashboardScreen), findsNothing);
+
+        await lock.verify('2468');
+        await tester.pumpAndSettle();
+
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          completed ? AppRoutes.root : AppRoutes.onboarding,
+        );
+        expect(
+          find.byType(completed ? DashboardScreen : OnboardingScreen),
+          findsOneWidget,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 1));
+      },
+    );
+  }
+
+  testWidgets(
+    'delayed lock initialization holds on splash and proceeds when ready',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({'onboardingCompleted': true});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      final lock = AppLockCubit(TestSecurityRepository(), SecurityTestClock());
+      final router = AppRouter.create(localStorage: storage, appLock: lock);
+      addTearDown(() async {
+        router.dispose();
+        await lock.close();
+      });
+
+      await tester.pumpWidget(DaftariApp(router: router, appLockCubit: lock));
+      await tester.pump();
+      expect(router.routeInformationProvider.value.uri.path, AppRoutes.splash);
+      expect(find.byType(SplashScreen, skipOffstage: false), findsOneWidget);
+
+      await tester.pump(SplashScreen.displayDuration);
+      expect(router.routeInformationProvider.value.uri.path, AppRoutes.splash);
+      expect(find.byType(SplashScreen, skipOffstage: false), findsOneWidget);
+
+      await lock.initialize();
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, AppRoutes.root);
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
 }

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/animation/staggered_list_item.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../../../core/routing/app_routes.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../core/utils/money_utils.dart';
 import '../../../../core/widgets/daftari_loading.dart';
 import '../../domain/entities/customer_entity.dart';

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants/app_constants.dart';
-import 'app_color_scheme.dart';
-import 'app_colors.dart';
-import 'app_spacing.dart';
-import 'app_typography.dart';
+import 'colors/app_color_scheme.dart';
+import 'colors/app_colors.dart';
+import 'spacing/app_spacing.dart';
+import 'text_theme/app_typography.dart';
 
 abstract final class AppTheme {
   static final ColorScheme _lightColorScheme = _buildColorScheme(

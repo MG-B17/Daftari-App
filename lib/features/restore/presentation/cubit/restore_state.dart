@@ -22,6 +22,19 @@ enum RestorePhase {
 
 enum RestoreRefreshReason { cloudVersionOrDeviceChanged, localLedgerChanged }
 
+enum RestoreFeedback {
+  none,
+  completedTransferred,
+  completedSameDevice,
+  cloudVersionChanged,
+  localLedgerChanged,
+  accountMismatch,
+  offline,
+  interrupted,
+  authError,
+  failed,
+}
+
 /// Immutable presentation state for the Cloud Restore and Device Transfer flow.
 final class RestoreViewState extends Equatable {
   const RestoreViewState({
@@ -33,8 +46,11 @@ final class RestoreViewState extends Equatable {
     this.primaryConfirmed = false,
     this.replacementConfirmed = false,
     this.authorityTransferred = false,
+    this.isCancellingInterrupted = false,
     this.refreshReason,
     this.isPreview = false,
+    this.feedback = RestoreFeedback.none,
+    this.feedbackId = 0,
   });
 
   /// Default preview state when [RestoreCubit] is not mounted (e.g., isolated
@@ -80,15 +96,20 @@ final class RestoreViewState extends Equatable {
   final bool primaryConfirmed;
   final bool replacementConfirmed;
   final bool authorityTransferred;
+  final bool isCancellingInterrupted;
   final RestoreRefreshReason? refreshReason;
   final bool isPreview;
+  final RestoreFeedback feedback;
+  final int feedbackId;
 
   String? get accountEmail => account?.email;
 
   String? get accountShopName => account?.shopName;
 
   bool get isBusy =>
-      phase == RestorePhase.loading || phase == RestorePhase.executing;
+      phase == RestorePhase.loading ||
+      phase == RestorePhase.executing ||
+      isCancellingInterrupted;
 
   bool get requiresTakeover {
     if (pendingTransfer case final inFlight?) {
@@ -139,8 +160,11 @@ final class RestoreViewState extends Equatable {
     bool? primaryConfirmed,
     bool? replacementConfirmed,
     bool? authorityTransferred,
+    bool? isCancellingInterrupted,
     RestoreRefreshReason? Function()? refreshReason,
     bool? isPreview,
+    RestoreFeedback? feedback,
+    int? feedbackId,
   }) => RestoreViewState(
     phase: phase ?? this.phase,
     account: account != null ? account() : this.account,
@@ -152,8 +176,12 @@ final class RestoreViewState extends Equatable {
     primaryConfirmed: primaryConfirmed ?? this.primaryConfirmed,
     replacementConfirmed: replacementConfirmed ?? this.replacementConfirmed,
     authorityTransferred: authorityTransferred ?? this.authorityTransferred,
+    isCancellingInterrupted:
+        isCancellingInterrupted ?? this.isCancellingInterrupted,
     refreshReason: refreshReason != null ? refreshReason() : this.refreshReason,
     isPreview: isPreview ?? this.isPreview,
+    feedback: feedback ?? this.feedback,
+    feedbackId: feedbackId ?? this.feedbackId,
   );
 
   @override
@@ -166,7 +194,10 @@ final class RestoreViewState extends Equatable {
     primaryConfirmed,
     replacementConfirmed,
     authorityTransferred,
+    isCancellingInterrupted,
     refreshReason,
     isPreview,
+    feedback,
+    feedbackId,
   ];
 }

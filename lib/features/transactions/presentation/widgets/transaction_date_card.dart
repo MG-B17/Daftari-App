@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/services/date_service.dart';
+import '../../../../core/services/date/date_service.dart';
 import '../../../../core/utils/app_date_utils.dart';
 
 class TransactionDateCard extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'package:daftariapp/core/di/service_locator.dart';
-import 'package:daftariapp/core/services/date_service.dart';
+import 'package:daftariapp/core/services/date/date_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

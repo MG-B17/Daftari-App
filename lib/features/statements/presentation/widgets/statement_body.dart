@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../cubit/statement_cubit.dart';
 import 'statement_actions_section.dart';
 import 'statement_preview_card.dart';

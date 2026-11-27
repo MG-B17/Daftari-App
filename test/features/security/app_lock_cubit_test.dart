@@ -219,4 +219,76 @@ void main() {
     expect(await lock.verify('2468'), isTrue);
     await lock.close();
   });
+
+  test('biometric setup emits one-shot success and error feedback; disable stays lightweight', () async {
+    final repository = TestSecurityRepository(pin: '2468');
+    final lock = await testAppLock(repository: repository);
+    expect(await lock.verify('2468'), isTrue);
+
+    expect(await lock.setBiometric(true), isTrue);
+    expect(lock.state.feedback, SecurityFeedback.biometricEnabled);
+    expect(lock.state.feedbackId, 1);
+    expect(lock.consumeFeedback(1), isTrue);
+    expect(lock.consumeFeedback(1), isFalse);
+
+    expect(await lock.setBiometric(false), isTrue);
+    expect(lock.state.feedback, SecurityFeedback.none);
+    expect(lock.state.feedbackId, 1);
+
+    repository.setBiometricResult = false;
+    expect(await lock.setBiometric(true), isFalse);
+    expect(lock.state.feedback, SecurityFeedback.biometricUnavailable);
+    expect(lock.state.feedbackId, 2);
+    expect(lock.consumeFeedback(2), isTrue);
+    expect(lock.consumeFeedback(2), isFalse);
+
+    await lock.close();
+  });
+
+  test('biometric setup backgrounded or failing storage preserves lock-screen priority without feedback', () async {
+    final barrier = Completer<void>();
+    final repository = TestSecurityRepository(pin: '2468')
+      ..biometricBarrier = barrier.future;
+    final lock = await testAppLock(repository: repository);
+    expect(await lock.verify('2468'), isTrue);
+
+    final enableFuture = lock.setBiometric(true);
+    expect(lock.state.busy, isTrue);
+    lock.lifecycle(AppLifecycleState.paused);
+    barrier.complete();
+    expect(await enableFuture, isFalse);
+    expect(lock.state.locked, isTrue);
+    expect(lock.state.feedback, SecurityFeedback.none);
+    expect(lock.state.feedbackId, 0);
+
+    expect(await lock.verify('2468'), isTrue);
+    repository
+      ..biometricBarrier = null
+      ..fail = true;
+    expect(await lock.setBiometric(true), isFalse);
+    expect(lock.state.locked, isTrue);
+    expect(lock.state.message, SecurityMessage.storage);
+    expect(lock.state.feedback, SecurityFeedback.none);
+    expect(lock.state.feedbackId, 0);
+
+    await lock.close();
+  });
+
+  test('routine biometric unlock never emits dialog feedback', () async {
+    final repository = TestSecurityRepository(
+      pin: '2468',
+      biometricEnabled: true,
+    );
+    final lock = await testAppLock(repository: repository);
+    expect(await lock.biometric(), isFalse);
+    expect(lock.state.feedback, SecurityFeedback.none);
+    expect(lock.state.feedbackId, 0);
+
+    repository.biometricSuccess = true;
+    expect(await lock.biometric(), isTrue);
+    expect(lock.state.locked, isFalse);
+    expect(lock.state.feedback, SecurityFeedback.none);
+    expect(lock.state.feedbackId, 0);
+    await lock.close();
+  });
 }

@@ -6,7 +6,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/extensions/string_extensions.dart';
-import '../../../../core/services/contact_picker_service.dart';
+import '../../../../core/services/contact_picker/contact_picker_service.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/entities/picked_contact.dart';
 import '../../domain/repositories/customer_repository.dart';

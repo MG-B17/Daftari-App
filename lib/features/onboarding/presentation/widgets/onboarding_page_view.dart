@@ -40,19 +40,25 @@ class _OnboardingPageViewState extends State<OnboardingPageView> {
       listener: (context, state) {
         if (_controller.hasClients &&
             _controller.page?.round() != state.pageIndex) {
-          _controller.animateToPage(
-            state.pageIndex,
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 280),
-            curve: Curves.easeInOut,
-          );
+          if (MediaQuery.disableAnimationsOf(context)) {
+            _controller.jumpToPage(state.pageIndex);
+          } else {
+            _controller.animateToPage(
+              state.pageIndex,
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeInOut,
+            );
+          }
         }
       },
-      buildWhen: (previous, current) => previous.isSaving != current.isSaving,
+      buildWhen: (previous, current) =>
+          previous.isSaving != current.isSaving ||
+          previous.isCompleted != current.isCompleted,
       builder: (context, state) => PageView.builder(
         controller: _controller,
-        physics: state.isSaving ? const NeverScrollableScrollPhysics() : null,
+        physics: state.isSaving || state.isCompleted
+            ? const NeverScrollableScrollPhysics()
+            : null,
         onPageChanged: context.read<OnboardingCubit>().onPageChanged,
         itemCount: OnboardingState.pageCount,
         itemBuilder: (context, index) => OnboardingPageContent(

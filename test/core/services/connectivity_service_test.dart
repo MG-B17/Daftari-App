@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
-import 'package:daftariapp/core/services/connectivity_service.dart';
+import 'package:daftariapp/core/services/connectivity/connectivity_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

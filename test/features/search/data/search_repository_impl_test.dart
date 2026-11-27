@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/features/search/data/repositories/search_repository_impl.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';

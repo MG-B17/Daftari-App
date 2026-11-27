@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import '../../../../core/services/widget_image_exporter.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/services/image_exporter/widget_image_exporter.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 import 'package:flutter/widgets.dart';

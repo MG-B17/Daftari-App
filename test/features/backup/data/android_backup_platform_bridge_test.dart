@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/core/services/session_commit_gate/session_commit_gate.dart';
 import 'package:daftariapp/features/backup/data/services/android_backup_platform_bridge.dart';
 import 'package:daftariapp/features/backup/domain/entities/backup_schedule.dart';
 import 'package:daftariapp/features/backup/domain/repositories/backup_scheduler.dart';

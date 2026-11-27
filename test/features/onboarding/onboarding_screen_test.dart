@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:daftariapp/app.dart';
+import 'package:daftariapp/core/animation/screen_transition_animation/fade_transition_page.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
-import 'package:daftariapp/core/theme/app_color_scheme.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
+import 'package:daftariapp/core/theme/colors/app_color_scheme.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
+import 'package:daftariapp/core/widgets/daftari_loading.dart';
+import 'package:daftariapp/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:daftariapp/features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import 'package:daftariapp/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:daftariapp/features/onboarding/presentation/widgets/onboarding_page_indicator.dart';
+import 'package:daftariapp/features/splash/presentation/screens/splash_screen.dart';
 import 'package:daftariapp/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -276,4 +283,163 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     router.dispose();
   });
+
+  testWidgets(
+    'reduced motion advances pages immediately, completes once, and bypasses after restart',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      SharedPreferences.setMockInitialValues({});
+      final storage = LocalStorageService(
+        await SharedPreferences.getInstance(),
+      );
+      final router = AppRouter.create(localStorage: storage);
+      addTearDown(router.dispose);
+      final locations = <String>[];
+      void recordLocation() =>
+          locations.add(router.routeInformationProvider.value.uri.path);
+      router.routerDelegate.addListener(recordLocation);
+      addTearDown(() => router.routerDelegate.removeListener(recordLocation));
+
+      await tester.pumpWidget(
+        DaftariApp(router: router, locale: const Locale('en')),
+      );
+      await tester.pump(SplashScreen.displayDuration);
+      await tester.pumpAndSettle();
+
+      final indicatorDots = tester.widgetList<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(OnboardingPageIndicator),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      expect(indicatorDots, hasLength(3));
+      for (final dot in indicatorDots) {
+        expect(dot.duration, Duration.zero);
+      }
+
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Know every customer'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Your data is safe'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pumpAndSettle();
+
+      expect(storage.onboardingCompleted, isTrue);
+      expect(router.routeInformationProvider.value.uri.path, '/');
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      expect(find.byType(OnboardingScreen), findsNothing);
+      expect(locations.where((path) => path == '/').length, 1);
+
+      router.go('/onboarding');
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/');
+
+      await tester.pumpWidget(const SizedBox());
+      final returning = AppRouter.create(
+        localStorage: LocalStorageService(
+          await SharedPreferences.getInstance(),
+        ),
+      );
+      addTearDown(returning.dispose);
+      await tester.pumpWidget(
+        DaftariApp(router: returning, locale: const Locale('en')),
+      );
+      await tester.pump(SplashScreen.displayDuration);
+      await tester.pumpAndSettle();
+      expect(returning.routeInformationProvider.value.uri.path, '/');
+      expect(find.byType(OnboardingScreen), findsNothing);
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'pending completion disables duplicate taps, shows shared loader, and navigates once',
+    (tester) async {
+      final pending = Completer<void>();
+      var completed = false;
+      final storage = _Storage();
+      when(() => storage.onboardingCompleted).thenAnswer((_) => completed);
+      when(() => storage.setOnboardingCompleted(true)).thenAnswer((_) async {
+        await pending.future;
+        completed = true;
+      });
+      final router = AppRouter.create(
+        localStorage: storage,
+        createOnboardingCubit: () => OnboardingCubit(storage),
+      );
+      addTearDown(router.dispose);
+      final locations = <String>[];
+      void recordLocation() =>
+          locations.add(router.routeInformationProvider.value.uri.path);
+      router.routerDelegate.addListener(recordLocation);
+      addTearDown(() => router.routerDelegate.removeListener(recordLocation));
+
+      await tester.pumpWidget(
+        DaftariApp(router: router, locale: const Locale('en')),
+      );
+      await tester.pumpAndSettle();
+
+      final indicatorDots = tester.widgetList<AnimatedContainer>(
+        find.descendant(
+          of: find.byType(OnboardingPageIndicator),
+          matching: find.byType(AnimatedContainer),
+        ),
+      );
+      for (final dot in indicatorDots) {
+        expect(dot.duration, const Duration(milliseconds: 200));
+      }
+
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('onboarding-next')));
+      await tester.pump();
+      expect(find.byType(DaftariLoading), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(
+        tester
+            .widget<TextButton>(find.byKey(const ValueKey('onboarding-skip')))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('onboarding-next')),
+        warnIfMissed: false,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('onboarding-skip')),
+        warnIfMissed: false,
+      );
+      await tester.pump();
+      verify(() => storage.setOnboardingCompleted(true)).called(1);
+
+      pending.complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final navigator = tester.widget<Navigator>(find.byType(Navigator).first);
+      expect(navigator.pages.last, isA<FadeTransitionPage<dynamic>>());
+
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, '/');
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      expect(find.byType(OnboardingScreen), findsNothing);
+      expect(locations.where((path) => path == '/').length, 1);
+      verifyNever(() => storage.setOnboardingCompleted(any()));
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 }

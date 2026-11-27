@@ -1,5 +1,5 @@
 import 'package:daftariapp/core/errors/app_exception.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

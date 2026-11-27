@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
+import '../../../../core/widgets/daftari_loading.dart';
 import '../models/backup_view_state.dart';
 import 'backup_account_card.dart';
 import 'backup_labels.dart';
@@ -95,12 +96,9 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(color: background, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: status == BackupStatus.running
-          ? SizedBox.square(
-              dimension: AppSpacing.iconMedium,
-              child: CircularProgressIndicator(
-                strokeWidth: AppSpacing.progressStroke,
-                color: foreground,
-              ),
+          ? DaftariLoading.inline(
+              size: AppSpacing.iconMedium,
+              color: foreground,
             )
           : Icon(
               status == BackupStatus.upToDate

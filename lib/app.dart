@@ -9,8 +9,8 @@ import 'core/constants/app_constants.dart';
 import 'core/animation/app_theme_transition.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/theme_switcher_cubit.dart';
-import 'core/theme/theme_switcher_state.dart';
+import 'core/theme/theme_controller/theme_switcher_cubit.dart';
+import 'core/theme/theme_controller/theme_switcher_state.dart';
 import 'features/auth/session/presentation/cubit/auth_session_cubit.dart';
 import 'features/backup/presentation/cubit/backup_cubit.dart';
 import 'features/settings/presentation/cubit/settings_cubit.dart';
@@ -148,6 +148,9 @@ class _DaftariAppState extends State<DaftariApp> with WidgetsBindingObserver {
               theme: lightTheme,
               darkTheme: darkTheme,
               themeMode: themeMode,
+              themeAnimationStyle: MediaQuery.disableAnimationsOf(context)
+                  ? AnimationStyle.noAnimation
+                  : null,
               builder: (context, child) {
                 final content = AppThemeTransitionArea(
                   child: child ?? const SizedBox.shrink(),

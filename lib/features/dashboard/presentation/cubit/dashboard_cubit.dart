@@ -6,7 +6,7 @@ import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/app_failure.dart';
-import '../../../../core/services/date_service.dart';
+import '../../../../core/services/date/date_service.dart';
 import '../../domain/entities/dashboard_summary_entity.dart';
 import '../../domain/usecases/watch_dashboard_summary_usecase.dart';
 

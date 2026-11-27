@@ -1,5 +1,5 @@
 import 'package:daftariapp/core/errors/app_exception.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class PoisonError implements Exception {

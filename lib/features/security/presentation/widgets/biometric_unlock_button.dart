@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/spacing/app_spacing.dart';
 
 class BiometricUnlockButton extends StatelessWidget {
   const BiometricUnlockButton({super.key, required this.onPressed});

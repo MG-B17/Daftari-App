@@ -4,7 +4,7 @@ import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/features/auth/session/data/services/auth_error_mapper.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_session_event.dart';
 import 'package:daftariapp/features/auth/session/presentation/cubit/auth_session_cubit.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import '../theme/colors/app_colors.dart';
+import '../theme/spacing/app_spacing.dart';
 import 'app_loading_indicator.dart';
 
 enum AppButtonVariant { primary, secondary, credit, payment, outlined, danger }

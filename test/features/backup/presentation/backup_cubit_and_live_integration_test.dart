@@ -7,11 +7,12 @@ import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
-import 'package:daftariapp/core/services/connectivity_service.dart';
-import 'package:daftariapp/core/services/session_commit_gate.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
+import 'package:daftariapp/core/services/connectivity/connectivity_service.dart';
+import 'package:daftariapp/core/services/session_commit_gate/session_commit_gate.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/utils/app_date_utils.dart';
+import 'package:daftariapp/core/widgets/app_success_dialog.dart';
 import 'package:daftariapp/features/auth/session/data/services/ledger_owner_storage.dart';
 import 'package:daftariapp/features/auth/session/data/services/supabase_auth_service.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_session_event.dart';
@@ -594,6 +595,11 @@ void main() {
         );
         expect(app.cubit.state.pendingChanges, 3);
         expect(app.cubit.state.status, BackupStatus.pending);
+        expect(app.cubit.state.manualFeedback, BackupManualFeedback.confirmed);
+        expect(find.byType(AppSuccessDialog), findsOneWidget);
+        await tester.tap(find.text('OK'));
+        await tester.pump();
+        expect(find.byType(AppSuccessDialog), findsNothing);
 
         // Second manual backup captures the edit (15000), new tx, and audit once.
         cloudPublisher.serverTime = DateTime.utc(2026, 11, 24, 10, 15);
@@ -604,6 +610,11 @@ void main() {
         expect(app.cubit.state.pendingChanges, 0);
         expect(app.cubit.state.status, BackupStatus.upToDate);
         expect(app.cubit.state.canBackUpNow, isFalse);
+        expect(app.cubit.state.manualFeedback, BackupManualFeedback.confirmed);
+        expect(find.byType(AppSuccessDialog), findsOneWidget);
+        await tester.tap(find.text('OK'));
+        await tester.pump();
+        expect(find.byType(AppSuccessDialog), findsNothing);
 
         // Switch to Manage Backup screen and select Weekly, then replace with Monthly.
         await pumpBackupWidget(
@@ -661,6 +672,8 @@ void main() {
     expect(cloudPublisher.publishedBatches.length, 2);
     expect(p2.cubit.state.lastConfirmedAt, DateTime.utc(2026, 2, 28, 9, 1));
     expect(p2.cubit.state.pendingChanges, 0);
+    expect(p2.cubit.state.manualFeedback, BackupManualFeedback.none);
+    expect(p2.cubit.state.manualFeedbackId, 0);
     await p2.cubit.close();
     await p2.db.close();
 
@@ -672,6 +685,8 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 80));
 
     expect(cloudPublisher.publishedBatches.length, 2);
+    expect(p3.cubit.state.manualFeedback, BackupManualFeedback.none);
+    expect(p3.cubit.state.manualFeedbackId, 0);
     final saved = (await p3.localStore.readScheduleState()).getOrElse(
       (_) => throw StateError('failed'),
     );
@@ -882,12 +897,22 @@ void main() {
     await app.cubit.backUpNow();
     expect(app.cubit.state.status, BackupStatus.failed);
     expect(app.cubit.state.lastConfirmedAt, isNull);
+    expect(app.cubit.state.manualFeedback, BackupManualFeedback.offline);
 
     // Retry succeeds -> confirmed timestamp recorded.
     cloudPublisher.serverTime = DateTime.utc(2026, 11, 24, 14);
     await app.cubit.backUpNow();
     expect(app.cubit.state.status, BackupStatus.upToDate);
     expect(app.cubit.state.lastConfirmedAt, DateTime.utc(2026, 11, 24, 14));
+    expect(app.cubit.state.manualFeedback, BackupManualFeedback.confirmed);
+
+    // Manual backup when nothing new to upload reports nothingToUpload accurately.
+    await app.cubit.backUpNow();
+    expect(app.cubit.state.status, BackupStatus.upToDate);
+    expect(
+      app.cubit.state.manualFeedback,
+      BackupManualFeedback.nothingToUpload,
+    );
 
     // Later attempt fails -> status failed, previous lastConfirmedAt preserved!
     await app.db.customerDao.createCustomer(name: 'Hany');
@@ -895,6 +920,7 @@ void main() {
     await app.cubit.backUpNow();
     expect(app.cubit.state.status, BackupStatus.failed);
     expect(app.cubit.state.lastConfirmedAt, DateTime.utc(2026, 11, 24, 14));
+    expect(app.cubit.state.manualFeedback, BackupManualFeedback.offline);
   });
 
   test('cross-isolate P12-16: foreground sign-out and replacement sign-in during worker publication prevents stale worker acknowledgment', () async {

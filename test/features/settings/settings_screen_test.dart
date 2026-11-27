@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:daftariapp/app.dart';
 import 'package:daftariapp/core/constants/app_constants.dart';
 import 'package:daftariapp/core/di/service_locator.dart';
@@ -7,12 +9,20 @@ import 'package:daftariapp/core/errors/error_handler.dart';
 import 'package:daftariapp/core/extensions/context_extensions.dart';
 import 'package:daftariapp/core/routing/app_router.dart';
 import 'package:daftariapp/core/routing/app_routes.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
-import 'package:daftariapp/core/services/local_storage_service.dart';
-import 'package:daftariapp/core/theme/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
+import 'package:daftariapp/core/services/loacl_storage/local_storage_service.dart';
+import 'package:daftariapp/core/theme/theme_controller/theme_switcher_cubit.dart';
+import 'package:daftariapp/core/widgets/app_error_dialog.dart';
+import 'package:daftariapp/core/widgets/app_success_dialog.dart';
+import 'package:daftariapp/core/widgets/daftari_loading.dart';
 import 'package:daftariapp/features/auth/login/presentation/screens/login_screen.dart';
 import 'package:daftariapp/features/auth/sign_up/presentation/screens/register_screen.dart';
 import 'package:daftariapp/features/backup/presentation/screens/backup_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customer_details_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customer_form_screen.dart';
+import 'package:daftariapp/features/customers/presentation/screens/customers_list_screen.dart';
+import 'package:daftariapp/features/customers/presentation/widgets/customer_list_card.dart';
+import 'package:daftariapp/features/dashboard/presentation/widgets/dashboard_summary_card.dart';
 import 'package:daftariapp/features/security/presentation/cubit/app_lock_cubit.dart';
 import 'package:daftariapp/features/security/presentation/screens/pin_lock_screen.dart';
 import 'package:daftariapp/features/settings/data/repositories/settings_repository_impl.dart';
@@ -21,6 +31,7 @@ import 'package:daftariapp/features/settings/domain/usecases/get_settings_usecas
 import 'package:daftariapp/features/settings/presentation/cubit/settings_cubit.dart';
 import 'package:daftariapp/features/settings/presentation/screens/settings_screen.dart';
 import 'package:daftariapp/features/settings/presentation/widgets/language_picker_sheet.dart';
+import 'package:daftariapp/features/settings/presentation/widgets/settings_section_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +39,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../customer_test_setup.dart';
 import '../../dashboard_test_setup.dart';
 import '../../security_test_setup.dart';
 
@@ -198,6 +210,9 @@ void main() {
     await digits('9876');
     await digits('9876');
     expect(cubit.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.byType(PinLockScreen), findsNothing);
     await _scrollTo(tester, find.text('Change PIN'));
@@ -207,11 +222,17 @@ void main() {
     await digits('2468');
     await digits('2468');
     expect(cubit.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.byType(PinLockScreen), findsNothing);
     await openPin();
     await digits('2468');
     expect(cubit.state.settings.isPinEnabled, isFalse);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.byType(PinLockScreen), findsNothing);
     await _dispose(tester, harness);
@@ -424,6 +445,8 @@ void main() {
     expect(themeSwitcher.state.hasError, isTrue);
     expect(themeSwitcher.state.themeMode, ThemeMode.light);
     expect(find.text(context.l10n.settingsStorageError), findsOneWidget);
+    expect(find.byType(AppErrorDialog), findsNothing);
+    expect(find.byType(AppSuccessDialog), findsNothing);
     verify(() => handler.handle(any())).called(1);
 
     await tester.pumpWidget(const SizedBox());
@@ -513,6 +536,9 @@ void main() {
     await _digits(tester, '1357');
 
     expect(harness.security.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(
       harness.router.routeInformationProvider.value.uri.path,
@@ -539,6 +565,9 @@ void main() {
 
     expect(repository.pin, '1357');
     expect(harness.security.state.settings.isPinEnabled, isTrue);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(
       harness.router.routeInformationProvider.value.uri.path,
@@ -563,6 +592,9 @@ void main() {
 
     expect(repository.pin, isNull);
     expect(harness.security.state.settings.isPinEnabled, isFalse);
+    expect(find.byType(AppSuccessDialog), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
     expect(
       harness.router.routeInformationProvider.value.uri.path,
@@ -570,4 +602,241 @@ void main() {
     );
     await _dispose(tester, harness);
   });
+
+  testWidgets(
+    'quick preference changes respond immediately without loading or modal dialogs',
+    (tester) async {
+      final themeWrite = Completer<void>();
+      final localeWrite = Completer<void>();
+      final storage = _Storage();
+      final handler = _Handler();
+      when(() => storage.localeCode).thenReturn('ar');
+      when(() => storage.themeMode).thenReturn(ThemeMode.light);
+      when(() => storage.setThemeMode(ThemeMode.dark))
+          .thenAnswer((_) => themeWrite.future);
+      when(() => storage.setLocaleCode('en'))
+          .thenAnswer((_) => localeWrite.future);
+      when(() => handler.handle(any()))
+          .thenAnswer((_) async => const AppFailure(AppErrorCode.storage));
+
+      final cubit = SettingsCubit(
+        GetSettingsUseCase(SettingsRepositoryImpl(storage)),
+        ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
+        handler,
+      );
+      final themeSwitcher = ThemeSwitcherCubit(storage, handler);
+      final router = AppRouter.create();
+      final security = await testAppLock();
+      await tester.pumpWidget(
+        DaftariApp(
+          router: router,
+          settingsCubit: cubit,
+          themeSwitcherCubit: themeSwitcher,
+          appLockCubit: security,
+        ),
+      );
+      await tester.pumpAndSettle();
+      router.go(AppRoutes.settings);
+      await tester.pumpAndSettle();
+
+      await _scrollTo(tester, find.byKey(const ValueKey('theme-dark')));
+      await tester.tap(find.byKey(const ValueKey('theme-dark')));
+      await tester.pump();
+      expect(themeSwitcher.state.themeMode, ThemeMode.dark);
+      expect(find.byType(DaftariLoading), findsNothing);
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.byType(AppErrorDialog), findsNothing);
+      themeWrite.complete();
+      await tester.pumpAndSettle();
+      expect(
+        Theme.of(tester.element(find.byType(SettingsScreen))).brightness,
+        Brightness.dark,
+      );
+
+      await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
+      await tester.tap(find.byKey(const ValueKey('language-tile')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('language-option-en')));
+      await tester.pump();
+      expect(cubit.state.localeCode, 'en');
+      expect(find.byType(DaftariLoading), findsNothing);
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.byType(AppErrorDialog), findsNothing);
+      localeWrite.complete();
+      await tester.pumpAndSettle();
+      expect(
+        Directionality.of(tester.element(find.byType(SettingsScreen))),
+        TextDirection.ltr,
+      );
+      expect(find.byType(AppSuccessDialog), findsNothing);
+      expect(find.byType(AppErrorDialog), findsNothing);
+
+      await tester.pumpWidget(const SizedBox());
+      router.dispose();
+      await cubit.close();
+      await themeSwitcher.close();
+      await security.close();
+    },
+  );
+
+  testWidgets('storage failure reverts the language and shows a snackbar', (
+    tester,
+  ) async {
+    final storage = _Storage();
+    final handler = _Handler();
+    when(() => storage.localeCode).thenReturn('ar');
+    when(() => storage.themeMode).thenReturn(ThemeMode.light);
+    when(() => storage.setLocaleCode(any()))
+        .thenThrow(const StorageException());
+    when(() => handler.handle(any()))
+        .thenAnswer((_) async => const AppFailure(AppErrorCode.storage));
+    final cubit = SettingsCubit(
+      GetSettingsUseCase(SettingsRepositoryImpl(storage)),
+      ChangeLanguageUseCase(SettingsRepositoryImpl(storage)),
+      handler,
+    );
+    final themeSwitcher = ThemeSwitcherCubit(storage, handler);
+    final router = AppRouter.create();
+    final security = await testAppLock();
+    await tester.pumpWidget(
+      DaftariApp(
+        router: router,
+        settingsCubit: cubit,
+        themeSwitcherCubit: themeSwitcher,
+        appLockCubit: security,
+      ),
+    );
+    await tester.pumpAndSettle();
+    router.go(AppRoutes.settings);
+    await tester.pumpAndSettle();
+
+    await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
+    await tester.tap(find.byKey(const ValueKey('language-tile')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('language-option-en')));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(SettingsScreen));
+    expect(Directionality.of(context), TextDirection.rtl);
+    expect(cubit.state.hasError, isTrue);
+    expect(cubit.state.localeCode, 'ar');
+    expect(find.text(context.l10n.settingsStorageError), findsOneWidget);
+    expect(find.byType(AppErrorDialog), findsNothing);
+    expect(find.byType(AppSuccessDialog), findsNothing);
+    verify(() => handler.handle(any())).called(1);
+
+    await tester.pumpWidget(const SizedBox());
+    router.dispose();
+    await cubit.close();
+    await themeSwitcher.close();
+    await security.close();
+  });
+
+  for (final size in const [Size(800, 1280), Size(1280, 800)]) {
+    for (final locale in const [Locale('ar'), Locale('en')]) {
+      testWidgets(
+        'tablet ${size.width.toInt()}x${size.height.toInt()} ${locale.languageCode}: Settings margins match Home and Customers at the same window size',
+        (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+
+          final firstCustomerId = await tester.runAsync(() async {
+            final db = await setupCustomerTests();
+            await sl<LocalStorageService>().setOnboardingCompleted(true);
+            final active = await db.customerDao.watchActiveCustomers().first;
+            await sl<SettingsCubit>().setLocaleCode(locale.languageCode);
+            return active.first.id;
+          });
+          final security = await testAppLock();
+          addTearDown(security.close);
+          final router = AppRouter.create(
+            localStorage: sl<LocalStorageService>(),
+            appLock: security,
+          );
+          await tester.pumpWidget(
+            DaftariApp(
+              router: router,
+              locale: locale,
+              settingsCubit: sl<SettingsCubit>(),
+              themeSwitcherCubit: sl<ThemeSwitcherCubit>(),
+              appLockCubit: security,
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          router.go(AppRoutes.settings);
+          await tester.pumpAndSettle();
+          expect(find.byType(SettingsScreen), findsOneWidget);
+          final settingsRect = tester.getRect(
+            find.byType(SettingsSectionCard).first,
+          );
+          expect(settingsRect.width, greaterThan(520));
+          expect(
+            settingsRect.left,
+            closeTo(size.width - settingsRect.right, 0.1),
+          );
+
+          await _scrollTo(tester, find.byKey(const ValueKey('language-tile')));
+          await tester.tap(find.byKey(const ValueKey('language-tile')));
+          await tester.pumpAndSettle();
+          expect(find.byType(LanguagePickerSheet), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          Navigator.of(tester.element(find.byType(LanguagePickerSheet))).pop();
+          await tester.pumpAndSettle();
+
+          router.go(AppRoutes.root);
+          await tester.pumpAndSettle();
+          final homeRect = tester.getRect(find.byType(DashboardSummaryCard));
+          expect(homeRect.left, closeTo(settingsRect.left, 0.1));
+          expect(homeRect.right, closeTo(settingsRect.right, 0.1));
+          expect(homeRect.width, closeTo(settingsRect.width, 0.1));
+
+          router.go(AppRoutes.customers);
+          await tester.pumpAndSettle();
+          expect(find.byType(CustomersListScreen), findsOneWidget);
+          final customersSearchRect = tester.getRect(
+            find.byKey(const ValueKey('customers-search')),
+          );
+          final customersCardRect = tester.getRect(
+            find.byType(CustomerListCard).first,
+          );
+          for (final rect in [customersSearchRect, customersCardRect]) {
+            expect(rect.left, closeTo(settingsRect.left, 0.1));
+            expect(rect.right, closeTo(settingsRect.right, 0.1));
+            expect(rect.width, closeTo(settingsRect.width, 0.1));
+          }
+
+          router.goNamed(
+            AppRoutes.customerDetailsName,
+            pathParameters: {'id': firstCustomerId!},
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(CustomerDetailsScreen), findsOneWidget);
+          final detailsRect = tester.getRect(
+            find.byKey(const ValueKey('customer-details-card')),
+          );
+          expect(detailsRect.left, closeTo(settingsRect.left, 0.1));
+          expect(detailsRect.right, closeTo(settingsRect.right, 0.1));
+          expect(detailsRect.width, closeTo(settingsRect.width, 0.1));
+
+          router.go(AppRoutes.customerNew);
+          await tester.pumpAndSettle();
+          expect(find.byType(CustomerFormScreen), findsOneWidget);
+          final formRect = tester.getRect(
+            find.byKey(const ValueKey('customer-form-header-card')),
+          );
+          expect(formRect.left, closeTo(settingsRect.left, 0.1));
+          expect(formRect.right, closeTo(settingsRect.right, 0.1));
+          expect(formRect.width, closeTo(settingsRect.width, 0.1));
+
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(const Duration(milliseconds: 1));
+          router.dispose();
+        },
+      );
+    }
+  }
 }

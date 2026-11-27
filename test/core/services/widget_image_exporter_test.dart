@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 
-import 'package:daftariapp/core/services/widget_image_exporter.dart';
+import 'package:daftariapp/core/services/image_exporter/widget_image_exporter.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -5,7 +5,7 @@ import 'package:daftariapp/core/database/app_database.dart';
 import 'package:daftariapp/core/errors/app_exception.dart';
 import 'package:daftariapp/core/errors/app_failure.dart';
 import 'package:daftariapp/core/errors/error_handler.dart';
-import 'package:daftariapp/core/services/app_logger.dart';
+import 'package:daftariapp/core/services/logger/app_logger.dart';
 import 'package:daftariapp/features/auth/session/data/services/supabase_auth_service.dart';
 import 'package:daftariapp/features/auth/session/data/services/supabase_bootstrap.dart';
 import 'package:daftariapp/features/auth/session/domain/entities/auth_session_event.dart';

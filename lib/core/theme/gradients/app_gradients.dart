@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../extensions/context_extensions.dart';
+import '../../extensions/context_extensions.dart';
 
 abstract final class AppGradients {
   static LinearGradient onboardingCard(BuildContext context) {

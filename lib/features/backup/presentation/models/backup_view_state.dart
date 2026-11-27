@@ -7,6 +7,21 @@ export '../../domain/entities/backup_schedule.dart' show BackupSchedule;
 
 enum BackupStatus { neverBackedUp, pending, running, failed, upToDate }
 
+enum BackupManualFeedback {
+  none,
+  confirmed,
+  nothingToUpload,
+  alreadyRunning,
+  offline,
+  signedOut,
+  emailNotVerified,
+  ledgerUnlinked,
+  accountMismatch,
+  inactiveDevice,
+  authError,
+  failed,
+}
+
 /// Presentation snapshot rendered by the Settings backup section and the
 /// Manage Backup screen.
 final class BackupViewState extends Equatable {
@@ -20,6 +35,8 @@ final class BackupViewState extends Equatable {
     this.isPreview = false,
     this.isEligibleForManualBackup = true,
     this.isInactiveDevice = false,
+    this.manualFeedback = BackupManualFeedback.none,
+    this.manualFeedbackId = 0,
   });
 
   /// Default empty preview used when [BackupCubit] is not mounted (e.g.,
@@ -42,6 +59,8 @@ final class BackupViewState extends Equatable {
   final bool isPreview;
   final bool isEligibleForManualBackup;
   final bool isInactiveDevice;
+  final BackupManualFeedback manualFeedback;
+  final int manualFeedbackId;
 
   bool get isRunning => status == BackupStatus.running;
 
@@ -61,6 +80,8 @@ final class BackupViewState extends Equatable {
     bool? isPreview,
     bool? isEligibleForManualBackup,
     bool? isInactiveDevice,
+    BackupManualFeedback? manualFeedback,
+    int? manualFeedbackId,
   }) => BackupViewState(
     status: status ?? this.status,
     pendingChanges: pendingChanges ?? this.pendingChanges,
@@ -76,6 +97,8 @@ final class BackupViewState extends Equatable {
     isEligibleForManualBackup:
         isEligibleForManualBackup ?? this.isEligibleForManualBackup,
     isInactiveDevice: isInactiveDevice ?? this.isInactiveDevice,
+    manualFeedback: manualFeedback ?? this.manualFeedback,
+    manualFeedbackId: manualFeedbackId ?? this.manualFeedbackId,
   );
 
   @override
@@ -89,5 +112,7 @@ final class BackupViewState extends Equatable {
     isPreview,
     isEligibleForManualBackup,
     isInactiveDevice,
+    manualFeedback,
+    manualFeedbackId,
   ];
 }

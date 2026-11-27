@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:daftariapp/core/constants/app_constants.dart';
-import 'package:daftariapp/core/theme/app_colors.dart';
-import 'package:daftariapp/core/theme/app_spacing.dart';
+import 'package:daftariapp/core/theme/colors/app_colors.dart';
+import 'package:daftariapp/core/theme/spacing/app_spacing.dart';
 import 'package:daftariapp/core/theme/app_theme.dart';
 import 'package:daftariapp/core/widgets/app_button.dart';
 import 'package:daftariapp/core/widgets/app_error_dialog.dart';
