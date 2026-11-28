@@ -11,14 +11,11 @@
 
 ## 📱 Screenshots
 <img width="540" height="1204" alt="daftari-1" src="https://github.com/user-attachments/assets/ca72610d-8ba8-40a6-befd-e84fcd306b52" />
-<img width="540" height="1204" alt="daftari-2" src="https://github.com/user-attachments/assets/f73123b7-2930-4b11-8268-0cc6fec8c37e" />
-<img width="540" height="1204" alt="daftari-5" src="https://github.com/user-attachments/assets/e70991cd-2958-4ebf-ae54-9b99e2415582" />
 <img width="540" height="1204" alt="daftari-7" src="https://github.com/user-attachments/assets/b6948692-9647-4df9-9341-450969f8e3ff" />
 <img width="540" height="1204" alt="daftari-8" src="https://github.com/user-attachments/assets/42bf62a1-029c-482e-9ac4-c93c2ef99648" />
 <img width="540" height="1204" alt="daftari-10" src="https://github.com/user-attachments/assets/16818b69-19ca-459c-9ea9-10f10b3735d6" />
 <img width="540" height="1204" alt="daftari-11" src="https://github.com/user-attachments/assets/434a54a8-5be0-4afa-a56f-738dae31b1ee" />
 <img width="540" height="1204" alt="daftari-12" src="https://github.com/user-attachments/assets/087149ae-1542-4807-a29d-0e7849a9c0f2" />
-<img width="540" height="1204" alt="daftari-16" src="https://github.com/user-attachments/assets/d1205e98-84f3-41e6-8f74-d3b27b13493f" />
 <img width="540" height="1204" alt="daftari-17" src="https://github.com/user-attachments/assets/e946f087-87b3-407b-bdec-0ca18e38b320" />
 <img width="540" height="1204" alt="daftari-19" src="https://github.com/user-attachments/assets/166e637b-8a16-4388-a6f8-68c0d065283f" />
 <img width="540" height="1204" alt="daftari-20" src="https://github.com/user-attachments/assets/251d9bb5-3870-47a6-8607-f88f01d983fe" />
