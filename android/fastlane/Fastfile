@@ -29,7 +29,7 @@ platform :android do
             )
           )
           file.flush
-          sh("flutter", "build", "apk", "--release", "--dart-define-from-file=#{file.path}")
+          sh("flutter", "build", "apk", "--release",)
         end
       else
         sh("flutter", "build", "apk", "--release")
